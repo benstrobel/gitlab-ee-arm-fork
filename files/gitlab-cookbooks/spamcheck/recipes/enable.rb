@@ -19,10 +19,15 @@ omnibus_helper = OmnibusHelper.new(node)
 logfiles_helper = LogfilesHelper.new(node)
 
 data_dir = node['spamcheck']['dir']
+<<<<<<< HEAD
 sockets_dir = File.join(data_dir, 'sockets')
+=======
+log_dir = node['spamcheck']['log_directory']
+>>>>>>> Update spamcheck version to 1.2.2
 env_dir = node['spamcheck']['env_directory']
-config_file = File.join(data_dir, 'config.toml')
+config_file = File.join(data_dir, 'config.yaml')
 
+<<<<<<< HEAD
 classifier_dir = "#{node['package']['install-dir']}/embedded/service/spam-classifier"
 preprocessor_dir = File.join(classifier_dir, 'preprocessor')
 preprocessor_model_path = File.join(classifier_dir, 'model/issues/tflite/model.tflite')
@@ -31,6 +36,15 @@ preprocessor_socket_path = File.join(sockets_dir, 'preprocessor.sock')
 [
   data_dir,
   sockets_dir
+=======
+service_dir = "#{node['package']['install-dir']}/embedded/service/spamcheck"
+classifier_dir = "#{node['package']['install-dir']}/embedded/service/spam-classifier/classifiers"
+
+[
+  data_dir,
+  log_dir,
+  classifier_dir,
+>>>>>>> Update spamcheck version to 1.2.2
 ].each do |dir|
   directory dir do
     owner account_helper.gitlab_user
@@ -53,14 +67,11 @@ end
 end
 
 template config_file do
-  source 'config.toml.erb'
+  source 'config.yaml.erb'
   owner 'root'
   group account_helper.gitlab_group
   mode '0640'
-  variables(node['spamcheck'].to_hash.merge(
-              preprocessor_socket_path: preprocessor_socket_path,
-              preprocessor_model_path: preprocessor_model_path
-            ))
+  variables(node['spamcheck'].to_hash.merge(ml_classifiers_path: classifier_dir))
   notifies :restart, 'runit_service[spamcheck]'
 end
 
@@ -78,6 +89,7 @@ runit_service 'spamcheck' do
     env_directory: env_dir,
     user: account_helper.gitlab_user,
     groupname: account_helper.gitlab_group,
+<<<<<<< HEAD
     config_file: config_file
   }.merge(params))
   log_options spamcheck_logging_settings[:options]
@@ -94,6 +106,10 @@ runit_service 'spam-classifier' do
     groupname: account_helper.gitlab_group,
     preprocessor_dir: preprocessor_dir,
     sockets_dir: sockets_dir
+=======
+    config_file: config_file,
+    service_dir: service_dir
+>>>>>>> Update spamcheck version to 1.2.2
   }.merge(params))
   log_options classifier_logging_settings[:options]
 end
