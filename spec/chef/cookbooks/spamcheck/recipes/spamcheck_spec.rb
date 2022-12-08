@@ -38,10 +38,6 @@ RSpec.describe 'spamcheck' do
         )
       end
 
-<<<<<<< HEAD
-      it 'creates config.toml with default values' do
-        actual_content = get_rendered_toml(chef_run, '/var/opt/gitlab/spamcheck/config.toml')
-=======
       it 'creates necessary directories at default locations' do
         %w[
           /var/opt/gitlab/spamcheck
@@ -56,17 +52,16 @@ RSpec.describe 'spamcheck' do
       end
 
       it 'creates config.yaml with default values' do
-        actual_content = get_rendered_yaml(chef_run, '/var/opt/gitlab/spamcheck/config.yaml')
->>>>>>> Update spamcheck version to 1.2.2
+        actual_content = get_rendered_yaml(chef_run, '/var/opt/gitlab/spamcheck/config.yaml', symbolize: false)
         expected_content = {
-          filter: {
-            allow_list: nil,
-            allowed_domains: ["gitlab.com"],
-            deny_list: nil
+          "filter" => {
+            "allow_list" => nil,
+            "allowed_domains" => ["gitlab.com"],
+            "deny_list" => nil
           },
-          grpc_addr: "127.0.0.1:8001",
-          log_level: "info",
-          ml_classifiers: "/opt/gitlab/embedded/service/spam-classifier/classifiers"
+          "grpc_addr" => "127.0.0.1:8001",
+          "log_level" => "info",
+          "ml_classifiers" => "/opt/gitlab/embedded/service/spam-classifier/classifiers"
         }
         expect(actual_content).to eq(expected_content)
       end
@@ -96,35 +91,6 @@ RSpec.describe 'spamcheck' do
       end
     end
 
-    context 'log directory and runit group' do
-      context 'default values' do
-        before do
-          stub_gitlab_rb(spamcheck: { enable: true })
-        end
-
-        it_behaves_like 'enabled logged service', 'spamcheck', true, { log_directory_owner: 'git' }
-        it_behaves_like 'enabled logged service', 'spam-classifier', true, { log_directory_owner: 'git' }
-      end
-
-      context 'custom values' do
-        before do
-          stub_gitlab_rb(
-            spamcheck: {
-              enable: true,
-              log_group: 'fugee',
-              log_directory: '/log/spamcheck',
-              classifier: {
-                log_group: 'fugee',
-                log_directory: '/log/spam-classifier',
-              }
-            }
-          )
-        end
-        it_behaves_like 'enabled logged service', 'spamcheck', true, { log_directory_owner: 'git', log_group: 'fugee', log_directory: '/log/spamcheck' }
-        it_behaves_like 'enabled logged service', 'spam-classifier', true, { log_directory_owner: 'git', log_group: 'fugee', log_directory: '/log/spam-classifier' }
-      end
-    end
-
     context 'with user specified values' do
       before do
         stub_gitlab_rb(
@@ -138,6 +104,7 @@ RSpec.describe 'spamcheck' do
             port: 5001,
             host: "0.0.0.0",
             log_level: 'debug',
+            allowed_domains: ["gitlab.com", 'example.com'],
             allowlist: {
               '14' => 'spamtest/hello'
             },
@@ -145,13 +112,10 @@ RSpec.describe 'spamcheck' do
               '15' => 'foobar/random'
             },
             env_directory: '/env/spamcheck',
+            log_directory: '/log/spamcheck',
             env: {
               'FOO' => 'BAR'
-<<<<<<< HEAD
-            },
-=======
             }
->>>>>>> Update spamcheck version to 1.2.2
           }
         )
       end
@@ -159,11 +123,7 @@ RSpec.describe 'spamcheck' do
       it 'creates necessary directories at user specified locations' do
         %w[
           /data/spamcheck
-<<<<<<< HEAD
-          /data/spamcheck/sockets
-=======
           /log/spamcheck
->>>>>>> Update spamcheck version to 1.2.2
         ].each do |dir|
           expect(chef_run).to create_directory(dir).with(
             owner: 'randomuser',
@@ -174,20 +134,20 @@ RSpec.describe 'spamcheck' do
       end
 
       it 'creates config.yaml with user specified values' do
-        actual_content = get_rendered_yaml(chef_run, '/data/spamcheck/config.yaml')
+        actual_content = get_rendered_yaml(chef_run, '/data/spamcheck/config.yaml', symbolize: false)
         expected_content = {
-          filter: {
-            allowed_domains: ["gitlab.com"],
-            allow_list: {
+          "filter" => {
+            "allowed_domains" => ["gitlab.com", 'example.com'],
+            "allow_list" => {
               14 => "spamtest/hello"
             },
-            deny_list: {
+            "deny_list" => {
               15 => "foobar/random"
             }
           },
-          grpc_addr: "0.0.0.0:5001",
-          log_level: "debug",
-          ml_classifiers: "/opt/gitlab/embedded/service/spam-classifier/classifiers"
+          "grpc_addr" => "0.0.0.0:5001",
+          "log_level" => "debug",
+          "ml_classifiers" => "/opt/gitlab/embedded/service/spam-classifier/classifiers"
         }
         expect(actual_content).to eq(expected_content)
       end
@@ -216,28 +176,6 @@ RSpec.describe 'spamcheck' do
 
         expect(chef_run).to render_file('/opt/gitlab/sv/spamcheck/run').with_content(expected_content)
       end
-<<<<<<< HEAD
-
-      it 'creates runit files for spam-classifier service' do
-        expected_content = <<~EOS
-          #!/bin/bash
-
-          # Let runit capture all script error messages
-          exec 2>&1
-
-          exec chpst -e /env/spamcheck -P \\
-            -u randomuser:randomgroup \\
-            -U randomuser:randomgroup \\
-            /opt/gitlab/embedded/bin/python3 /opt/gitlab/embedded/service/spam-classifier/preprocessor/preprocess.py \\
-              --tokenizer-pickle-path /opt/gitlab/embedded/service/spam-classifier/preprocessor/tokenizer.pickle \\
-              --log-dir /var/log/gitlab/spam-classifier \\
-              --socket-dir /data/spamcheck/sockets
-        EOS
-
-        expect(chef_run).to render_file('/opt/gitlab/sv/spam-classifier/run').with_content(expected_content)
-      end
-=======
->>>>>>> Update spamcheck version to 1.2.2
     end
   end
 
