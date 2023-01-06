@@ -113,3 +113,9 @@ runit_service 'spam-classifier' do
   }.merge(params))
   log_options classifier_logging_settings[:options]
 end
+
+# shutdown any existing legacy spam-classifier service
+# TODO: remove in GitLab 16.0
+runit_service 'spam-classifier' do
+  action :disable
+end
