@@ -73,7 +73,6 @@ RSpec.describe 'gitlab::users' do
     context 'with default attributes' do
       let(:expected_options) { [] }
       let(:expected_content) do
-        # rubocop:disable Layout/TrailingWhitespace
         <<-EOF
 #{gitconfig_header}
 [user]
@@ -81,11 +80,9 @@ RSpec.describe 'gitlab::users' do
         email = gitlab@fauxhai.local
 [core]
         autocrlf = input
-        
 [gc]
         auto = 0
         EOF
-        # rubocop:enable Layout/TrailingWhitespace
       end
 
       it_behaves_like 'a rendered .gitconfig'
@@ -94,7 +91,6 @@ RSpec.describe 'gitlab::users' do
     context 'with non-core gitconfig' do
       let(:expected_options) { [] }
       let(:expected_content) do
-        # rubocop:disable Layout/TrailingWhitespace
         <<-EOF
 #{gitconfig_header}
 [user]
@@ -102,11 +98,9 @@ RSpec.describe 'gitlab::users' do
         email = gitlab@fauxhai.local
 [core]
         autocrlf = input
-        
 [gc]
         auto = 0
         EOF
-        # rubocop:enable Layout/TrailingWhitespace
       end
 
       before do
@@ -125,7 +119,7 @@ RSpec.describe 'gitlab::users' do
     context 'with core gitconfig' do
       let(:expected_options) do
         [
-          'example = value'
+          { "key" => "example", "section" => "core", "value" => "value" }
         ]
       end
 
