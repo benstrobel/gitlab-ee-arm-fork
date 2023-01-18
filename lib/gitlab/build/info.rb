@@ -116,11 +116,11 @@ module Build
           .gsub(/(\A-+|-+\z)/, '')
       end
 
-      def gitlab_rails_commit
+      def gitlab_rails_commit(prepend_version = true)
         # In generate-facts, we are identifying the latest commit and storing
         # it as a build fact. This gets used by Version class and is presented
         # as version of `gitlab-rails` software component.
-        Gitlab::Version.new('gitlab-rails').print
+        Gitlab::Version.new('gitlab-rails').print(prepend_version)
       end
 
       def previous_version
@@ -149,7 +149,7 @@ module Build
       end
 
       def qa_image
-        Gitlab::Util.get_env('QA_IMAGE') || "#{Gitlab::Util.get_env('CI_REGISTRY')}/#{gitlab_rails_project_path}/#{Build::Info.package}-qa:#{gitlab_rails_commit}"
+        Gitlab::Util.get_env('QA_IMAGE') || "#{Gitlab::Util.get_env('CI_REGISTRY')}/#{gitlab_rails_project_path}/#{Build::Info.package}-qa:#{gitlab_rails_commit(false)}"
       end
 
       def edition
