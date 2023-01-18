@@ -33,6 +33,7 @@ relative_path 'src/gitlab-org/spamcheck'
 build do
   env = with_standard_compiler_flags(with_embedded_path)
 
+  # TODO: Migrate to using a requirements.txt file once it is supported in spamcheck
   command "#{install_dir}/embedded/bin/pip3 install tflite-runtime==2.10.0", env: env
   command "#{install_dir}/embedded/bin/pip3 install grpcio==1.44.0", env: env
   command "#{install_dir}/embedded/bin/pip3 install grpcio_reflection==1.44.0", env: env

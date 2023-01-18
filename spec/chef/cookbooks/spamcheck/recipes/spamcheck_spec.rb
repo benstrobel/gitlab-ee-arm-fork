@@ -56,7 +56,7 @@ RSpec.describe 'spamcheck' do
         expected_content = {
           "filter" => {
             "allow_list" => nil,
-            "allowed_domains" => ["gitlab.com"],
+            "allowed_domains" => nil,
             "deny_list" => nil
           },
           "grpc_addr" => "127.0.0.1:8001",
