@@ -1336,3 +1336,47 @@ replication user's password.
    ```
 
 1. Navigate to `https://your_primary_server/admin/geo/nodes` and ensure that all nodes are healthy.
+
+With the [known caveat of upgrading PostgreSQL with Geo](https://docs.gitlab.com/omnibus/settings/database.html#caveats-when-upgrading-postgresql-with-geo) these steps can help with secondary nodes failing to upgrade.
+
+Error example:
+
+```
+There was an error fetching locale and encoding information from the database
+Please ensure the database is running and functional before running pg-upgrade
+STDOUT: 
+STDERR: psql: error: could not connect to server: No such file or directory
+        Is the server running locally and accepting
+        connections on Unix domain socket "/var/opt/gitlab/geo-postgresql/.s.PGSQL.5431"?
+== Fatal error ==
+
+There was an error promoting the database. Please check the logs
+== Reverting ==
+```
+
+
+1. Rollback the pg-upgrade to version 10 with `gitlab-ctl revert-pg-upgrade`
+
+1. Disable the geo role from `gitlab.rb`
+
+1. Reconfigure
+
+1. Run `gitlab-ctl pg-upgrade -V <version you are upgrading to - same as primary version>`
+
+1. Manually initialize the geo-postgresql DB with:
+`sudo -u gitlab-psql /opt/gitlab/embedded/postgresql/<version>/bin/initdb -D /var/opt/gitlab/geo-postgresql/data.<version> --encoding=UTF8`
+
+1. Manually migrate the data from <current version> to <new version> with:
+`sudo -u gitlab-psql /opt/gitlab/embedded/postgresql/<new version>/bin/pg_upgrade -b /opt/gitlab/embedded/postgresql/<current version>/bin -B /opt/gitlab/embedded/postgresql/<new version>/bin -d /var/opt/gitlab/geo-postgresql/data -D /var/opt/gitlab/geo-postgresql/data.<new version>`
+
+1. Move data 
+`mv /var/opt/gitlab/geo-postgresql/data /var/opt/gitlab/geo-postgresql/data.old && mv /var/opt/gitlab/geo-postgresql/data.<new version> /var/opt/gitlab/geo-postgresql/data`
+
+1. Enabled geo role in `gitlab.rb`
+
+1. Reconfigure
+
+1. Migrate the geo-database again:
+`gitlab-ctl replicate-geo-database --slot-name=<geo_replica_name> --host=<primary_server_host>`
+
+1. Reconfigure (twice) to fix the missing `runtime.conf` file
