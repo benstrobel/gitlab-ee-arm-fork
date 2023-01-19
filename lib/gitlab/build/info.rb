@@ -116,11 +116,18 @@ module Build
           .gsub(/(\A-+|-+\z)/, '')
       end
 
-      def gitlab_rails_commit
-        # In generate-facts, we are identifying the latest commit and storing
-        # it as a build fact. This gets used by Version class and is presented
-        # as version of `gitlab-rails` software component.
-        Gitlab::Version.new('gitlab-rails').print
+      def gitlab_rails_ref(prepend_version: true)
+        # Returns the immutable git ref of GitLab rails being used.
+        #
+        # 1. In feature branch pipelines, generate-facts job will create
+        #    version fact files which will contain the commit SHA of GitLab
+        #    rails. This will be used by `Gitlab::Version` class and will be
+        #    presented as version of `gitlab-rails` software component.
+        # 2. In stable branch and tag pipelines, these version fact files will
+        #    not be created. However, in such cases, VERSION file will be
+        #    anyway pointing to immutable references (git tags), and hence we
+        #    can directly use it.
+        Gitlab::Version.new('gitlab-rails').print(prepend_version)
       end
 
       def previous_version
@@ -149,7 +156,7 @@ module Build
       end
 
       def qa_image
-        Gitlab::Util.get_env('QA_IMAGE') || "#{Gitlab::Util.get_env('CI_REGISTRY')}/#{gitlab_rails_project_path}/#{Build::Info.package}-qa:#{gitlab_rails_commit}"
+        Gitlab::Util.get_env('QA_IMAGE') || "#{Gitlab::Util.get_env('CI_REGISTRY')}/#{gitlab_rails_project_path}/#{Build::Info.package}-qa:#{gitlab_rails_ref(prepend_version: false)}"
       end
 
       def edition
