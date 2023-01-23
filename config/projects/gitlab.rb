@@ -111,6 +111,7 @@ dependency 'logrotate'
 dependency 'runit'
 dependency 'go-crond'
 dependency 'docker-distribution-pruner'
+dependency 'shellwords-gem'
 
 dependency 'mail_room'
 dependency 'grafana-dashboards'
