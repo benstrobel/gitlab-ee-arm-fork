@@ -27,14 +27,15 @@ if node['gitlab']['nginx']['enable']
   # Check first allowed_host, fallback to checking localhost
   allowed_hosts = node['gitlab']['gitlab-rails']['allowed_hosts']
   flags << "--header Host: #{allowed_hosts[0]}" unless allowed_hosts.empty?
+  flags << '--insecure'
   host = "localhost:#{node['gitlab']['nginx']['listen_port']}"
 else
   # Always use http for workhorse
   schema = 'http'
   use_socket = workhorse_helper.unix_socket?
   socket_path = use_socket ? node['gitlab']['gitlab-workhorse']['listen_addr'] : ''
+  flags << (use_socket ? "--unix-socket #{socket_path}" : '--insecure')
   host = use_socket ? 'localhost' : node['gitlab']['gitlab-workhorse']['listen_addr']
-  flags << use_socket ? "--unix-socket #{socket_path}" : '--insecure'
 end
 
 template "/opt/gitlab/etc/gitlab-healthcheck-rc" do
