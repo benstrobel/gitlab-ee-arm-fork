@@ -16,6 +16,7 @@
 #
 
 workhorse_helper = GitlabWorkhorseHelper.new(node)
+flags = []
 
 # If nginx is disabled we will use workhorse for the healthcheck
 if node['gitlab']['nginx']['enable']
@@ -23,13 +24,17 @@ if node['gitlab']['nginx']['enable']
   # Fallback to the setting derived from external_url
   listen_https = node['gitlab']['gitlab-rails']['gitlab_https'] if listen_https.nil?
   schema = listen_https ? 'https' : 'http'
-  # Only check on the local network
+  # Check first allowed_host, fallback to checking localhost
+  allowed_hosts = node['gitlab']['gitlab-rails']['allowed_hosts']
+  flags << "--header Host: #{allowed_hosts[0]}" unless allowed_hosts.empty?
   host = "localhost:#{node['gitlab']['nginx']['listen_port']}"
 else
   # Always use http for workhorse
   schema = 'http'
   use_socket = workhorse_helper.unix_socket?
+  socket_path = use_socket ? node['gitlab']['gitlab-workhorse']['listen_addr'] : ''
   host = use_socket ? 'localhost' : node['gitlab']['gitlab-workhorse']['listen_addr']
+  flags << use_socket ? "--unix-socket #{socket_path}" : '--insecure'
 end
 
 template "/opt/gitlab/etc/gitlab-healthcheck-rc" do
@@ -37,9 +42,8 @@ template "/opt/gitlab/etc/gitlab-healthcheck-rc" do
   group 'root'
   variables(
     {
-      use_socket: use_socket,
-      socket_path: use_socket ? node['gitlab']['gitlab-workhorse']['listen_addr'] : '',
-      url: "#{schema}://#{host}#{Gitlab['gitlab_rails']['gitlab_relative_url']}/help"
+      url: "#{schema}://#{host}#{Gitlab['gitlab_rails']['gitlab_relative_url']}/help",
+      flags: flags
     }
   )
 end
