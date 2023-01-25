@@ -14,8 +14,6 @@
 # limitations under the License.
 #
 
-require 'shellwords'
-
 class PrometheusHelper
   attr_reader :node
 
