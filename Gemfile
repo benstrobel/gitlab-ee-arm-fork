@@ -41,7 +41,6 @@ gem 'gitlab'
 gem 'yard'
 gem 'toml-rb'
 gem 'retriable'
-gem 'shellwords'
 
 group :packagecloud, optional: true do
   gem 'package_cloud'
