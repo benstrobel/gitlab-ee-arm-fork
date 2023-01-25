@@ -35,6 +35,17 @@ RSpec.describe 'gitlab::gitlab-healthcheck' do
       expect(chef_run).to render_file("/opt/gitlab/etc/gitlab-healthcheck-rc")
         .with_content(%r{url='http://localhost:80/custom/help'})
     end
+
+    it 'correctly renders out the healthcheck-rc file when setting allowed_hosts' do
+      stub_gitlab_rb(
+        external_url: 'https://gitlab.example.com',
+        gitlab_rails: { allowed_hosts: ['gitlab.example.com'] }
+      )
+      expect(chef_run).to render_file("/opt/gitlab/etc/gitlab-healthcheck-rc")
+        .with_content(%r{url='https://localhost:443/help'})
+      expect(chef_run).to render_file("/opt/gitlab/etc/gitlab-healthcheck-rc")
+        .with_content(%r{flags='--header Host: gitlab.example.com --insecure'})
+    end
   end
 
   context 'nginx is disabled' do
