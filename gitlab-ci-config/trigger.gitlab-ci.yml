@@ -1,0 +1,53 @@
+include:
+  - local: '/gitlab-ci-config/common.yml'
+
+.trigger-package-cache:
+  cache:
+    key: "Ubuntu-20.04-branch-${BUILDER_IMAGE_REVISION}-${CACHE_EDITION}${CACHE_KEY_SUFFIX}"
+    paths:
+      - cache
+      - gems
+      - assets_cache
+      - node_modules
+    policy: pull
+
+.build-package: &build-package
+  - !reference [.prepare_repository]
+  - bundle exec rake cache:populate
+  - bundle exec rake cache:restore
+  - bundle exec rake build:project
+  - bundle exec rake cache:bundle
+  - bundle exec rake build:component_shas
+
+.trigger-package-common:
+  extends: .trigger-package-cache
+  image: "${BUILDER_IMAGE_REGISTRY}/${BASE_OS}:${BUILDER_IMAGE_REVISION}"
+  stage: trigger-package
+  script:
+    - !reference [.build-package]
+    # Renaming so we can easily generate the artifact URL
+    - mv $PACKAGE_DIRECTORY/*.deb $PACKAGE_DIRECTORY/gitlab.deb
+    - mv $PACKAGE_DIRECTORY/*.deb.size $PACKAGE_DIRECTORY/gitlab.deb.size
+  artifacts:
+    expire_in: 3 days
+    when: always
+    paths:
+      - pkg/
+  tags:
+    - triggered-packages
+  needs:
+    - job: fetch-assets
+      optional: true
+    - job: generate-facts
+      optional: true
+      artifacts: true
+  rules:
+    - if: '$PIPELINE_TYPE =~ /TRIGGERED_(CE|EE)_PIPELINE/'
+    - if: '$PIPELINE_TYPE == "DURATION_PLOTTER_PIPELINE"'
+    - if: '$PIPELINE_TYPE == "TRIGGER_CACHE_UPDATE_PIPELINE"'
+
+Trigger:package:
+  extends: .trigger-package-common
+  variables:
+    BASE_OS: "ubuntu_20.04"
+    PACKAGE_DIRECTORY: "pkg/ubuntu-focal"
