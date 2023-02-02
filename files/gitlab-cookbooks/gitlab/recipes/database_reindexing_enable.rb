@@ -41,7 +41,7 @@ else
   reindexing = node['gitlab']['gitlab-rails']['database_reindexing']
 
   execute 'delete-existing-reindexing-jobs' do
-    command "find  . -name 'database-reindexing*' -exec rm {} \;"
+    command 'find  . -name \'database-reindexing*\' -exec rm {} \;'
     user "root"
     cwd "/var/opt/gitlab/crond"
   end

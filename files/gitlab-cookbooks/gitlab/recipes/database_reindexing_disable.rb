@@ -21,7 +21,7 @@ crond_job 'database-reindexing' do
 end
 
 execute 'delete-multiple-reindexing-jobs' do
-  command "find  . -name 'database-reindexing*' -exec rm {} \;"
+  command 'find  . -name \'database-reindexing*\' -exec rm {} \;'
   user "root"
   cwd "/var/opt/gitlab/crond"
   only_if { ::File.exist?("/var/opt/gitlab/crond/database-reindexing-0") }
