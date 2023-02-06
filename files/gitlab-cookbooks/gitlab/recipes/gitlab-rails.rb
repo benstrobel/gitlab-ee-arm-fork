@@ -220,6 +220,18 @@ templatesymlink "Create a resque.yml and create a symlink to Rails root" do
   sensitive true
 end
 
+templatesymlink "Create an override redis.yml and create a symlink to Rails root" do
+  link_from File.join(gitlab_rails_source_dir, "config/redis.yml")
+  link_to File.join(gitlab_rails_etc_dir, "redis.yml")
+  source "redis.yml.erb"
+  owner "root"
+  group "root"
+  mode "0644"
+  variables(redis_yml: node['gitlab']['gitlab-rails']['redis_yml_override'])
+  dependent_services.each { |svc| notifies :restart, svc }
+  sensitive true
+end
+
 templatesymlink "Create a cable.yml and create a symlink to Rails root" do
   url = node['gitlab']['gitlab-rails']['redis_actioncable_instance']
   sentinels = node['gitlab']['gitlab-rails']['redis_actioncable_sentinels']
@@ -240,7 +252,7 @@ templatesymlink "Create a cable.yml and create a symlink to Rails root" do
   sensitive true
 end
 
-%w(cache queues shared_state trace_chunks rate_limiting sessions).each do |instance|
+%w(cache queues shared_state trace_chunks rate_limiting sessions repository_cache).each do |instance|
   filename = "redis.#{instance}.yml"
   url = node['gitlab']['gitlab-rails']["redis_#{instance}_instance"]
   sentinels = node['gitlab']['gitlab-rails']["redis_#{instance}_sentinels"]
@@ -256,15 +268,8 @@ end
     mode '0644'
     variables(redis_url: url, redis_sentinels: sentinels, redis_enable_client: redis_enable_client)
     dependent_services.each { |svc| notifies :restart, svc }
-    not_if { url.nil? }
     sensitive true
-  end
-
-  [from_filename, to_filename].each do |filename|
-    file filename do
-      action :delete
-      only_if { url.nil? }
-    end
+    action :delete if url.nil?
   end
 end
 

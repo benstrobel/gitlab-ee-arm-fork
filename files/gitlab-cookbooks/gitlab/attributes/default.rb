@@ -144,6 +144,7 @@ default['gitlab']['gitlab-rails']['incoming_email_password'] = nil
 default['gitlab']['gitlab-rails']['incoming_email_mailbox_name'] = "inbox"
 default['gitlab']['gitlab-rails']['incoming_email_idle_timeout'] = nil
 default['gitlab']['gitlab-rails']['incoming_email_log_file'] = "/var/log/gitlab/mailroom/mail_room_json.log" # file path of internal `mail_room` JSON logs
+default['gitlab']['gitlab-rails']['incoming_email_delete_after_delivery'] = true
 default['gitlab']['gitlab-rails']['incoming_email_expunge_deleted'] = nil
 default['gitlab']['gitlab-rails']['incoming_email_inbox_method'] = "imap"
 default['gitlab']['gitlab-rails']['incoming_email_inbox_options'] = nil
@@ -172,6 +173,7 @@ default['gitlab']['gitlab-rails']['ssh_keys_expiring_soon_notification_worker_cr
 
 default['gitlab']['gitlab-rails']['ci_runners_stale_group_runners_prune_worker_cron'] = nil
 default['gitlab']['gitlab-rails']['ci_runner_versions_reconciliation_worker_cron'] = nil
+default['gitlab']['gitlab-rails']['ci_runners_stale_machines_cleanup_worker_cron'] = nil
 
 # Consolidated object storage config
 default['gitlab']['gitlab-rails']['object_store']['enabled'] = false
@@ -450,6 +452,9 @@ default['gitlab']['gitlab-rails']['redis_rate_limiting_instance'] = nil
 default['gitlab']['gitlab-rails']['redis_rate_limiting_sentinels'] = []
 default['gitlab']['gitlab-rails']['redis_sessions_instance'] = nil
 default['gitlab']['gitlab-rails']['redis_sessions_sentinels'] = []
+default['gitlab']['gitlab-rails']['redis_repository_cache_instance'] = nil
+default['gitlab']['gitlab-rails']['redis_repository_cache_sentinels'] = []
+default['gitlab']['gitlab-rails']['redis_yml_override'] = nil
 
 default['gitlab']['gitlab-rails']['smtp_enable'] = false
 default['gitlab']['gitlab-rails']['smtp_address'] = nil

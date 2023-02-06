@@ -185,6 +185,7 @@ external_url 'GENERATED_EXTERNAL_URL'
 # gitlab_rails['ssh_keys_expiring_soon_notification_worker_cron'] = "0 1 * * *"
 # gitlab_rails['loose_foreign_keys_cleanup_worker_cron'] = "*/5 * * * *"
 # gitlab_rails['ci_runner_versions_reconciliation_worker_cron'] = "@daily"
+# gitlab_rails['ci_runners_stale_machines_cleanup_worker_cron'] = "36 4 * * *"
 
 ### Webhook Settings
 ###! Number of seconds to wait for HTTP response after sending webhook HTTP POST
@@ -293,7 +294,12 @@ external_url 'GENERATED_EXTERNAL_URL'
 # gitlab_rails['incoming_email_idle_timeout'] = 60
 ####! The file name for internal `mail_room` JSON logfile
 # gitlab_rails['incoming_email_log_file'] = "/var/log/gitlab/mailroom/mail_room_json.log"
+####! This marks incoming messages deleted after delivery.
+####! If you are using Microsoft Graph API instead of IMAP, set this to false to retain
+####! messages in the inbox since deleted messages are auto-expunged after some time.
+# gitlab_rails['incoming_email_delete_after_delivery'] = true
 ####! Permanently remove messages from the mailbox when they are marked as deleted after delivery
+####! Only applies to IMAP. Microsoft Graph will auto-expunge any deleted messages.
 # gitlab_rails['incoming_email_expunge_deleted'] = false
 
 #### Inbox options (for Microsoft Graph)
@@ -341,6 +347,7 @@ external_url 'GENERATED_EXTERNAL_URL'
 # gitlab_rails['object_store']['objects']['dependency_proxy']['bucket'] = nil
 # gitlab_rails['object_store']['objects']['terraform_state']['bucket'] = nil
 # gitlab_rails['object_store']['objects']['ci_secure_files']['bucket'] = nil
+# gitlab_rails['object_store']['objects']['pages']['bucket'] = nil
 
 ### Job Artifacts
 # gitlab_rails['artifacts_enabled'] = true
@@ -788,6 +795,9 @@ external_url 'GENERATED_EXTERNAL_URL'
 # gitlab_rails['redis_rate_limiting_sentinels'] = nil
 # gitlab_rails['redis_sessions_instance'] = nil
 # gitlab_rails['redis_sessions_sentinels'] = nil
+# gitlab_rails['redis_repository_cache_instance'] = nil
+# gitlab_rails['redis_repository_cache_sentinels'] = nil
+# gitlab_rails['redis_yml_override'] = nil
 
 ################################################################################
 ## Container Registry settings
@@ -1844,7 +1854,7 @@ external_url 'GENERATED_EXTERNAL_URL'
 # gitlab_rails['gitlab_kas_enabled'] = true
 # gitlab_rails['gitlab_kas_external_url'] = 'ws://gitlab.example.com/-/kubernetes-agent/'
 # gitlab_rails['gitlab_kas_internal_url'] = 'grpc://localhost:8153'
-# gitlab_rails['gitlab_kas_external_k8s_proxy_url'] = 'https://gitlab.example.com/-/kubernetes-agent/'
+# gitlab_rails['gitlab_kas_external_k8s_proxy_url'] = 'https://gitlab.example.com/-/kubernetes-agent/k8s-proxy/'
 
 ##! Enable GitLab KAS
 # gitlab_kas['enable'] = true
