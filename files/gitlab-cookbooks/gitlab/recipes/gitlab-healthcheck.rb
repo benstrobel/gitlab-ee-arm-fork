@@ -26,7 +26,7 @@ if node['gitlab']['nginx']['enable']
   schema = listen_https ? 'https' : 'http'
   # Check first allowed_host, fallback to checking localhost
   allowed_hosts = node['gitlab']['gitlab-rails']['allowed_hosts']
-  flags << "--header Host: #{allowed_hosts[0]}" unless allowed_hosts.empty?
+  flags << "--header \"Host: #{allowed_hosts[0]}\"" unless allowed_hosts.empty?
   flags << '--insecure'
   host = "localhost:#{node['gitlab']['nginx']['listen_port']}"
 else
