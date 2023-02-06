@@ -44,7 +44,7 @@ RSpec.describe 'gitlab::gitlab-healthcheck' do
       expect(chef_run).to render_file("/opt/gitlab/etc/gitlab-healthcheck-rc")
         .with_content(%r{url='https://localhost:443/help'})
       expect(chef_run).to render_file("/opt/gitlab/etc/gitlab-healthcheck-rc")
-        .with_content(%r{flags='--header Host: gitlab.example.com --insecure'})
+        .with_content(%r{flags='--header "Host: gitlab.example.com" --insecure'})
     end
   end
 
