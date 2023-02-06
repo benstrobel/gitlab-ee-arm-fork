@@ -182,11 +182,6 @@ if Build::Check.use_system_ssl?
   end
 end
 
-# Temporarily allow spamcheck libraries
-allowed_lib /libz/
-allowed_lib /libgfortran/
-allowed_lib /libquadmath/
-
 exclude "\.git*"
 exclude "bundler\/git"
 
