@@ -59,6 +59,9 @@ your proxy has its own SSL certificate and SSL enabled. This means, even for
 the `https_proxy` value, you should usually specify a value as
 `http://USERNAME:PASSWORD@example.com:8080`.
 
+NOTE:
+If your GitLab instance is behind a proxy and the domain DNS can't be resolved, DNS rebind protection is disabled.
+
 ## Applying the changes
 
 Any change made to the environment variables requires a reconfigure for it
