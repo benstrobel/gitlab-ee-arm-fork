@@ -164,7 +164,18 @@ module Praefect
         # ambigious which key is ued in the final configuration.
         raise "Legacy configuration key '#{mapping}' can't be set when its new key '#{[new_parent, new_key].flatten.join('.')}' is set." if new_configuration.key?(new_key)
 
-        new_configuration[new_key] = Gitlab['praefect'][mapping]
+        old_value = Gitlab['praefect'][mapping]
+        if old_value.is_a?(String)
+          begin
+            # While the documentation covered configuring integers as Integer, the configuration values could also
+            # be provided as Strings in which case they were automatically converted into an Integer. Do that here
+            # by attempting to parse an Integer from the old value. If it fails, just use the old value.
+            old_value = Integer(old_value)
+          rescue StandardError
+          end
+        end
+
+        new_configuration[new_key] = old_value
       end
 
       new_configuration

@@ -241,6 +241,39 @@ RSpec.describe 'praefect' do
       end
     end
 
+    context 'with integer option configured as string' do
+      it 'handles database_port and database_port_direct' do
+        stub_gitlab_rb(
+          {
+            praefect: {
+              enable: true,
+              database_port: '1234',
+              database_direct_port: '4321',
+            }
+          }
+        )
+
+        expect(chef_run).to render_file(config_path).with_content { |content|
+          expect(get_rendered_toml(chef_run, '/var/opt/gitlab/praefect/config.toml')).to eq(
+            {
+              auth: { transitioning: false },
+              failover: { enabled: true },
+              listen_addr: 'localhost:2305',
+              logging: { format: 'json' },
+              prometheus_exclude_database_from_default_metrics: true,
+              prometheus_listen_addr: 'localhost:9652',
+              database: {
+                port: 1234,
+                session_pooled: {
+                  port: 4321,
+                }
+              }
+            }
+          )
+        }
+      end
+    end
+
     context 'with old virtual_storages and new virtual_storage set' do
       before do
         stub_gitlab_rb(
