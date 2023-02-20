@@ -159,11 +159,13 @@
 .ce-trigger-job-variables:
   extends: .base-trigger-job-variables
   PIPELINE_TYPE: "TRIGGERED_CE_PIPELINE"
+  BUILD_ON_ALL_OS: ${BUILD_ON_ALL_OS}
   CACHE_EDITION: "CE"
 
 .ee-trigger-job-variables:
   extends: .base-trigger-job-variables
   PIPELINE_TYPE: "TRIGGERED_EE_PIPELINE"
+  BUILD_ON_ALL_OS: ${BUILD_ON_ALL_OS}
   CACHE_EDITION: "EE"
   ee: "true"
 
@@ -740,6 +742,18 @@ pages:
   rules:
     - if: '$PIPELINE_TYPE == "LICENSE_PAGE_UPDATE_PIPELINE"'
 
+.build-package-on-all-os-vars:
+  SKIP_JOB_REGEX: '/SLES|Ubuntu-20.04|Docker|QA/'
+  PIPELINE_TYPE: "${EDITION}_BRANCH_BUILD_PIPELINE"
+  ee: "${ee}"
+  ALTERNATIVE_SOURCES: 'true'
+  GITLAB_VERSION: ${GITLAB_VERSION}
+  GITLAB_SHELL_VERSION: ${GITLAB_SHELL_VERSION}
+  GITLAB_PAGES_VERSION: ${GITLAB_PAGES_VERSION}
+  GITALY_VERSION: ${GITALY_SERVER_VERSION}
+  GITLAB_ELASTICSEARCH_INDEXER_VERSION: ${GITLAB_ELASTICSEARCH_INDEXER_VERSION}
+  GITLAB_KAS_VERSION: ${GITLAB_KAS_VERSION}
+
 build-package-on-all-os:
   stage: trigger-package
   needs:
@@ -750,17 +764,10 @@ build-package-on-all-os:
     include: '.gitlab-ci.yml'
     strategy: depend
   rules:
+    - if: '$PIPELINE_TYPE =~ /TRIGGERED_(CE|EE)_PIPELINE/ && $BUILD_ON_ALL_OS == "true"'
+      allow_failure: true
+      variables: !reference [.build-package-on-all-os-vars]
     - if: '$PIPELINE_TYPE =~ /TRIGGERED_(CE|EE)_PIPELINE/'
       when: manual
       allow_failure: true
-      variables:
-        SKIP_JOB_REGEX: '/SLES|Ubuntu-20.04|Docker|QA/'
-        PIPELINE_TYPE: "${EDITION}_BRANCH_BUILD_PIPELINE"
-        ee: "${ee}"
-        ALTERNATIVE_SOURCES: 'true'
-        GITLAB_VERSION: ${GITLAB_VERSION}
-        GITLAB_SHELL_VERSION: ${GITLAB_SHELL_VERSION}
-        GITLAB_PAGES_VERSION: ${GITLAB_PAGES_VERSION}
-        GITALY_VERSION: ${GITALY_SERVER_VERSION}
-        GITLAB_ELASTICSEARCH_INDEXER_VERSION: ${GITLAB_ELASTICSEARCH_INDEXER_VERSION}
-        GITLAB_KAS_VERSION: ${GITLAB_KAS_VERSION}
+      variables: !reference [.build-package-on-all-os-vars]
