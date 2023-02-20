@@ -97,8 +97,8 @@ module Registry
         Nginx.parse_proxy_headers('registry_nginx', false)
       when "https"
         Gitlab['registry_nginx']['https'] ||= true
-        Gitlab['registry_nginx']['ssl_certificate'] ||= "/etc/gitlab/ssl/#{uri.host}.crt"
-        Gitlab['registry_nginx']['ssl_certificate_key'] ||= "/etc/gitlab/ssl/#{uri.host}.key"
+        Gitlab['registry_nginx']['ssl_certificate'] ||= Gitlab['nginx']['ssl_certificate']
+        Gitlab['registry_nginx']['ssl_certificate_key'] ||= Gitlab['nginx']['ssl_certificate_key']
 
         Nginx.parse_proxy_headers('registry_nginx', true)
       else

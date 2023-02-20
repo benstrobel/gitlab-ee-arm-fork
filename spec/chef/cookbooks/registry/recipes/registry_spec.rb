@@ -497,6 +497,25 @@ RSpec.describe 'auto enabling registry' do
       }
   end
 
+  context 'when NGINX is configured with SSL certificates' do
+    before do
+      stub_gitlab_rb(
+        nginx: {
+          ssl_certificate: '/etc/gitlab/ssl/nginx.crt',
+          ssl_certificate_key: '/etc/gitlab/ssl/nginx.key'
+        }
+      )
+    end
+
+    it 'uses the NGINX SSL config' do
+      expect(chef_run).to render_file(nginx_config)
+        .with_content { |content|
+          expect(content).to include("ssl_certificate /etc/gitlab/ssl/nginx.crt;")
+          expect(content).to include("ssl_certificate_key /etc/gitlab/ssl/nginx.key;")
+        }
+    end
+  end
+
   it 'should point gitlab-rails to the registry' do
     expect(chef_run).to create_templatesymlink(
       'Create a gitlab.yml and create a symlink to Rails root'

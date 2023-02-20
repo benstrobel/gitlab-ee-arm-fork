@@ -72,8 +72,8 @@ module GitlabMattermost
         Nginx.parse_proxy_headers('mattermost_nginx', false)
       when "https"
         Gitlab['mattermost']['service_use_ssl'] = true
-        Gitlab['mattermost_nginx']['ssl_certificate'] ||= "/etc/gitlab/ssl/#{uri.host}.crt"
-        Gitlab['mattermost_nginx']['ssl_certificate_key'] ||= "/etc/gitlab/ssl/#{uri.host}.key"
+        Gitlab['mattermost_nginx']['ssl_certificate'] ||= Gitlab['nginx']['ssl_certificate']
+        Gitlab['mattermost_nginx']['ssl_certificate_key'] ||= Gitlab['nginx']['ssl_certificate_key']
 
         LetsEncryptHelper.add_service_alt_name("mattermost")
 
