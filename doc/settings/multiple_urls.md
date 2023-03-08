@@ -68,14 +68,14 @@ Firstly please ensure that the alternative domain name (that is, the domain that
 
 Next, create a new Nginx configuration file in `/etc/gitlab` (Storing configuration files here will [guarantee the files are included in backups]()).
 
-Modify the following configuration and insert it into the empty Nginx configuration file you just created. Replace `originaldomain.com` with the domain you would like to redirect, and replace `newdomain.com` with your `external_url`.
+Modify the following configuration and insert it into the empty Nginx configuration file you just created. Replace `example.com` with the domain you would like to redirect, and replace `gitlab.example.com` with your `external_url`.
 
 ```
 server {
     listen 80;
-    server_name originaldomain.com;
-    access_log /var/log/gitlab/nginx/originaldomain.com.access.log;
-    error_log /var/log/gitlab/nginx/originaldomain.com.error.log;
+    server_name example.com;
+    access_log /var/log/gitlab/nginx/example.com.access.log;
+    error_log /var/log/gitlab/nginx/example.com.error.log;
     
     # Let's Encrypt ACME challenge validation
     location ^~ /.well-known/acme-challenge/ {
@@ -84,14 +84,14 @@ server {
     }
     
     # Redirect all HTTP requests to HTTPS
-    return 301 https://newdomain.com$request_uri;
+    return 301 https://gitlab.example.com$request_uri;
 }
 
 server {
     listen 443 ssl;
-    server_name originaldomain.com;
-    access_log /var/log/gitlab/nginx/originaldomain.com.access.log;
-    error_log /var/log/gitlab/nginx/originaldomain.com.error.log;
+    server_name example.com;
+    access_log /var/log/gitlab/nginx/example.com.access.log;
+    error_log /var/log/gitlab/nginx/example.com.error.log;
     ssl_certificate /path/to/certificate.crt; 
     ssl_certificate_key /path/to/certificate.key; 
     
@@ -101,7 +101,7 @@ server {
     }
     
     # Redirect all HTTPS requests to the new domain
-    return 301 https://newdomain.com$request_uri;
+    return 301 https://gitlab.example.com$request_uri;
 }
 ```
 
