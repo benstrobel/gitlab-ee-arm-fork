@@ -4,7 +4,7 @@ group: Distribution
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://about.gitlab.com/handbook/product/ux/technical-writing/#assignments
 ---
 
-TODO: Check if the frontmatter above is correct
+TODO: Check if the front matter above is correct
 
 # Configuring multiple domains for an instance
 
