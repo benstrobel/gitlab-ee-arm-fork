@@ -163,22 +163,6 @@ module Build
         Info.package.gsub("gitlab-", "").strip # 'ee' or 'ce'
       end
 
-      def release_bucket
-        # Tag builds are releases and they get pushed to a specific S3 bucket
-        # whereas regular branch builds use a separate one
-        downloads_bucket = Gitlab::Util.get_env('RELEASE_BUCKET') || "downloads-packages"
-        builds_bucket = Gitlab::Util.get_env('BUILDS_BUCKET') || "omnibus-builds"
-        Check.on_tag? ? downloads_bucket : builds_bucket
-      end
-
-      def release_bucket_region
-        Gitlab::Util.get_env('RELEASE_BUCKET_REGION') || "eu-west-1"
-      end
-
-      def release_bucket_s3_endpoint
-        Gitlab::Util.get_env('RELEASE_BUCKET_S3_ENDPOINT') || "s3.amazonaws.com"
-      end
-
       def gcp_release_bucket
         # All tagged builds are pushed to the release bucket
         # whereas regular branch builds use a separate one
@@ -197,24 +181,6 @@ module Build
         else
           'info'
         end
-      end
-
-      # Fetch the package from an S3 bucket
-      def deb_package_download_url(arch: 'amd64')
-        folder = 'ubuntu-focal'
-        folder = "#{folder}_aarch64" if arch == 'arm64'
-
-        package_filename_url_safe = Info.release_version.gsub("+", "%2B")
-        "https://#{Info.release_bucket}.#{Info.release_bucket_s3_endpoint}/#{folder}/#{Info.package}_#{package_filename_url_safe}_#{arch}.deb"
-      end
-
-      def rpm_package_download_url(arch: 'x86_64')
-        folder = 'el-8'
-        folder = "#{folder}_aarch64" if arch == 'arm64'
-        folder = "#{folder}_fips" if Build::Check.use_system_ssl?
-
-        package_filename_url_safe = Info.release_version.gsub("+", "%2B")
-        "https://#{Info.release_bucket}.#{Info.release_bucket_s3_endpoint}/#{folder}/#{Info.package}-#{package_filename_url_safe}.el8.#{arch}.rpm"
       end
 
       def get_api(path, token: nil)
@@ -264,16 +230,11 @@ module Build
         repo = Gitlab::Util.get_env('PACKAGECLOUD_REPO') # Target repository
         token = Gitlab::Util.get_env('TRIGGER_PRIVATE_TOKEN') # Token used for triggering a build
 
-        download_url = if token && !token.empty?
-                         Info.triggered_build_package_url
-                       else
-                         Info.deb_package_download_url
-                       end
         contents = []
         contents << "PACKAGECLOUD_REPO=#{repo.chomp}\n" if repo && !repo.empty?
         contents << "RELEASE_PACKAGE=#{Info.package}\n"
         contents << "RELEASE_VERSION=#{Info.release_version}\n"
-        contents << "DOWNLOAD_URL=#{download_url}\n" if download_url
+        contents << "DOWNLOAD_URL=#{Info.triggered_build_package_url}\n" if token && !token.empty?
         contents << "TRIGGER_PRIVATE_TOKEN=#{token.chomp}\n" if token && !token.empty?
         contents.join
       end

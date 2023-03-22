@@ -100,10 +100,6 @@ These additional variables are available to override or enable different build b
 | AUTO_DEPLOY_ENVIRONMENT                       | Deployment name used for the [`gitlab.com` deployer](https://gitlab.com/gitlab-org/release/docs/blob/master/general/deploy/gitlab-com-deployer.md) trigger if current ref is an auto-deploy tag. |
 | DEPLOYER_TRIGGER_PROJECT                      | GitLab project ID for the repository used for the [`gitlab.com` deployer](https://gitlab.com/gitlab-org/release/docs/blob/master/general/deploy/gitlab-com-deployer.md). |
 | DEPLOYER_TRIGGER_TOKEN                        | Trigger token for the various [`gitlab.com` deployer](https://gitlab.com/gitlab-org/release/docs/blob/master/general/deploy/gitlab-com-deployer.md) environments. |
-| RELEASE_BUCKET                                | S3 bucket where release packages are pushed. |
-| BUILDS_BUCKET                                 | S3 bucket where regular branch packages are pushed. |
-| RELEASE_BUCKET_REGION                         | S3 bucket region. |
-| RELEASE_BUCKET_S3_ENDPOINT                    | Specify S3 endpoint. Especially useful when S3 compatible storage service is adopted. |
 | GITLAB_BUNDLE_GEMFILE                         | Set Gemfile path required by `gitlab-rails` bundle. Default is `Gemfile`. |
 | GITLAB_COM_PKGS_BUCKET                        | GCS bucket where release packages are pushed for SaaS deployments. |
 | GITLAB_COM_PKGS_SA_FILE                       | Service account key used for pushing release packages for SaaS deployments, it must have write access to the pkgs bucket. |
