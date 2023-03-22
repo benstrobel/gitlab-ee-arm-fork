@@ -28,9 +28,9 @@ registry_nginx['redirect_http_to_https'] = true
 mattermost_nginx['redirect_http_to_https'] = true
 ```
 
-With the [nginx helm chart](https://gitlab.com/gitlab-org/charts/gitlab/tree/master/charts/nginx-ingress), you xan redirect all http traffic to use https:
+With the [NGINX Helm chart](https://gitlab.com/gitlab-org/charts/gitlab/tree/master/charts/nginx-ingress), you can redirect all HTTP traffic to use HTTPS:
 
-```
+```yaml
 global:
   ingress:
     annotations:
