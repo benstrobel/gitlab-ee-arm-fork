@@ -260,6 +260,23 @@ Same as `Trigger:ce-package`, but builds an EE package.
 This job is run only on [Development repository](https://gitlab.com/gitlab-org/omnibus-gitlab) and [Security mirror](https://gitlab.com/gitlab-org/security/omnibus-gitlab) on branch
 pipelines.
 
+#### `Trigger:ce-build-package-on-all-os`
+
+This is a manual job which when played triggers a pipeline that runs a CE
+package build for all operating systems (except the package built in
+`Trigger:ce-package`). This job runs automatically if any software dependency or
+gem is changed, or the environment variable `BUILD_ON_ALL_OS` is set to "true".
+
+This job is run only on [Development repository](https://gitlab.com/gitlab-org/omnibus-gitlab) and [Security mirror](https://gitlab.com/gitlab-org/security/omnibus-gitlab) on branch
+pipelines.
+
+#### `Trigger:ee-build-package-on-all-os`
+
+Same as `Trigger:ce-build-package-on-all-os``, but builds EE packages.
+
+This job is run only on [Development repository](https://gitlab.com/gitlab-org/omnibus-gitlab) and [Security mirror](https://gitlab.com/gitlab-org/security/omnibus-gitlab) on branch
+pipelines.
+
 #### `fetch-assets`
 
 For building packages, we make use of the Rails assets that are already compiled
