@@ -28,6 +28,15 @@ registry_nginx['redirect_http_to_https'] = true
 mattermost_nginx['redirect_http_to_https'] = true
 ```
 
+With the [nginx helm chart](https://gitlab.com/gitlab-org/charts/gitlab/tree/master/charts/nginx-ingress), you xan redirect all http traffic to use https:
+
+```
+global:
+  ingress:
+    annotations:
+      "nginx.ingress.kubernetes.io/ssl-redirect": "true"`
+```
+
 NOTE:
 Modifying NGINX configuration should be done with care as incorrect
 or incompatible configuration may yield to unavailability of service.
