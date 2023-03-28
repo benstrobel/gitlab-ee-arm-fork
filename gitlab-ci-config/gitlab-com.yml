@@ -742,6 +742,7 @@ pages:
 
 .build-package-on-all-os-vars:
   SKIP_JOB_REGEX: '/SLES|Ubuntu-20.04|Docker|QA/'
+  PIPELINE_TYPE: "${EDITION}_BRANCH_BUILD_PIPELINE"
   ALTERNATIVE_SOURCES: 'true'
   GITLAB_VERSION: ${GITLAB_VERSION}
   GITLAB_SHELL_VERSION: ${GITLAB_SHELL_VERSION}
@@ -750,23 +751,7 @@ pages:
   GITLAB_ELASTICSEARCH_INDEXER_VERSION: ${GITLAB_ELASTICSEARCH_INDEXER_VERSION}
   GITLAB_KAS_VERSION: ${GITLAB_KAS_VERSION}
 
-.ce-build-package-on-all-os-vars:
-  extends: .build-package-on-all-os-vars
-  PIPELINE_TYPE: "CE_BRANCH_BUILD_PIPELINE"
-  ee: "false"
-
-.ee-build-package-on-all-os-vars:
-  extends: .build-package-on-all-os-vars
-  PIPELINE_TYPE: "EE_BRANCH_BUILD_PIPELINE"
-  ee: "true"
-
-.build-package-on-all-os-changes:
-  - Gemfile
-  - Gemfile.lock
-  - config/software/**
-  - config/patches/**
-
-.trigger-build-package-on-all-os-common:
+build-package-on-all-os:
   stage: trigger-package
   needs:
     - job: generate-facts
@@ -775,33 +760,26 @@ pages:
   trigger:
     include: '.gitlab-ci.yml'
     strategy: depend
-
-Trigger:ce-build-package-on-all-os:
-  extends: .trigger-build-package-on-all-os-common
   rules:
-    - if: '$PIPELINE_TYPE =~ /_MR_PIPELINE$/'
-      changes: !reference [.build-package-on-all-os-changes]
+    # Triggers from GitLab Rails/Gitaly/GitLab Pages pipeline which forced building on all OS automatically
+    - if: '$PIPELINE_TYPE =~ /TRIGGERED_(CE|EE)_PIPELINE/ && $BUILD_ON_ALL_OS == "true"'
+      when: always
       allow_failure: true
-      variables: !reference [.ce-build-package-on-all-os-vars]
-    - if: '($PIPELINE_TYPE =~ /_MR_PIPELINE$/ || $PIPELINE_TYPE =~ /_BRANCH_TEST_PIPELINE$/) && $BUILD_ON_ALL_OS == "true"'
+      variables: !reference [.build-package-on-all-os-vars]
+    # MR pipelines from omnibus-gitlab that change files which require building on all OS automatically
+    - if: '$PIPELINE_TYPE =~ /TRIGGERED_(CE|EE)_PIPELINE/ && $CI_PIPELINE_SOURCE != "pipeline"'
+      changes:
+       - Gemfile
+       - Gemfile.lock
+       - config/software/**
+       - config/patches/**
+      when: always
       allow_failure: true
-      variables: !reference [.ce-build-package-on-all-os-vars]
-    - if: '$PIPELINE_TYPE =~ /_MR_PIPELINE$/ || $PIPELINE_TYPE =~ /_BRANCH_TEST_PIPELINE$/'
+      variables: !reference [.build-package-on-all-os-vars]
+    # Covering the remaining scenarios - provide the job to be manually run by developers, if required
+    # (i) MR pipelines from omnibus-gitlab that doesn't change files which require building on all OS
+    # (ii) Triggers from GitLab Rails/Gitaly/GitLab Pages pipeline which didn't force building on all OS
+    - if: '$PIPELINE_TYPE =~ /TRIGGERED_(CE|EE)_PIPELINE/'
       when: manual
       allow_failure: true
-      variables: !reference [.ce-build-package-on-all-os-vars]
-
-Trigger:ee-build-package-on-all-os:
-  extends: .trigger-build-package-on-all-os-common
-  rules:
-    - if: '$PIPELINE_TYPE =~ /_MR_PIPELINE$/'
-      changes: !reference [.build-package-on-all-os-changes]
-      allow_failure: true
-      variables: !reference [.ee-build-package-on-all-os-vars]
-    - if: '($PIPELINE_TYPE =~ /_MR_PIPELINE$/ || $PIPELINE_TYPE =~ /_BRANCH_TEST_PIPELINE$/) && $BUILD_ON_ALL_OS == "true"'
-      allow_failure: true
-      variables: !reference [.ee-build-package-on-all-os-vars]
-    - if: '$PIPELINE_TYPE =~ /_MR_PIPELINE$/ || $PIPELINE_TYPE =~ /_BRANCH_TEST_PIPELINE$/'
-      when: manual
-      allow_failure: true
-      variables: !reference [.ee-build-package-on-all-os-vars]
+      variables: !reference [.build-package-on-all-os-vars]
