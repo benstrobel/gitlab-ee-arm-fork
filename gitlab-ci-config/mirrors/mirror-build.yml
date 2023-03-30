@@ -16,9 +16,10 @@ variables:
   script:
     - git clone "https://gitlab.com/gitlab-org/omnibus-gitlab.git" -b "parallel-build-spike" /tmp/omnibus-gitlab
     - cd /tmp/omnibus-gitlab
+    - cp config/projects/simple.rb /tmp/simple.rb
     - bundle install
     - rm -rf /opt/simple /var/cache/omnibus/build /var/cache/omnibus/src
-    - pwd
+    - cp /tmp/simple.rb config/projects.simple.rb
     - ls -la config/projects/*
     - sed -i "s/dependency.*/dependency '${CI_PROJECT_NAME}'/i" config/projects/simple.rb
     - bundle exec omnibus build simple
