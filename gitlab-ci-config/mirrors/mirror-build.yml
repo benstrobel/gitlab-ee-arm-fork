@@ -14,7 +14,15 @@ variables:
 .distro_template:
   stage: build
   script:
-    - echo "Build component on this distribution of Linux"
+    - git clone "https://gitlab.com/gitlab-org/omnibus-gitlab.git" -b "parallel-build-spike" /tmp/omnibus-gitlab
+    - pushd /tmp/omnibus-gitlab
+    - bundle install
+    - cp simple.rb /tmp/simple.rb
+    - rm -rf config/projects/simple.rb /opt/simple /var/cache/omnibus/build /var/cache/omnibus/src
+    - cp /tmp/simple.rb config/projects/simple.rb
+    - sed -i "s/dependency.*/dependency '${CI_PROJECT_NAME}'/i" config/projects/simple.rb
+    - bundle exec omnibus build simple
+
   rules:
     - if: $CI_PIPELINE_SOURCE == "push"
       when: always
