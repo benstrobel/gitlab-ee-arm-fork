@@ -1,0 +1,141 @@
+default:
+  tags:
+    - gitlab-components
+
+stages:
+  - rebase
+  - build
+
+variables:
+  BUILDER_IMAGE_REGISTRY: "registry.gitlab.com/gitlab-org/gitlab-omnibus-builder"
+  BUILDER_IMAGE_REVISION: "4.7.0"
+
+.distro_template:
+  stage: build
+  script:
+    - echo "Build component on this distribution of Linux"
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "push"
+      when: always
+
+Ubuntu-16.04-build:
+  image: "${BUILDER_IMAGE_REGISTRY}/ubuntu_16.04:${BUILDER_IMAGE_REVISION}"
+  extends: .distro_template
+
+Ubuntu-18.04-build:
+  image: "${BUILDER_IMAGE_REGISTRY}/ubuntu_18.04:${BUILDER_IMAGE_REVISION}"
+  extends: .distro_template
+
+Ubuntu-20.04-build:
+  image: "${BUILDER_IMAGE_REGISTRY}/ubuntu_20.04:${BUILDER_IMAGE_REVISION}"
+  extends: .distro_template
+
+Ubuntu-22.04-build:
+  image: "${BUILDER_IMAGE_REGISTRY}/ubuntu_22.04:${BUILDER_IMAGE_REVISION}"
+  extends: .distro_template
+
+Debian-10-build:
+  image: "${BUILDER_IMAGE_REGISTRY}/debian_10:${BUILDER_IMAGE_REVISION}"
+  extends: .distro_template
+
+Debian-10-arm-build:
+  image: "${BUILDER_IMAGE_REGISTRY}/debian_10_arm64:${BUILDER_IMAGE_REVISION}"
+  extends: .distro_template
+  tags:
+  - arm64
+
+Debian-11-build:
+  image: "${BUILDER_IMAGE_REGISTRY}/debian_11:${BUILDER_IMAGE_REVISION}"
+  extends: .distro_template
+
+Debian-11-arm-build:
+  image: "${BUILDER_IMAGE_REGISTRY}/debian_11_arm64:${BUILDER_IMAGE_REVISION}"
+  extends: .distro_template
+  tags:
+  - arm64
+
+Ubuntu-20.04-arm-build:
+  image: "${BUILDER_IMAGE_REGISTRY}/ubuntu_20.04_arm64:${BUILDER_IMAGE_REVISION}"
+  extends: .distro_template
+  tags:
+  - arm64
+
+Ubuntu-22.04-arm-build:
+  image: "${BUILDER_IMAGE_REGISTRY}/ubuntu_22.04_arm64:${BUILDER_IMAGE_REVISION}"
+  extends: .distro_template
+  tags:
+  - arm64
+
+CentOS-7-build:
+  image: "${BUILDER_IMAGE_REGISTRY}/centos_7:${BUILDER_IMAGE_REVISION}"
+  extends: .distro_template
+
+CentOS-8-build:
+  image: "${BUILDER_IMAGE_REGISTRY}/centos_8:${BUILDER_IMAGE_REVISION}"
+  extends: .distro_template
+
+CentOS-8-arm64-build:
+  image: "${BUILDER_IMAGE_REGISTRY}/centos_8_arm64:${BUILDER_IMAGE_REVISION}"
+  extends: .distro_template
+  tags:
+  - arm64
+
+OpenSUSE-15.3-build:
+  image: "${BUILDER_IMAGE_REGISTRY}/opensuse_15.3:${BUILDER_IMAGE_REVISION}"
+  extends: .distro_template
+
+OpenSUSE-15.3-arm64-build:
+  image: "${BUILDER_IMAGE_REGISTRY}/opensuse_15.3_arm64:${BUILDER_IMAGE_REVISION}"
+  extends: .distro_template
+  tags:
+  - arm64
+
+OpenSUSE-15.4-build:
+  image: "${BUILDER_IMAGE_REGISTRY}/opensuse_15.4:${BUILDER_IMAGE_REVISION}"
+  extends: .distro_template
+
+OpenSUSE-15.4-arm64-build:
+  image: "${BUILDER_IMAGE_REGISTRY}/opensuse_15.4_arm64:${BUILDER_IMAGE_REVISION}"
+  extends: .distro_template
+  tags:
+  - arm64
+
+AmazonLinux-2-build:
+  image: "${BUILDER_IMAGE_REGISTRY}/amazonlinux_2:${BUILDER_IMAGE_REVISION}"
+  extends: .distro_template
+
+AmazonLinux-2-arm64-build:
+  image: "${BUILDER_IMAGE_REGISTRY}/amazonlinux_2_arm64:${BUILDER_IMAGE_REVISION}"
+  extends: .distro_template
+  tags:
+  - arm64
+
+AmazonLinux-2022-build:
+  image: "${BUILDER_IMAGE_REGISTRY}/amazonlinux_2022:${BUILDER_IMAGE_REVISION}"
+  extends: .distro_template
+
+AmazonLinux-2022-arm64-build:
+  image: "${BUILDER_IMAGE_REGISTRY}/amazonlinux_2022_arm64:${BUILDER_IMAGE_REVISION}"
+  extends: .distro_template
+  tags:
+  - arm64
+
+SLES-12.5-build:
+  image: "${BUILDER_IMAGE_REGISTRY}/sles_12sp5:${BUILDER_IMAGE_REVISION}"
+  extends: .distro_template
+
+SLES-15.2-build:
+  image: "${BUILDER_IMAGE_REGISTRY}/sles_15sp2:${BUILDER_IMAGE_REVISION}"
+  extends: .distro_template
+
+Raspberry-Pi-2-Buster-build:
+  image: "${BUILDER_IMAGE_REGISTRY}/rpi_10:${BUILDER_IMAGE_REVISION}"
+  extends: .distro_template
+  tags:
+  - arm64
+
+Raspberry-Pi-2-Bullseye-build:
+  image: "${BUILDER_IMAGE_REGISTRY}/rpi_11:${BUILDER_IMAGE_REVISION}"
+  extends: .distro_template
+  tags:
+  - arm64
