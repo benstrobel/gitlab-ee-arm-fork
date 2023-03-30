@@ -113,13 +113,15 @@ AmazonLinux-2022-arm64-build:
   image: "${BUILDER_IMAGE_REGISTRY}/amazonlinux_2022_arm64:${BUILDER_IMAGE_REVISION}"
   extends: .arm64_distro_template
 
-SLES-12.5-build:
-  image: "${BUILDER_IMAGE_REGISTRY}/sles_12sp5:${BUILDER_IMAGE_REVISION}"
-  extends: .amd64_distro_template
-
-SLES-15.2-build:
-  image: "${BUILDER_IMAGE_REGISTRY}/sles_15sp2:${BUILDER_IMAGE_REVISION}"
-  extends: .amd64_distro_template
+# For now, skip SLES jobs while doing proof of concept as these are going to
+# need special handling
+#SLES-12.5-build:
+#  image: "${BUILDER_IMAGE_REGISTRY}/sles_12sp5:${BUILDER_IMAGE_REVISION}"
+#  extends: .amd64_distro_template
+#
+#SLES-15.2-build:
+#  image: "${BUILDER_IMAGE_REGISTRY}/sles_15sp2:${BUILDER_IMAGE_REVISION}"
+#  extends: .amd64_distro_template
 
 Raspberry-Pi-2-Buster-build:
   image: "${BUILDER_IMAGE_REGISTRY}/rpi_10:${BUILDER_IMAGE_REVISION}"
