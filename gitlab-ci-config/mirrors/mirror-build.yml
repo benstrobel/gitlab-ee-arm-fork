@@ -9,6 +9,7 @@ stages:
 variables:
   BUILDER_IMAGE_REGISTRY: "registry.gitlab.com/gitlab-org/gitlab-omnibus-builder"
   BUILDER_IMAGE_REVISION: "4.7.0"
+  PACKAGE_DIRECTORY: "pkg/"
 
 
 .distro_template:
@@ -20,6 +21,7 @@ variables:
     - rm -rf /opt/simple /var/cache/omnibus/build /var/cache/omnibus/src
     - scripts/mirrors/write-component-config > config/projects/component.rb
     - bundle exec omnibus build component
+    - find "${PACKAGE_DIRECTORY}"
 
       #  rules:
       #    - if: $CI_PIPELINE_SOURCE == "push"
