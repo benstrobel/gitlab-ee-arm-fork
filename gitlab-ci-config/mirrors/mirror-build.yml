@@ -18,7 +18,7 @@ variables:
     - cd /tmp/omnibus-gitlab
     - bundle install
     - rm -rf /opt/simple /var/cache/omnibus/build /var/cache/omnibus/src
-    - scripts/mirrors/write-component-config > /config/projects/component.rb
+    - scripts/mirrors/write-component-config > config/projects/component.rb
     - bundle exec omnibus build component
 
       #  rules:
