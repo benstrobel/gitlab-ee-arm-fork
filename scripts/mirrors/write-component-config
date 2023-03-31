@@ -2,7 +2,8 @@
 
 require 'erb'
 
-component_template = File.read('./component.rb.erb')
+component_template_path = File.expand_path("component.rb.erb", __dir__)
+component_template = File.read(component_template_path)
 component_name = ENV["CI_PROJECT_NAME"]
 
 x = ERB.new(component_template).result(binding)
