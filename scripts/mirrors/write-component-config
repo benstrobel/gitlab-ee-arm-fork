@@ -1,0 +1,10 @@
+#!/usr/bin/env ruby
+
+require 'erb'
+
+component_template = File.read('./component.rb.erb')
+component_name = ENV["CI_PROJECT_NAME"]
+
+x = ERB.new(component_template).result(binding)
+
+puts x

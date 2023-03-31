@@ -18,9 +18,8 @@ variables:
     - cd /tmp/omnibus-gitlab
     - bundle install
     - rm -rf /opt/simple /var/cache/omnibus/build /var/cache/omnibus/src
-    - cp doc/development/examples/simple.rb config/projects/simple.rb
-    - sed -i "s/dependency.*/dependency '${CI_PROJECT_NAME}'/i" config/projects/simple.rb
-    - bundle exec omnibus build simple
+    - scripts/mirrors/write-component-config > /config/projects/component.rb
+    - bundle exec omnibus build component
 
       #  rules:
       #    - if: $CI_PIPELINE_SOURCE == "push"
