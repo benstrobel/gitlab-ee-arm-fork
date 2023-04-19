@@ -778,6 +778,32 @@ RSpec.describe 'gitaly' do
             expect(chef_run).to render_file(config_path)
               .with_content(%r{\[\[storage\]\]\s+name = "nfs1"\s+path = "/mnt/nfs1/repositories"})
           end
+
+          context "with a legacy gitaly storage" do
+            before do
+              stub_gitlab_rb(
+                gitaly: {
+                  storage: [
+                    {
+                      'name' => 'default',
+                      'path' => '/path/to/legacy/gitaly/storage'
+                    }
+                  ],
+                  configuration: {
+                    storage: [
+                      {
+                        'name' => 'default',
+                        'path' => '/path/to/gitaly/configuration/storage'
+                      }
+                    ]
+                  }
+                }
+              )
+            end
+            it 'raises an error with legacy storage set' do
+              expect { chef_run }.to raise_error "Legacy configuration key 'storage' can't be set when its new key 'configuration.storage' is set."
+            end
+          end
         end
       end
     end
