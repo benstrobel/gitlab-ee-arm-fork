@@ -190,6 +190,12 @@ gitlab_rails['env'] = {
 }
 ```
 
+If you're using a [GitLab Development Kit](https://gitlab.com/gitlab-org/gitlab-development-kit) also create a `env.runit` file in your GDK directory with the following contents:
+
+```
+export GITLAB_LICENSE_MODE=test
+```
+
 ## OpenShift GitLab Development Setup
 
 See Omnibus GitLab [development setup](https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/blob/master/doc/developer/guide.md) documentation.
