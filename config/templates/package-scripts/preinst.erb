@@ -10,6 +10,7 @@ mkdir -p /var/log/gitlab/reconfigure
 skip_backup_file=/etc/gitlab/skip-auto-backup
 skip_reconfigure_file=/etc/gitlab/skip-auto-reconfigure
 skip_unmigrated_data_check=/etc/gitlab/skip-unmigrated-data-check
+skip_config_check=/etc/gitlab/skip-gl16-config-check
 
 # environment may contain these - clear them out
 OLD_VERSION_STRING=""
@@ -29,6 +30,11 @@ greater_version()
 }
 
 config_check() {
+# TODO: Remove this return before the 16.0 release
+if [ -e "${skip_config_check}" ] ; then
+  return
+fi
+
 if [ -e "${DEST_DIR}/embedded/service/omnibus-ctl/check_config.rb" ] ; then
   ${DEST_DIR}/bin/gitlab-ctl check-config --version=${NEW_MINOR_VERSION}
   if [ $? -ne 0 ]; then
