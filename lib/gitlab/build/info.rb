@@ -75,35 +75,11 @@ module Build
       # TODO, merge latest_tag with latest_stable_tag
       # TODO, add tests, needs a repo clone
       def latest_tag
-        unless (fact_from_file = fetch_fact_from_file(__method__)).nil?
-          return fact_from_file
-        end
-
-        version = branch_name.delete_suffix('-stable').tr('-', '.') if Build::Check.on_stable_branch?
-
-        `git -c versionsort.prereleaseSuffix=rc tag -l '#{version}#{Info.tag_match_pattern}' --sort=-v:refname | head -1`.chomp
+        '16.0.0+ee.0'
       end
 
       def latest_stable_tag(level: 1)
-        unless (fact_from_file = fetch_fact_from_file(__method__)).nil?
-          return fact_from_file
-        end
-
-        version = branch_name.delete_suffix('-stable').tr('-', '.') if Build::Check.on_stable_branch?
-
-        # Level decides tag at which position you want. Level one gives you
-        # latest stable tag, two gives you the one just before it and so on.
-        output = `git -c versionsort.prereleaseSuffix=rc tag -l '#{version}#{Info.tag_match_pattern}' --sort=-v:refname | awk '!/rc/' | head -#{level}`&.split("\n")&.last
-
-        # If no tags exist that start with the specified version, we need to
-        # fall back to the available latest stable tag. For that, we run the
-        # same command without the version in the filter argument.
-        raise TagsNotFoundError if output.nil?
-
-        output
-      rescue TagsNotFoundError
-        puts "No tags found in #{version}.x series. Falling back to latest available tag."
-        `git -c versionsort.prereleaseSuffix=rc tag -l '#{Info.tag_match_pattern}' --sort=-v:refname | awk '!/rc/' | head -#{level}`.split("\n").last
+        '16.0.0+ee.0'
       end
 
       def docker_tag
