@@ -39,9 +39,9 @@ module Gitaly
       return unless Gitlab['gitaly'].dig('configuration', 'cgroups').nil?
 
       # maintain backwards compatibility with pre 15.0 Gitaly cgroups config
-      cgroups_repositories_memory_bytes = Gitlab['gitaly']['cgroups_repositories_memory_bytes'] || (Gitlab['gitaly']['cgroups_memory_limit'] if Gitlab['gitaly']['cgroups_memory_enabled'])
-      cgroups_repositories_cpu_shares = Gitlab['gitaly']['cgroups_repositories_cpu_shares'] || (Gitlab['gitaly']['cgroups_cpu_shares'] if Gitlab['gitaly']['cgroups_cpu_enabled'])
-      cgroups_repositories_count = Gitlab['gitaly']['cgroups_repositories_count'] || Gitlab['gitaly']['cgroups_count']
+      cgroups_repositories_memory_bytes = Gitlab['gitaly']['cgroups_repositories_memory_bytes']
+      cgroups_repositories_cpu_shares = Gitlab['gitaly']['cgroups_repositories_cpu_shares'] || Gitlab['gitaly']['cgroups_cpu_shares']
+      cgroups_repositories_count = Gitlab['gitaly']['cgroups_repositories_count']
       cgroups_cpu_shares = Gitlab['gitaly']['cgroups_cpu_shares'] if Gitlab['gitaly']['cgroups_repositories_count'] && cgroups_repositories_count&.positive?
 
       Gitlab['gitaly']['cgroups_cpu_shares'] = cgroups_cpu_shares

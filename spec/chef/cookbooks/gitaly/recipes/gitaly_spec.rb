@@ -173,12 +173,10 @@ RSpec.describe 'gitaly' do
       stub_gitlab_rb(
         gitaly: {
           cgroups_mountpoint: cgroups_mountpoint,
-          cgroups_count: 100,
+          cgroups_repositories_count: 100,
           cgroups_hierarchy_root: cgroups_hierarchy_root,
-          cgroups_memory_limit: cgroups_memory_bytes,
-          cgroups_memory_enabled: true,
+          cgroups_repositories_memory_bytes: cgroups_memory_bytes,
           cgroups_cpu_shares: cgroups_cpu_shares,
-          cgroups_cpu_enabled: true,
           pack_objects_cache_enabled: pack_objects_cache_enabled,
           pack_objects_cache_dir: pack_objects_cache_dir,
           pack_objects_cache_max_age: pack_objects_cache_max_age,
