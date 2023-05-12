@@ -626,7 +626,7 @@ RAT:
     QA_IMAGE: ${QA_IMAGE}
   trigger:
     project: 'gitlab-org/distribution/reference-architecture-tester'
-    branch: 'master'
+    branch: 'switch-to-ubuntu-22.04'
     strategy: depend
     forward:
       pipeline_variables: false
@@ -660,7 +660,7 @@ GET:Geo:
     GITLAB_DEB_DOWNLOAD_URL: ${RAT_PACKAGE_URL}
   trigger:
     project: 'gitlab-org/geo-team/geo-ci'
-    branch: $GET_GEO_TAG
+    branch: 'switch-to-ubuntu-22.04'
     strategy: depend
     forward:
       pipeline_variables: false
