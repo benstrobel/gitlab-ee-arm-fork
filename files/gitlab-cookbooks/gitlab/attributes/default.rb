@@ -482,11 +482,6 @@ default['gitlab']['gitlab_rails']['redis_repository_cache_sentinels'] = []
 default['gitlab']['gitlab_rails']['redis_repository_cache_username'] = nil
 default['gitlab']['gitlab_rails']['redis_repository_cache_password'] = nil
 default['gitlab']['gitlab_rails']['redis_repository_cache_cluster_nodes'] = []
-default['gitlab']['gitlab_rails']['redis_cluster_rate_limiting_instance'] = nil
-default['gitlab']['gitlab_rails']['redis_cluster_rate_limiting_sentinels'] = []
-default['gitlab']['gitlab_rails']['redis_cluster_rate_limiting_username'] = nil
-default['gitlab']['gitlab_rails']['redis_cluster_rate_limiting_password'] = nil
-default['gitlab']['gitlab_rails']['redis_cluster_rate_limiting_cluster_nodes'] = []
 
 default['gitlab']['gitlab_rails']['redis_yml_override'] = nil
 
