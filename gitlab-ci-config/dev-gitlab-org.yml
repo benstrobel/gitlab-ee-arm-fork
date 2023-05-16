@@ -30,6 +30,7 @@
   - gems
   - assets_cache
   - node_modules
+  - rails_bundle_cache
 
 .branch-cache: &branch-cache
   key: "${CI_JOB_NAME}-${BUILDER_IMAGE_REVISION}-${CACHE_EDITION}${CACHE_KEY_SUFFIX}"

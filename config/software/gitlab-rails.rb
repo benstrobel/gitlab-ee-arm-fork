@@ -111,6 +111,10 @@ build do
     env['CARGO_HOME'] = '/run'
   end
 
+  # Move the cache directory to default location
+  mkdir "#{Omnibus::Config.source_dir}/gitlab-rails/vendor"
+  move "#{Omnibus::Config.project_root}/rails_bundle_cache", "#{Omnibus::Config.source_dir}/gitlab-rails/vendor/cache"
+
   bundle "config set --local gemfile #{gitlab_bundle_gemfile}" if gitlab_bundle_gemfile != 'Gemfile'
   bundle 'config force_ruby_platform true', env: env if OhaiHelper.ruby_native_gems_unsupported?
 
@@ -128,7 +132,8 @@ build do
   bundle 'config build.ruby-magic --with-magic-flags=--disable-zstdlib', env: env
   bundle "config set --local frozen 'true'", env: env
   bundle "config set --local without #{bundle_without.join(' ')}", env: env
-  bundle "install --jobs #{workers} --retry 5", env: env
+  bundle "cache --no-install", env: env
+  bundle "install --local --jobs #{workers} --retry 5", env: env
 
   block 'delete unneeded precompiled shared libraries' do
     next if OhaiHelper.ruby_native_gems_unsupported?
@@ -205,6 +210,8 @@ build do
   # and Artifacts. So we need these folder in the root directory.
   move "#{Omnibus::Config.source_dir}/gitlab-rails/tmp/cache", "#{Omnibus::Config.project_root}/assets_cache"
   move "#{Omnibus::Config.source_dir}/gitlab-rails/node_modules", Omnibus::Config.project_root.to_s
+  move "#{Omnibus::Config.source_dir}/gitlab-rails/vendor/cache", "#{Omnibus::Config.project_root}/rails_bundle_cache"
+  delete "#{Omnibus::Config.source_dir}/gitlab-rails/vendor"
 
   # Tear down now that gitlab:assets:compile is done.
   delete 'config/gitlab.yml'
