@@ -118,11 +118,14 @@ build do
   bundle "config set --local gemfile #{gitlab_bundle_gemfile}" if gitlab_bundle_gemfile != 'Gemfile'
   bundle 'config force_ruby_platform true', env: env if OhaiHelper.ruby_native_gems_unsupported?
 
+  # Force native gem installation to run multiple commands in parallel
+  bundle_install_env = env.dup
+  bundle_install_env['MAKE'] = "make -j#{workers}" unless Gitlab::Util.get_env('PARALLELIZE_BUNDLE_INSTALL') == "false"
   # This works around an issue with the grpc gem attempting to include
   # /opt/gitlab/include headers instead of the vendored re2 headers:
   # https://github.com/grpc/grpc/pull/32580. This can be removed
   # after grpc is updated with that pull request.
-  env['CPPFLAGS'] = "-Ithird_party/re2 #{env['CPPFLAGS']}" if OhaiHelper.arm?
+  bundle_install_env['CPPFLAGS'] = "-Ithird_party/re2 #{env['CPPFLAGS']}" if OhaiHelper.arm?
 
   bundle 'config build.gpgme --use-system-libraries', env: env
   bundle "config build.nokogiri --use-system-libraries --with-xml2-include=#{install_dir}/embedded/include/libxml2 --with-xslt-include=#{install_dir}/embedded/include/libxslt", env: env
@@ -132,8 +135,8 @@ build do
   bundle 'config build.ruby-magic --with-magic-flags=--disable-zstdlib', env: env
   bundle "config set --local frozen 'true'", env: env
   bundle "config set --local without #{bundle_without.join(' ')}", env: env
-  bundle "cache --no-install", env: env
-  bundle "install --local --jobs #{workers} --retry 5", env: env
+  bundle "cache --no-install", env: bundle_install_env
+  bundle "install --local --jobs #{workers} --retry 5", env: bundle_install_env
 
   block 'delete unneeded precompiled shared libraries' do
     next if OhaiHelper.ruby_native_gems_unsupported?
