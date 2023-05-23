@@ -44,6 +44,9 @@ build do
   # TODO: the following is not idempotent
   command 'sed -i -e s:-static:: Makefile', env: env
 
+  # Set Open File Limit
+  open_file_limit = node['gitlab']['open_file_limit'].nil? ? '50000' : node['package']['open_file_limit']
+
   # Build it
   make env: env
   make 'check', env: env
@@ -63,7 +66,10 @@ build do
   erb source: 'runsvdir-start.erb',
       dest: "#{install_dir}/embedded/bin/runsvdir-start",
       mode: 0755,
-      vars: { install_dir: install_dir }
+      vars: {
+        install_dir: install_dir,
+        open_file_limit: open_file_limit
+      }
 
   # Setup service directories
   touch "#{install_dir}/service/.gitkeep"
