@@ -45,7 +45,7 @@ build do
   command 'sed -i -e s:-static:: Makefile', env: env
 
   # Set Open File Limit
-  open_file_limit = node['gitlab']['open_file_limit'].nil? ? '50000' : node['package']['open_file_limit']
+  open_file_limit = node['gitlab']['open_file_limit'].nil? ? '50000' : node['gitlab']['open_file_limit']
 
   # Build it
   make env: env
