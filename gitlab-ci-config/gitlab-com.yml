@@ -55,12 +55,7 @@
     policy: pull
 
 .install-gems: &install-gems
-  - gem install bundler:${BUNDLER_VERSION}
-  - bundle config build.ffi --disable-system-libffi
-  - bundle config set --local path 'gems'
-  - bundle config set --local frozen 'true'
-  - bundle install -j $(nproc)
-  - bundle binstubs --all
+  - bash scripts/ci/prepare_bundle.sh
 
 .build-package: &build-package
   - bundle exec rake cache:populate
@@ -100,6 +95,8 @@
 .spec_template: &spec_template
   extends: .gems-cache-os-dependent
   stage: tests
+  variables:
+    INCLUDE_RUBOCOP: "true"
   before_script:
     # These jobs will not be run on dev, so we set ALTERNATIVE_SOURCES to true
     # so tests run fine on forks
@@ -285,6 +282,8 @@ rubocop:
   extends: .gems-cache
   stage: check
   image: "${RUBY_IMAGE}"
+  variables:
+    INCLUDE_RUBOCOP: "true"
   before_script: !reference [.install-gems]
   script:
     - bundle exec rubocop --parallel
