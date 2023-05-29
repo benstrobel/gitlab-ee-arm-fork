@@ -40,6 +40,12 @@
   key: "${CI_JOB_NAME}-branch-${BUILDER_IMAGE_REVISION}-${CACHE_EDITION}${CACHE_KEY_SUFFIX}"
   paths: !reference [.cache-paths]
 
+.release-jobs-cache: &release-jobs-cache
+  # Use the same cache key as tag builds, but include Ubuntu version of builder
+  # image used so that a change in the builder image used will bust the cache
+  key: "${CI_JOB_NAME}-branch-${RELEASE_JOBS_UBUNTU_VERSION}-${BUILDER_IMAGE_REVISION}-${CACHE_EDITION}${CACHE_KEY_SUFFIX}"
+  paths: !reference [.cache-paths]
+
 .branch_template: &branch_build
   stage: package
   script:
@@ -160,7 +166,7 @@
   script:
     - if [[ "${USE_SYSTEM_SSL}" == "true" ]]; then export STAGING_REPO=${FIPS_STAGING_REPO}; fi
     - bundle exec rake repository:upload:staging[$STAGING_REPO]
-  cache: !reference [.tag-cache]
+  cache: !reference [.release-jobs-cache]
   retry: 2
   tags:
   - promotion
@@ -197,7 +203,7 @@
   script:
     - bundle exec rake repository:upload:production
   retry: 2
-  cache: !reference [.tag-cache]
+  cache: !reference [.release-jobs-cache]
   tags:
   - promotion
   rules:
@@ -1055,12 +1061,12 @@ QA-Tag:
 
 license-upload:
   stage: metrics
-  image: "${BUILDER_IMAGE_REGISTRY}/ubuntu_18.04:${BUILDER_IMAGE_REVISION}"
+  image: "${BUILDER_IMAGE_REGISTRY}/ubuntu_${RELEASE_JOBS_UBUNTU_VERSION}:${BUILDER_IMAGE_REVISION}"
   script:
     - bundle exec rake license:upload
   tags:
   - docker-builder
-  cache: !reference [.tag-cache]
+  cache: !reference [.release-jobs-cache]
   needs:
     - Ubuntu-18.04
   rules:
@@ -1071,12 +1077,12 @@ license-upload:
 
 manifest-upload:
   stage: metrics
-  image: "${BUILDER_IMAGE_REGISTRY}/ubuntu_18.04:${BUILDER_IMAGE_REVISION}"
+  image: "${BUILDER_IMAGE_REGISTRY}/ubuntu_${RELEASE_JOBS_UBUNTU_VERSION}:${BUILDER_IMAGE_REVISION}"
   script:
     - bundle exec rake manifest:upload
   tags:
   - docker-builder
-  cache: !reference [.tag-cache]
+  cache: !reference [.release-jobs-cache]
   needs:
     - Ubuntu-18.04
   allow_failure: true
@@ -1088,10 +1094,10 @@ manifest-upload:
 
 RAT-Tag:
   stage: slow_jobs
-  image: "dev.gitlab.org:5005/cookbooks/gitlab-omnibus-builder/ubuntu_22.04:${BUILDER_IMAGE_REVISION}"
+  image: "dev.gitlab.org:5005/cookbooks/gitlab-omnibus-builder/ubuntu_${RELEASE_JOBS_UBUNTU_VERSION}:${BUILDER_IMAGE_REVISION}"
   script:
     - bundle exec rake qa:rat:tag
-  cache: !reference [.tag-cache]
+  cache: !reference [.release-jobs-cache]
   needs:
     - Ubuntu-22.04
   allow_failure: true

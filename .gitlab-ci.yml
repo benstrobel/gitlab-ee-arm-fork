@@ -70,6 +70,7 @@ variables:
   SECURITY_PROJECT_PATH: 'gitlab-org/security/omnibus-gitlab'
   DEV_PROJECT_PATH: 'gitlab/omnibus-gitlab'
   QA_PROJECT_PATH: 'gitlab-org/build/omnibus-gitlab-mirror'
+  RELEASE_JOBS_UBUNTU_VERSION: '22.04'
 
 ### For services that need a docker daemon
 .docker_job: &docker_job
