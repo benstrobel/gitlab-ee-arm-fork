@@ -13,14 +13,10 @@ contains a complete list of available options. New installations have all the
 options of the template listed in `/etc/gitlab/gitlab.rb` by default.
 
 NOTE:
-The exampled provided in the `gitlab.rb` do not always reflect the default settings for an instance. Some commented out values are not default.
+The examples provided in the `gitlab.rb` do not always reflect the default settings for an instance. Some commented out values are not default.
 
 For a list of default settings, see the
 [package defaults](https://docs.gitlab.com/ee/administration/package_information/defaults.html).
-
-For a list of most default attributes see the 
-
-[attribute defaults](https://gitlab.com/gitlab-org/omnibus-gitlab/-/blob/master/files/gitlab-cookbooks/gitlab/attributes/default.rb).
 
 ## Configure the external URL for GitLab
 
