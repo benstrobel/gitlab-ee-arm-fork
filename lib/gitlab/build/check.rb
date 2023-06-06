@@ -61,11 +61,11 @@ module Build
       end
 
       def is_latest_stable_tag?
-        match_tag?(Info.latest_stable_tag)
+        match_tag?(Info::Git.latest_stable_tag)
       end
 
       def is_latest_tag?
-        match_tag?(Info.latest_tag)
+        match_tag?(Info::Git.latest_tag)
       end
 
       def is_nightly?
@@ -85,11 +85,11 @@ module Build
       end
 
       def on_stable_branch?
-        Build::Info.branch_name&.match?(/^\d+-\d+-stable$/)
+        Build::Info::Git.branch_name&.match?(/^\d+-\d+-stable$/)
       end
 
       def on_regular_branch?
-        Build::Info.branch_name && !on_stable_branch?
+        Build::Info::Git.branch_name && !on_stable_branch?
       end
     end
   end
