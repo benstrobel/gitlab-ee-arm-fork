@@ -30,10 +30,13 @@ current_ruby_version = '3.0.6'
 # to false to avoid surprises.
 next_ruby_version = Gitlab::Util.get_env('NEXT_RUBY_VERSION') || '3.0.6'
 
+# If explicitly told to use new Ruby version, we do that
+if Gitlab::Util.get_env('USE_NEXT_RUBY_VERSION') == "true"
+  default_version next_ruby_version
 # MRs targeting stable branches should use current Ruby version and ignore next
 # Ruby version. Also, we provide `USE_OLD_RUBY_VERSION` variable to force usage
 # of current Ruby version.
-if Gitlab::Util.get_env('RUBY2_BUILD') == "true" || Gitlab::Util.get_env('USE_OLD_RUBY_VERSION') == "true" || Gitlab::Util.get_env('CI_MERGE_REQUEST_TARGET_BRANCH_NAME')&.match?(/^\d+-\d+-stable$/)
+elsif Gitlab::Util.get_env('USE_OLD_RUBY_VERSION') == "true" || Gitlab::Util.get_env('CI_MERGE_REQUEST_TARGET_BRANCH_NAME')&.match?(/^\d+-\d+-stable$/)
   default_version current_ruby_version
 # Regular branch builds are switched to newer Ruby version first. So once the
 # `NEXT_RUBY_VERSION` variable is updated, regular branches (master and feature
