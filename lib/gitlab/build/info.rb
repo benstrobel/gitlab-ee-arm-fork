@@ -164,12 +164,6 @@ module Build
         Gitlab::Version.new('gitlab-rails').print(prepend_version)
       end
 
-      def previous_version
-        # Get the second latest git tag
-        previous_tag = Info.latest_stable_tag(level: 2)
-        previous_tag.tr("+", "-")
-      end
-
       def gitlab_rails_project_path
         if Gitlab::Util.get_env('CI_SERVER_HOST') == 'dev.gitlab.org'
           package == "gitlab-ee" ? 'gitlab/gitlab-ee' : 'gitlab/gitlabhq'
@@ -254,15 +248,6 @@ module Build
         "https://#{Info.release_bucket}.#{Info.release_bucket_s3_endpoint}/#{folder}/#{Info.package}_#{package_filename_url_safe}_#{arch}.deb"
       end
 
-      def rpm_package_download_url(arch: 'x86_64')
-        folder = 'el-8'
-        folder = "#{folder}_aarch64" if arch == 'arm64'
-        folder = "#{folder}_fips" if Build::Check.use_system_ssl?
-
-        package_filename_url_safe = Info.release_version.gsub("+", "%2B")
-        "https://#{Info.release_bucket}.#{Info.release_bucket_s3_endpoint}/#{folder}/#{Info.package}-#{package_filename_url_safe}.el8.#{arch}.rpm"
-      end
-
       def get_api(path, token: nil)
         uri = URI("https://gitlab.com/api/v4/#{path}")
         req = Net::HTTP::Get.new(uri)
@@ -329,10 +314,6 @@ module Build
 
       def current_git_tag
         `git describe --exact-match 2>/dev/null`.chomp
-      end
-
-      def image_reference
-        "#{Build::GitlabImage.gitlab_registry_image_address}:#{Info.docker_tag}"
       end
 
       def deploy_env_key
