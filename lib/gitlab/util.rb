@@ -27,6 +27,26 @@ module Gitlab
 
         $stdout.puts "section_end:#{Time.now.to_i}:#{name}\r\e[0K"
       end
+
+      def shellout_stdout(cmd)
+        begin
+          output = Mixlib::ShellOut.new(cmd)
+          output.run_command
+        rescue Errno::EACCES, Errno::ENOENT
+          return nil
+        end
+
+        stdout = output.stdout&.chomp&.strip
+
+        stdout unless stdout&.empty?
+      end
+
+      def fetch_fact_from_file(fact)
+        return unless File.exist?("build_facts/#{fact}")
+
+        content = File.read("build_facts/#{fact}").strip
+        return content unless content.empty?
+      end
     end
   end
 end
