@@ -38,14 +38,6 @@ module Build
         Gitlab::Util.get_env('GITLAB_COM_PKGS_SA_FILE')
       end
 
-      def log_level
-        if Gitlab::Util.get_env('BUILD_LOG_LEVEL') && !Gitlab::Util.get_env('BUILD_LOG_LEVEL').empty?
-          Gitlab::Util.get_env('BUILD_LOG_LEVEL')
-        else
-          'info'
-        end
-      end
-
       # Fetch the package used in AWS AMIs from an S3 bucket
       def ami_deb_package_download_url(arch: 'amd64')
         folder = 'ubuntu-focal'
