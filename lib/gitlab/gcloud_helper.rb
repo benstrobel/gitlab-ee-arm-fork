@@ -30,11 +30,11 @@ class GCloudHelper
     private
 
     def sa_file
-      Build::Info.gcp_release_bucket_sa_file
+      Build::Info::ObjectStorage::GCP.release_bucket_sa_file
     end
 
     def pkgs_bucket
-      Build::Info.gcp_release_bucket
+      Build::Info::ObjectStorage::GCP.release_bucket
     end
   end
 end
