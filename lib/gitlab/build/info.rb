@@ -16,10 +16,6 @@ module Build
     }.freeze
 
     class << self
-      def qa_image
-        Gitlab::Util.get_env('QA_IMAGE') || "#{Gitlab::Util.get_env('CI_REGISTRY')}/#{Build::Info::Components::GitLabRails.project_path}/#{Build::Info::Package.name}-qa:#{Build::Info::Components::GitLabRails.ref(prepend_version: false)}"
-      end
-
       def release_bucket
         # Tag builds are releases and they get pushed to a specific S3 bucket
         # whereas regular branch builds use a separate one
