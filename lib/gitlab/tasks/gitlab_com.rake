@@ -1,5 +1,5 @@
-require_relative '../deployer_helper.rb'
-require_relative "../util.rb"
+require_relative '../deployer_helper'
+require_relative '../util'
 
 namespace :gitlab_com do
   desc 'Tasks related to gitlab.com.'

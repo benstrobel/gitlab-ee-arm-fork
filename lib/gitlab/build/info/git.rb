@@ -2,6 +2,12 @@ require_relative '../../util'
 require_relative '../check'
 require_relative 'ci'
 
+# We can't require mixlib/shellout in Gitlab::Util since it is required by
+# Gitlab::Version, which is in turn required by Gemfile. So, when Gemfile is
+# being evaluated, mixlib/shellout will be required, but it won't be present in
+# the bundle yet. Hence, we do it here.
+require 'mixlib/shellout'
+
 module Build
   class Info
     class Git

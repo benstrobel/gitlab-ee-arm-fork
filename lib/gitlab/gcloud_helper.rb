@@ -1,6 +1,7 @@
-require 'retriable'
 require 'open3'
-require_relative './build/info.rb'
+require 'retriable'
+
+require_relative 'build/info/object_storage'
 
 class GCloudHelper
   GCSSyncError = Class.new(StandardError)

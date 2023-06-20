@@ -1,9 +1,9 @@
-require_relative 'build/info.rb'
-require_relative 'util.rb'
-
 require 'aws-sdk-ec2'
 require 'aws-sdk-marketplacecatalog'
 require 'json'
+
+require_relative 'build/info.rb'
+require_relative 'util.rb'
 
 class AWSHelper
   def initialize(version, type)
