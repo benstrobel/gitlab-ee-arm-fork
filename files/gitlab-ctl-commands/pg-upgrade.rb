@@ -276,11 +276,11 @@ add_command_under_category 'pg-upgrade', 'database',
     elsif @instance_type == :patroni_standby_leader
       patroni_standby_leader_upgrade
     end
-  elsif @roles.include?('geo-primary')
+  elsif @roles.include?('geo_primary')
     log 'Detected a GEO primary node'
     @instance_type = :geo_primary
     general_upgrade
-  elsif @roles.include?('geo-secondary')
+  elsif @roles.include?('geo_secondary')
     log 'Detected a Geo secondary node'
     @instance_type = :geo_secondary
     geo_secondary_upgrade(options[:tmp_dir], options[:timeout])
@@ -456,12 +456,11 @@ def geo_secondary_upgrade(tmp_dir, timeout)
     GitlabCtl::PostgreSQL.wait_for_postgresql(600)
 
     common_pre_upgrade
-
-    # Only disable maintenance_mode if geo-pg is not enabled
-    common_post_upgrade(!@geo_pg_enabled)
+    cleanup_data_dir
   end
 
   geo_pg_upgrade
+  common_post_upgrade
 end
 
 def geo_pg_upgrade
