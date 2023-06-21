@@ -447,8 +447,10 @@ def geo_secondary_upgrade(tmp_dir, timeout)
     log('Upgrading the postgresql database')
     begin
       promote_database
-    rescue GitlabCtl::Errors::ExecutionError
-      die "There was an error promoting the database. Please check the logs"
+    rescue GitlabCtl::Errors::ExecutionError => e
+      log "STDOUT: #{e.stdout}"
+      log "STDERR: #{e.stderr}"
+      die "There was an error promoting the database from standby, please check the logs and output."
     end
 
     # Restart the database after promotion, and wait for it to be ready
