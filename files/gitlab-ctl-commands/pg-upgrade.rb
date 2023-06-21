@@ -484,7 +484,6 @@ def geo_pg_upgrade
   rescue GitlabCtl::Errors::ExecutionError
     die "Error running pg_upgrade on secondary, please check logs"
   end
-  common_post_upgrade
 end
 
 def get_locale_encoding
