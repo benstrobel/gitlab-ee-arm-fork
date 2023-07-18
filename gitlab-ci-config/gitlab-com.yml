@@ -597,10 +597,10 @@ qa-test:
   needs:
     - job: generate-facts
       artifacts: true
-    - job: Trigger:package
-      artifacts: false
-    - job: Trigger:gitlab-docker
-      artifacts: false
+    # - job: Trigger:package
+    #   artifacts: false
+    # - job: Trigger:gitlab-docker
+    #   artifacts: false
 
 letsencrypt-test:
   extends: .docker_job
