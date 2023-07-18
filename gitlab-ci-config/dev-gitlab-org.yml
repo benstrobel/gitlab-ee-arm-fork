@@ -55,7 +55,8 @@
       bundle exec rake check:package_size || true;
       fi
   tags:
-  - docker-builder
+    - distribution-runner
+    - amd64
   artifacts: !reference [.package-artifacts]
   needs:
     - job: fetch-assets
@@ -80,13 +81,20 @@
       when: manual
       allow_failure: true
 
+.arm64_branch_template: &arm64_branch_build
+  extends: .branch_template
+  tags:
+    - distribution-runner
+    - arm64
+
 .rpi_branch_template: &rpi_branch_build
   extends: .branch_template
   stage: slow_jobs
   variables:
     NO_SOURCEMAPS: "true"
   tags:
-  - docker-arm-builder
+    - distribution-runner
+    - armhf
   retry: 1
   rules:
     - !reference [.default_rules, rules]
@@ -116,7 +124,8 @@
     - bundle exec rake cache:bundle
     - bundle exec rake build:component_shas
   tags:
-  - docker-builder
+    - distribution-runner
+    - amd64
   artifacts: !reference [.package-artifacts-release]
   needs:
     - job: fetch-assets
@@ -138,13 +147,20 @@
     - !reference [.default_rules, rules]
     - if: '$PIPELINE_TYPE =~ /^EE_(RC|TAG)_BUILD_PIPELINE$/'
 
+.arm64_tag_template: &arm64_tag_build
+  extends: .tag_template
+  tags:
+    - distribution-runner
+    - arm64
+
 .rpi_tag_template: &rpi_tag_build
   extends: .tag_template
   stage: slow_jobs
   variables:
     NO_SOURCEMAPS: "true"
   tags:
-  - docker-arm-builder
+    - distribution-runner
+    - armhf
   rules:
     - !reference [.default_rules, rules]
     - if: '$PIPELINE_TYPE =~ /^CE_(RC|TAG)_BUILD_PIPELINE$/'
@@ -239,7 +255,8 @@
   - export AWS_SECRET_ACCESS_KEY=$AWS_AMI_SECRET_ACCESS_KEY
   - bundle exec rake aws:ami:create
   tags:
-  - docker-builder
+    - distribution-runner
+    - amd64
   cache: !reference [.tag-cache]
   artifacts:
     paths:
@@ -289,35 +306,25 @@ Debian-10-branch:
   extends: .branch_template
 Debian-10-arm64-branch:
   image: "${BUILDER_IMAGE_REGISTRY}/debian_10_arm64:${BUILDER_IMAGE_REVISION}"
-  extends: .branch_template
-  tags:
-  - docker-arm-builder
+  extends: .arm64_branch_template
 Debian-11-branch:
   image: "${BUILDER_IMAGE_REGISTRY}/debian_11:${BUILDER_IMAGE_REVISION}"
   extends: .branch_template
 Debian-11-arm64-branch:
   image: "${BUILDER_IMAGE_REGISTRY}/debian_11_arm64:${BUILDER_IMAGE_REVISION}"
-  extends: .branch_template
-  tags:
-  - docker-arm-builder
+  extends: .arm64_branch_template
 Debian-12-branch:
   image: "${BUILDER_IMAGE_REGISTRY}/debian_12:${BUILDER_IMAGE_REVISION}"
   extends: .branch_template
 Debian-12-arm64-branch:
   image: "${BUILDER_IMAGE_REGISTRY}/debian_12_arm64:${BUILDER_IMAGE_REVISION}"
-  extends: .branch_template
-  tags:
-  - docker-arm-builder
+  extends: .arm64_branch_template
 Ubuntu-20.04-arm64-branch:
   image: "${BUILDER_IMAGE_REGISTRY}/ubuntu_20.04_arm64:${BUILDER_IMAGE_REVISION}"
-  extends: .branch_template
-  tags:
-  - docker-arm-builder
+  extends: .arm64_branch_template
 Ubuntu-22.04-arm64-branch:
   image: "${BUILDER_IMAGE_REGISTRY}/ubuntu_22.04_arm64:${BUILDER_IMAGE_REVISION}"
-  extends: .branch_template
-  tags:
-  - docker-arm-builder
+  extends: .arm64_branch_template
 CentOS-7-branch:
   image: "${BUILDER_IMAGE_REGISTRY}/centos_7:${BUILDER_IMAGE_REVISION}"
   extends: .branch_template
@@ -326,41 +333,31 @@ AlmaLinux-8-branch:
   extends: .branch_template
 AlmaLinux-8-arm64-branch:
   image: "${BUILDER_IMAGE_REGISTRY}/almalinux_8_arm64:${BUILDER_IMAGE_REVISION}"
-  extends: .branch_template
-  tags:
-  - docker-arm-builder
+  extends: .arm64_branch_template
 AlmaLinux-9-branch:
   image: "${BUILDER_IMAGE_REGISTRY}/almalinux_9:${BUILDER_IMAGE_REVISION}"
   extends: .branch_template
 AlmaLinux-9-arm64-branch:
   image: "${BUILDER_IMAGE_REGISTRY}/almalinux_9_arm64:${BUILDER_IMAGE_REVISION}"
-  extends: .branch_template
-  tags:
-  - docker-arm-builder
+  extends: .arm64_branch_template
 OpenSUSE-15.4-branch:
   image: "${BUILDER_IMAGE_REGISTRY}/opensuse_15.4:${BUILDER_IMAGE_REVISION}"
   extends: .branch_template
 OpenSUSE-15.4-arm64-branch:
   image: "${BUILDER_IMAGE_REGISTRY}/opensuse_15.4_arm64:${BUILDER_IMAGE_REVISION}"
-  extends: .branch_template
-  tags:
-  - docker-arm-builder
+  extends: .arm64_branch_template
 AmazonLinux-2-branch:
   image: "${BUILDER_IMAGE_REGISTRY}/amazonlinux_2:${BUILDER_IMAGE_REVISION}"
   extends: .branch_template
 AmazonLinux-2-arm64-branch:
   image: "${BUILDER_IMAGE_REGISTRY}/amazonlinux_2_arm64:${BUILDER_IMAGE_REVISION}"
-  extends: .branch_template
-  tags:
-  - docker-arm-builder
+  extends: .arm64_branch_template
 AmazonLinux-2022-branch:
   image: "${BUILDER_IMAGE_REGISTRY}/amazonlinux_2022:${BUILDER_IMAGE_REVISION}"
   extends: .branch_template
 AmazonLinux-2022-arm64-branch:
   image: "${BUILDER_IMAGE_REGISTRY}/amazonlinux_2022_arm64:${BUILDER_IMAGE_REVISION}"
-  extends: .branch_template
-  tags:
-  - docker-arm-builder
+  extends: .arm64_branch_template
 SLES-12.5-branch:
   image: "${DEV_BUILDER_IMAGE_REGISTRY}/sles_12sp5:${BUILDER_IMAGE_REVISION}"
   extends: .branch_template
@@ -398,7 +395,8 @@ Docker-branch:
   - bundle exec rake docker:push:staging
   - bundle exec rake docker:push:nightly
   tags:
-  - docker-builder
+    - distribution-runner
+    - amd64
   cache: !reference [.branch-cache]
   needs:
     - job: Ubuntu-22.04-branch
@@ -431,7 +429,8 @@ QA-branch:
     paths:
     - screenshots/
   tags:
-  - docker-builder
+    - distribution-runner
+    - amd64
   cache: !reference [.branch-cache]
   needs:
     - job: Ubuntu-22.04-branch
@@ -528,7 +527,8 @@ Docker-QA:
     - bundle exec rake qa:push:staging
   cache: !reference [.tag-cache]
   tags:
-  - docker-builder
+    - distribution-runner
+    - amd64
   needs:
     - job: generate-facts
       optional: true
@@ -592,35 +592,25 @@ Debian-10:
   extends: .tag_template
 Debian-10-arm64:
   image: "${BUILDER_IMAGE_REGISTRY}/debian_10_arm64:${BUILDER_IMAGE_REVISION}"
-  extends: .tag_template
-  tags:
-  - docker-arm-builder
+  extends: .arm64_tag_template
 Debian-11:
   image: "${BUILDER_IMAGE_REGISTRY}/debian_11:${BUILDER_IMAGE_REVISION}"
   extends: .tag_template
 Debian-11-arm64:
   image: "${BUILDER_IMAGE_REGISTRY}/debian_11_arm64:${BUILDER_IMAGE_REVISION}"
-  extends: .tag_template
-  tags:
-  - docker-arm-builder
+  extends: .arm64_tag_template
 Debian-12:
   image: "${BUILDER_IMAGE_REGISTRY}/debian_12:${BUILDER_IMAGE_REVISION}"
   extends: .tag_template
 Debian-12-arm64:
   image: "${BUILDER_IMAGE_REGISTRY}/debian_12_arm64:${BUILDER_IMAGE_REVISION}"
-  extends: .tag_template
-  tags:
-  - docker-arm-builder
+  extends: .arm64_tag_template
 Ubuntu-20.04-arm64:
   image: "${BUILDER_IMAGE_REGISTRY}/ubuntu_20.04_arm64:${BUILDER_IMAGE_REVISION}"
-  extends: .tag_template
-  tags:
-  - docker-arm-builder
+  extends: .arm64_tag_template
 Ubuntu-22.04-arm64:
   image: "${BUILDER_IMAGE_REGISTRY}/ubuntu_22.04_arm64:${BUILDER_IMAGE_REVISION}"
-  extends: .tag_template
-  tags:
-  - docker-arm-builder
+  extends: .arm64_tag_template
 CentOS-7:
   image: "${BUILDER_IMAGE_REGISTRY}/centos_7:${BUILDER_IMAGE_REVISION}"
   extends: .tag_template
@@ -629,41 +619,31 @@ AlmaLinux-8:
   extends: .tag_template
 AlmaLinux-8-arm64:
   image: "${BUILDER_IMAGE_REGISTRY}/almalinux_8_arm64:${BUILDER_IMAGE_REVISION}"
-  extends: .tag_template
-  tags:
-  - docker-arm-builder
+  extends: .arm64_tag_template
 AlmaLinux-9:
   image: "${BUILDER_IMAGE_REGISTRY}/almalinux_9:${BUILDER_IMAGE_REVISION}"
   extends: .tag_template
 AlmaLinux-9-arm64:
   image: "${BUILDER_IMAGE_REGISTRY}/almalinux_9_arm64:${BUILDER_IMAGE_REVISION}"
-  extends: .tag_template
-  tags:
-  - docker-arm-builder
+  extends: .arm64_tag_template
 OpenSUSE-15.4:
   image: "${BUILDER_IMAGE_REGISTRY}/opensuse_15.4:${BUILDER_IMAGE_REVISION}"
   extends: .tag_template
 OpenSUSE-15.4-arm64:
   image: "${BUILDER_IMAGE_REGISTRY}/opensuse_15.4_arm64:${BUILDER_IMAGE_REVISION}"
-  extends: .tag_template
-  tags:
-  - docker-arm-builder
+  extends: .arm64_tag_template
 AmazonLinux-2:
   image: "${BUILDER_IMAGE_REGISTRY}/amazonlinux_2:${BUILDER_IMAGE_REVISION}"
   extends: .tag_template
 AmazonLinux-2-arm64:
   image: "${BUILDER_IMAGE_REGISTRY}/amazonlinux_2_arm64:${BUILDER_IMAGE_REVISION}"
-  extends: .tag_template
-  tags:
-  - docker-arm-builder
+  extends: .arm64_tag_template
 AmazonLinux-2022:
   image: "${BUILDER_IMAGE_REGISTRY}/amazonlinux_2022:${BUILDER_IMAGE_REVISION}"
   extends: .tag_template
 AmazonLinux-2022-arm64:
   image: "${BUILDER_IMAGE_REGISTRY}/amazonlinux_2022_arm64:${BUILDER_IMAGE_REVISION}"
-  extends: .tag_template
-  tags:
-  - docker-arm-builder
+  extends: .arm64_tag_template
 SLES-12.5:
   image: "${BUILDER_IMAGE_REGISTRY}/sles_12sp5:${BUILDER_IMAGE_REVISION}"
   extends: .tag_template
@@ -696,7 +676,8 @@ Docker:
   - bundle exec rake docker:build:image
   - bundle exec rake docker:push:staging
   tags:
-  - docker-builder
+    - distribution-runner
+    - amd64
   cache: !reference [.tag-cache]
   needs:
     - job: Ubuntu-22.04
@@ -1074,7 +1055,8 @@ QA-Tag:
     paths:
     - screenshots/
   tags:
-  - docker-builder
+    - distribution-runner
+    - amd64
   cache: !reference [.tag-cache]
   needs:
     - job: generate-facts
@@ -1097,7 +1079,8 @@ license-upload:
   script:
     - bundle exec rake license:upload
   tags:
-  - docker-builder
+    - distribution-runner
+    - amd64
   cache: !reference [.tag-cache]
   needs:
     - Ubuntu-18.04
@@ -1113,7 +1096,8 @@ manifest-upload:
   script:
     - bundle exec rake manifest:upload
   tags:
-  - docker-builder
+    - distribution-runner
+    - amd64
   cache: !reference [.tag-cache]
   needs:
     - Ubuntu-18.04
