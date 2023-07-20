@@ -614,15 +614,12 @@ smoke-test:
     QA_RSPEC_TAGS: --tag smoke --tag ~orchestrated
     RELEASE: $QA_RELEASE
     QA_IMAGE: $QA_IMAGE
-    QA_SUITES: "QA::Scenario::Test::Instance::Smoke"
     ALLURE_JOB_NAME: $ALLURE_JOB_NAME
     GITLAB_SEMVER_VERSION: $GITLAB_SEMVER_VERSION # latest semver gitlab version used for testing upgrade paths
     SKIP_OMNIBUS_TRIGGER: "true"
     QA_RUN_ALL_TESTS: "false"
     GITLAB_AUTH_TOKEN: $DANGER_GITLAB_API_TOKEN
     ALLURE_MERGE_REQUEST_IID: $CI_MERGE_REQUEST_IID
-  inherit:
-   variables: false
   rules:
     - if: '$SKIP_QA_TEST == "true"'
       when: never
