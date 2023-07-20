@@ -634,7 +634,7 @@ qa-test:
 smoke-test:
   extends:
     - .qa
-    - .com:qa:rules:trigger-schedule-smoke
+#    - .com:qa:rules:trigger-schedule-smoke
   stage: trigger-qa
   parallel: 2
   variables:
