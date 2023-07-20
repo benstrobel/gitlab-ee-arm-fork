@@ -381,6 +381,7 @@ include:
   - project: 'gitlab-org/quality/pipeline-common'
     file:
       - '/ci/danger-review.yml'
+      - '/ci.base.gitlab-ci.yml'
 
 danger-review:
   stage: check
