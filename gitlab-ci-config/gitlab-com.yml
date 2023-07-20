@@ -604,6 +604,32 @@ qa-test:
     #   artifacts: false
     # - job: Trigger:gitlab-docker
     #   artifacts: false
+.qa-custom-knapsack-path:
+  variables:
+    QA_KNAPSACK_REPORT_PATH: $CI_PROJECT_DIR/knapsack
+
+.qa:
+  extends:
+    - .qa-base
+    - .qa-custom-knapsack-path
+  variables:
+    #GITLAB_QA_OPTS: --address $GITLAB_ADDRESS
+    GITLAB_USERNAME: gitlab-qa
+    GITLAB_PASSWORD: $GITLAB_QA_PASSWORD
+    # The password contains $ so we need to wrap around it
+    # to workaround https://gitlab.com/gitlab-org/gitlab/issues/17069
+    GITLAB_FORKER_PASSWORD: $GITLAB_FORKER_PASSWORD_INPUT
+    SIGNUP_DISABLED: "true"
+    QA_GENERATE_ALLURE_REPORT: "true"
+  script:
+    - |
+      if [[ -n "$NO_ADMIN" ]]; then
+        echo "Running in NO_ADMIN mode"
+        unset GITLAB_QA_ADMIN_ACCESS_TOKEN
+        export QA_CAN_TEST_ADMIN_FEATURES="false"
+      fi;
+    - !reference [.qa-base, script]
+
 
 smoke-test:
   extends:
