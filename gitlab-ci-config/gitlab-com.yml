@@ -665,10 +665,10 @@ smoke-test:
   needs:
     - job: generate-facts
       artifacts: true
-    # - job: Trigger:package
-    #   artifacts: false
-    # - job: Trigger:gitlab-docker
-    #   artifacts: false
+    - job: Trigger:package
+      artifacts: false
+    - job: Trigger:gitlab-docker
+      artifacts: false
 
 manual-qa-full-suite:
   stage: trigger-qa
