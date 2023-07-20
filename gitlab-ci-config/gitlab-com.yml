@@ -604,6 +604,48 @@ qa-test:
     # - job: Trigger:gitlab-docker
     #   artifacts: false
 
+smoke-test:
+  extends:
+    - .qa
+    - .com:qa:rules:trigger-schedule-smoke
+  stage: trigger-qa
+  parallel: 2
+  variables:
+    QA_RSPEC_TAGS: --tag smoke --tag ~orchestrated
+    RELEASE: $QA_RELEASE
+    QA_IMAGE: $QA_IMAGE
+    QA_SUITES: "QA::Scenario::Test::Instance::Smoke"
+    ALLURE_JOB_NAME: $ALLURE_JOB_NAME
+    GITLAB_SEMVER_VERSION: $GITLAB_SEMVER_VERSION # latest semver gitlab version used for testing upgrade paths
+    SKIP_OMNIBUS_TRIGGER: "true"
+    QA_RUN_ALL_TESTS: "false"
+    GITLAB_AUTH_TOKEN: $DANGER_GITLAB_API_TOKEN
+    ALLURE_MERGE_REQUEST_IID: $CI_MERGE_REQUEST_IID
+  inherit:
+   variables: false
+  rules:
+    - if: '$SKIP_QA_TEST == "true"'
+      when: never
+    - if: '$PIPELINE_TYPE =~ /TRIGGERED_CE_PIPELINE/ && $MANUAL_QA_TEST == "true"'
+      when: manual
+      allow_failure: true
+      variables:
+        FOSS_ONLY: "1"
+    - if: '$PIPELINE_TYPE =~ /TRIGGERED_CE_PIPELINE/'
+      variables:
+        FOSS_ONLY: "1"
+    - if: '$PIPELINE_TYPE =~ /TRIGGERED_EE_PIPELINE/ && $MANUAL_QA_TEST == "true"'
+      when: manual
+      allow_failure: true
+    - if: '$PIPELINE_TYPE =~ /TRIGGERED_EE_PIPELINE/'
+  needs:
+    - job: generate-facts
+      artifacts: true
+    # - job: Trigger:package
+    #   artifacts: false
+    # - job: Trigger:gitlab-docker
+    #   artifacts: false
+
 manual-qa-full-suite:
   stage: trigger-qa
   variables:
