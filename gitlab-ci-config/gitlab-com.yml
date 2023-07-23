@@ -640,6 +640,7 @@ smoke-test:
   variables:
     QA_RSPEC_TAGS: --tag smoke --tag ~orchestrated
     RELEASE: $QA_RELEASE
+    GITLAB_LICENSE_MODE: test
     QA_IMAGE: $QA_IMAGE
     ALLURE_JOB_NAME: $ALLURE_JOB_NAME
     GITLAB_SEMVER_VERSION: $GITLAB_SEMVER_VERSION # latest semver gitlab version used for testing upgrade paths
