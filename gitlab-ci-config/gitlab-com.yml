@@ -632,6 +632,16 @@ qa-test:
       fi;
     - !reference [.qa-base, script]
 
+
+.gitlab-qa-image:
+  image:
+    name: ${GITLAB_QA_IMAGE}
+    entrypoint: [""]
+  before_script:
+    - cd /home/gitlab/qa
+    - '[[ ! -f "Gemfile.lock" ]] || bundle config set --local frozen "true"'
+
+
 download-knapsack-report:
   extends:
     - .gitlab-qa-image
