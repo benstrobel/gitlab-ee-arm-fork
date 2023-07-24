@@ -381,9 +381,9 @@ include:
   - project: 'gitlab-org/quality/pipeline-common'
     ref: 7.2.3
     file:
+      - '/ci/dot-com/qa.gitlab-ci.yml'
       - '/ci/danger-review.yml'
       - '/ci/base.gitlab-ci.yml'
-     # - /ci/dot-com/qa.gitlab-ci.yml
 
 
 danger-review:
@@ -661,7 +661,8 @@ download-knapsack-report:
 
 smoke-test:
   extends:
-    - .qa
+    #- .qa
+    - qa-smoke
     # - .com:qa:rules:trigger-schedule-smoke
   stage: trigger-qa
   parallel: 2
@@ -694,10 +695,10 @@ smoke-test:
   needs:
     - job: generate-facts
       artifacts: true
-    - job: Trigger:package
-      artifacts: false
-    - job: Trigger:gitlab-docker
-      artifacts: false
+    # - job: Trigger:package
+    #   artifacts: false
+    # - job: Trigger:gitlab-docker
+    #   artifacts: false
 
 manual-qa-full-suite:
   stage: trigger-qa
