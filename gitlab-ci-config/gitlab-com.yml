@@ -382,6 +382,7 @@ include:
     file:
       - '/ci/danger-review.yml'
       - '/ci/base.gitlab-ci.yml'
+      - '/ci/dot-com/qa.gitlab-ci.yml'
 
 danger-review:
   stage: check
@@ -630,6 +631,17 @@ qa-test:
         export QA_CAN_TEST_ADMIN_FEATURES="false"
       fi;
     - !reference [.qa-base, script]
+
+download-knapsack-report:
+  stage: prepare
+  extends:
+    - download-knapsack-report
+  rules:
+    - if: '$PIPELINE_TYPE =~ /TRIGGERED_CE_PIPELINE/'
+      variables:
+        FOSS_ONLY: "1"
+    - if: '$PIPELINE_TYPE =~ /TRIGGERED_EE_PIPELINE/'
+
 
 smoke-test:
   extends:
