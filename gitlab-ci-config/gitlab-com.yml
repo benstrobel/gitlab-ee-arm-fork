@@ -661,8 +661,8 @@ download-knapsack-report:
 
 smoke-test:
   extends:
-    #- .qa
-    - qa-smoke
+    - .qa
+    #- qa-smoke
     # - .com:qa:rules:trigger-schedule-smoke
   stage: trigger-qa
   parallel: 2
