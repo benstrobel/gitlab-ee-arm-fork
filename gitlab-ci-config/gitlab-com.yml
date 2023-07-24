@@ -632,9 +632,6 @@ qa-test:
 
 
 smoke-test:
-  extends:
-    - .qa
-#    - .com:qa:rules:trigger-schedule-smoke
   stage: trigger-qa
   parallel: 2
   variables:
@@ -648,6 +645,18 @@ smoke-test:
     QA_RUN_ALL_TESTS: "false"
     GITLAB_AUTH_TOKEN: $DANGER_GITLAB_API_TOKEN
     ALLURE_MERGE_REQUEST_IID: $CI_MERGE_REQUEST_IID
+  inherit:
+   variables: false
+  trigger:
+    strategy: depend
+    forward:
+      yaml_variables: true
+      pipeline_variables: true
+    include:
+      - project: gitlab-org/quality/pipeline-common
+        ref: 7.4.1
+        file:
+          - /ci/dot-com/qa.gitlab-ci.yml
   rules:
     - if: '$SKIP_QA_TEST == "true"'
       when: never
