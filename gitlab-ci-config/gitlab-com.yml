@@ -381,7 +381,7 @@ include:
   - project: 'gitlab-org/quality/pipeline-common'
     ref: 7.2.3
     file:
-      - '/ci/dot-com/qa.gitlab-ci.yml'
+      #- '/ci/dot-com/qa.gitlab-ci.yml'
       - '/ci/danger-review.yml'
       - '/ci/base.gitlab-ci.yml'
 
