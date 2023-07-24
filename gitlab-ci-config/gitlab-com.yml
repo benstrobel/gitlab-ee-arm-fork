@@ -632,7 +632,7 @@ qa-test:
       fi;
     - !reference [.qa-base, script]
 
-download-knapsack-report:
+download-knapsack:
   stage: prepare
   extends:
     - download-knapsack-report
