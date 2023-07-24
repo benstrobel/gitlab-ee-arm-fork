@@ -382,6 +382,8 @@ include:
     file:
       - '/ci/danger-review.yml'
       - '/ci/base.gitlab-ci.yml'
+      - /ci/dot-com/qa.gitlab-ci.yml
+
 
 danger-review:
   stage: check
