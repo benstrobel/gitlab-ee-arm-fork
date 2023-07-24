@@ -632,10 +632,24 @@ qa-test:
       fi;
     - !reference [.qa-base, script]
 
-download-knapsack:
-  stage: prepare
+download-knapsack-report:
   extends:
-    - download-knapsack-report
+    - .gitlab-qa-image
+    - .qa-custom-knapsack-path
+    #- .com:qa:rules:knapsack-report-download
+  stage: prepare
+  variables:
+    GIT_STRATEGY: none
+  script:
+    - bundle exec rake "knapsack:download[$TEST_STAGE_NAME]"
+  after_script:
+    - mkdir -p ${QA_KNAPSACK_REPORT_PATH}
+    - mv /home/gitlab/qa/knapsack/*.json ${QA_KNAPSACK_REPORT_PATH}/
+  allow_failure: true
+  artifacts:
+    paths:
+      - ${QA_KNAPSACK_REPORT_PATH}/*.json
+    expire_in: 1 day
   rules:
     - if: '$PIPELINE_TYPE =~ /TRIGGERED_CE_PIPELINE/'
       variables:
