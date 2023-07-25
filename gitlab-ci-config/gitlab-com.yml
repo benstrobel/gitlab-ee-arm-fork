@@ -676,17 +676,8 @@ smoke-test:
     QA_RUN_ALL_TESTS: "false"
     GITLAB_AUTH_TOKEN: $DANGER_GITLAB_API_TOKEN
     ALLURE_MERGE_REQUEST_IID: $CI_MERGE_REQUEST_IID
-  inherit:
-   variables: false
-  trigger:
-    strategy: depend
-    forward:
-      yaml_variables: true
-      pipeline_variables: true
-    include:
-      - project: gitlab-org/quality/pipeline-common
-        ref: 7.2.3
-        file: ci/dot-com/qa.gitlab-ci.yml
+  script:
+    - !reference [.qa-smoke]
   rules:
     - if: '$SKIP_QA_TEST == "true"'
       when: never
