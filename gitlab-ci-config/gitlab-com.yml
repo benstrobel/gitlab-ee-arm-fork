@@ -719,8 +719,8 @@ direct-smoke-test:
     GITLAB_QA_VERSION: "12.0.0"
   script:
     - echo $RELEASE
-    # - source gitlab-ci-config/qa.sh
-    # - qa_export_passwords
+    - source gitlab-ci-config/qa.sh
+    - qa_export_passwords
     - ls -larth
     - pwd
     - docker login -u gitlab-ci-token -p "$CI_JOB_TOKEN" "$CI_REGISTRY"
