@@ -717,8 +717,10 @@ direct-smoke-test:
     ALLURE_MERGE_REQUEST_IID: $CI_MERGE_REQUEST_IID
     GITLAB_QA_VERSION: "12.0.0"
   script:
-    - source gitlab-ci-config/qa.sh
-    - qa_export_passwords
+    # - source gitlab-ci-config/qa.sh
+    # - qa_export_passwords
+    - ls -larth
+    - pwd
     - docker login -u gitlab-ci-token -p "$CI_JOB_TOKEN" "$CI_REGISTRY"
     - gem install gitlab-qa -v "${GITLAB_QA_VERSION}"
     # - source "${VARIABLES_FILE}"
@@ -755,10 +757,10 @@ direct-smoke-test:
   needs:
     - job: generate-facts
       artifacts: true
-    - job: Trigger:package
-      artifacts: false
-    - job: Trigger:gitlab-docker
-      artifacts: false
+    # - job: Trigger:package
+    #   artifacts: false
+    # - job: Trigger:gitlab-docker
+    #   artifacts: false
 
 manual-qa-full-suite:
   stage: trigger-qa
