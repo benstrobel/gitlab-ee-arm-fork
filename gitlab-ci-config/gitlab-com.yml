@@ -707,7 +707,7 @@ direct-smoke-test:
   parallel: 2
   variables:
     QA_RSPEC_TAGS: --tag smoke --tag ~orchestrated
-    RELEASE: $VISHAL #$QA_RELEASE
+    RELEASE: $QA_RELEASE
     GITLAB_LICENSE_MODE: test
     QA_IMAGE: $QA_IMAGE
     ALLURE_JOB_NAME: $ALLURE_JOB_NAME
