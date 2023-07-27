@@ -717,6 +717,7 @@ direct-smoke-test:
     ALLURE_MERGE_REQUEST_IID: $CI_MERGE_REQUEST_IID
     GITLAB_QA_VERSION: "12.0.0"
   script:
+    - echo $RELEASE
     # - source gitlab-ci-config/qa.sh
     # - qa_export_passwords
     - ls -larth
