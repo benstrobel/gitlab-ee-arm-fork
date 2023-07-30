@@ -611,72 +611,134 @@ qa-test:
   variables:
     QA_KNAPSACK_REPORT_PATH: $CI_PROJECT_DIR/knapsack
 
-.qa:
-  extends:
-    - .qa-base
-    - .qa-custom-knapsack-path
-  variables:
-    #GITLAB_QA_OPTS: --address $GITLAB_ADDRESS
-    GITLAB_USERNAME: gitlab-qa
-    GITLAB_PASSWORD: $GITLAB_QA_PASSWORD
-    # The password contains $ so we need to wrap around it
-    # to workaround https://gitlab.com/gitlab-org/gitlab/issues/17069
-    GITLAB_FORKER_PASSWORD: $GITLAB_FORKER_PASSWORD_INPUT
-    SIGNUP_DISABLED: "true"
-    QA_GENERATE_ALLURE_REPORT: "true"
-  script:
-    - |
-      if [[ -n "$NO_ADMIN" ]]; then
-        echo "Running in NO_ADMIN mode"
-        unset GITLAB_QA_ADMIN_ACCESS_TOKEN
-        export QA_CAN_TEST_ADMIN_FEATURES="false"
-      fi;
-    - !reference [.qa-base, script]
+# .qa:
+#   extends:
+#     - .qa-base
+#     - .qa-custom-knapsack-path
+#   variables:
+#     #GITLAB_QA_OPTS: --address $GITLAB_ADDRESS
+#     GITLAB_USERNAME: gitlab-qa
+#     GITLAB_PASSWORD: $GITLAB_QA_PASSWORD
+#     # The password contains $ so we need to wrap around it
+#     # to workaround https://gitlab.com/gitlab-org/gitlab/issues/17069
+#     GITLAB_FORKER_PASSWORD: $GITLAB_FORKER_PASSWORD_INPUT
+#     SIGNUP_DISABLED: "true"
+#     QA_GENERATE_ALLURE_REPORT: "true"
+#   script:
+#     - |
+#       if [[ -n "$NO_ADMIN" ]]; then
+#         echo "Running in NO_ADMIN mode"
+#         unset GITLAB_QA_ADMIN_ACCESS_TOKEN
+#         export QA_CAN_TEST_ADMIN_FEATURES="false"
+#       fi;
+#     - !reference [.qa-base, script]
 
-download-knapsack-report:
-  extends:
-    - .gitlab-qa-image
-    - .qa-custom-knapsack-path
-    #- .com:qa:rules:knapsack-report-download
-  stage: prepare
-  variables:
-    GIT_STRATEGY: none
-  script:
-    - bundle exec rake "knapsack:download[$TEST_STAGE_NAME]"
-  after_script:
-    - mkdir -p ${QA_KNAPSACK_REPORT_PATH}
-    - mv /home/gitlab/qa/knapsack/*.json ${QA_KNAPSACK_REPORT_PATH}/
-  allow_failure: true
-  artifacts:
-    paths:
-      - ${QA_KNAPSACK_REPORT_PATH}/*.json
-    expire_in: 1 day
-  rules:
-    - if: '$PIPELINE_TYPE =~ /TRIGGERED_CE_PIPELINE/'
-      variables:
-        FOSS_ONLY: "1"
-    - if: '$PIPELINE_TYPE =~ /TRIGGERED_EE_PIPELINE/'
+# download-knapsack-report:
+#   extends:
+#     - .gitlab-qa-image
+#     - .qa-custom-knapsack-path
+#     #- .com:qa:rules:knapsack-report-download
+#   stage: prepare
+#   variables:
+#     GIT_STRATEGY: none
+#   script:
+#     - bundle exec rake "knapsack:download[$TEST_STAGE_NAME]"
+#   after_script:
+#     - mkdir -p ${QA_KNAPSACK_REPORT_PATH}
+#     - mv /home/gitlab/qa/knapsack/*.json ${QA_KNAPSACK_REPORT_PATH}/
+#   allow_failure: true
+#   artifacts:
+#     paths:
+#       - ${QA_KNAPSACK_REPORT_PATH}/*.json
+#     expire_in: 1 day
+#   rules:
+#     - if: '$PIPELINE_TYPE =~ /TRIGGERED_CE_PIPELINE/'
+#       variables:
+#         FOSS_ONLY: "1"
+#     - if: '$PIPELINE_TYPE =~ /TRIGGERED_EE_PIPELINE/'
 
-
+# smoke-test:
+#   extends:
+#     - .qa
+#     #- qa-smoke
+#     # - .com:qa:rules:trigger-schedule-smoke
+#   stage: trigger-qa
+#   parallel: 2
+#   variables:
+#     QA_RSPEC_TAGS: --tag smoke --tag ~orchestrated
+#     RELEASE: $QA_RELEASE
+#     GITLAB_LICENSE_MODE: test
+#     QA_IMAGE: $QA_IMAGE
+#     ALLURE_JOB_NAME: $ALLURE_JOB_NAME
+#     GITLAB_SEMVER_VERSION: $GITLAB_SEMVER_VERSION # latest semver gitlab version used for testing upgrade paths
+#     SKIP_OMNIBUS_TRIGGER: "true"
+#     QA_RUN_ALL_TESTS: "false"
+#     GITLAB_AUTH_TOKEN: $DANGER_GITLAB_API_TOKEN
+#     ALLURE_MERGE_REQUEST_IID: $CI_MERGE_REQUEST_IID
+#   rules:
+#     - if: '$SKIP_QA_TEST == "true"'
+#       when: never
+#     - if: '$PIPELINE_TYPE =~ /TRIGGERED_CE_PIPELINE/ && $MANUAL_QA_TEST == "true"'
+#       when: manual
+#       allow_failure: true
+#       variables:
+#         FOSS_ONLY: "1"
+#     - if: '$PIPELINE_TYPE =~ /TRIGGERED_CE_PIPELINE/'
+#       variables:
+#         FOSS_ONLY: "1"
+#     - if: '$PIPELINE_TYPE =~ /TRIGGERED_EE_PIPELINE/ && $MANUAL_QA_TEST == "true"'
+#       when: manual
+#       allow_failure: true
+#     - if: '$PIPELINE_TYPE =~ /TRIGGERED_EE_PIPELINE/'
+#   needs:
+#     - job: generate-facts
+#       artifacts: true
+#     - job: Trigger:package
+#       artifacts: false
+#     - job: Trigger:gitlab-docker
+#       artifacts: false
 
 smoke-test:
   extends:
-    - .qa
-    #- qa-smoke
-    # - .com:qa:rules:trigger-schedule-smoke
+    - .qa-base
   stage: trigger-qa
   parallel: 2
   variables:
     QA_RSPEC_TAGS: --tag smoke --tag ~orchestrated
-    RELEASE: $QA_RELEASE
-    GITLAB_LICENSE_MODE: test
-    QA_IMAGE: $QA_IMAGE
-    ALLURE_JOB_NAME: $ALLURE_JOB_NAME
-    GITLAB_SEMVER_VERSION: $GITLAB_SEMVER_VERSION # latest semver gitlab version used for testing upgrade paths
-    SKIP_OMNIBUS_TRIGGER: "true"
-    QA_RUN_ALL_TESTS: "false"
-    GITLAB_AUTH_TOKEN: $DANGER_GITLAB_API_TOKEN
-    ALLURE_MERGE_REQUEST_IID: $CI_MERGE_REQUEST_IID
+  #   RELEASE: $QA_RELEASE
+  #   GITLAB_LICENSE_MODE: test
+  #   QA_CAN_TEST_PRAEFECT: "false"
+  #   QA_IMAGE: $QA_IMAGE
+  #   ALLURE_JOB_NAME: $ALLURE_JOB_NAME
+  #   GITLAB_SEMVER_VERSION: $GITLAB_SEMVER_VERSION # latest semver gitlab version used for testing upgrade paths
+  #   SKIP_OMNIBUS_TRIGGER: "true"
+  #   GITLAB_AUTH_TOKEN: $DANGER_GITLAB_API_TOKEN
+  #   ALLURE_MERGE_REQUEST_IID: $CI_MERGE_REQUEST_IID
+  #   GITLAB_QA_VERSION: "12.0.0"
+  # script:
+  #   - echo $RELEASE
+  #   - source gitlab-ci-config/qa.sh
+  #   - qa_export_passwords
+  #   - ls -larth
+  #   - pwd
+  #   - docker login -u gitlab-ci-token -p "$CI_JOB_TOKEN" "$CI_REGISTRY"
+  #   - gem install gitlab-qa -v "${GITLAB_QA_VERSION}"
+  #   # - source "${VARIABLES_FILE}"
+  #   # - if [ -n "$QA_GITLAB_REVISION" ]; then
+  #   # -   QA_IMAGE="registry.gitlab.com/gitlab-org/gitlab/gitlab-ee-qa:$QA_GITLAB_REVISION"
+  #   # - else
+  #   # -   QA_IMAGE="gitlab/gitlab-ee-qa:nightly" # this will default to use nightly https://gitlab.com/gitlab-org/gitlab-qa/-/blob/master/docs/what_tests_can_be_run.md#specifying-the-gitlab-version
+  #   # - fi;
+  #   - echo "Running - 'gitlab-qa Test::Instance::Image $RELEASE $GITLAB_QA_OPTS -- $QA_TESTS $QA_RSPEC_TAGS $RSPEC_REPORT_OPTS'"
+  #   - |
+  #     SIGNUP_DISABLED=true \
+  #     QA_DEBUG=true \
+  #     GITHUB_ACCESS_TOKEN=$QA_GITHUB_ACCESS_TOKEN \
+  #     GITLAB_USERNAME=root \
+  #     GITLAB_PASSWORD=$ROOT_PASSWORD \
+  #     GITLAB_ADMIN_USERNAME=root \
+  #     GITLAB_ADMIN_PASSWORD=$ROOT_PASSWORD \
+  #     gitlab-qa Test::Instance::Image $RELEASE $GITLAB_QA_OPTS -- $QA_TESTS $QA_RSPEC_TAGS $RSPEC_REPORT_OPTS
   rules:
     - if: '$SKIP_QA_TEST == "true"'
       when: never
@@ -700,13 +762,10 @@ smoke-test:
     - job: Trigger:gitlab-docker
       artifacts: false
 
-direct-smoke-test:
+.qa-base:
   extends:
     - .docker_job
-  stage: trigger-qa
-  parallel: 2
   variables:
-    QA_RSPEC_TAGS: --tag smoke --tag ~orchestrated
     RELEASE: $QA_RELEASE
     GITLAB_LICENSE_MODE: test
     QA_CAN_TEST_PRAEFECT: "false"
@@ -741,6 +800,14 @@ direct-smoke-test:
       GITLAB_ADMIN_USERNAME=root \
       GITLAB_ADMIN_PASSWORD=$ROOT_PASSWORD \
       gitlab-qa Test::Instance::Image $RELEASE $GITLAB_QA_OPTS -- $QA_TESTS $QA_RSPEC_TAGS $RSPEC_REPORT_OPTS
+
+reliable-test:
+  extends:
+    - .qa-base
+  stage: trigger-qa
+  parallel: 10
+  variables:
+    QA_RSPEC_TAGS: --tag reliable --tag ~orchestrated
   rules:
     - if: '$SKIP_QA_TEST == "true"'
       when: never
