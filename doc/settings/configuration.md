@@ -78,6 +78,24 @@ rather pass it specifically to the installation command:
 sudo EXTERNAL_URL="https://gitlab.example.com" apt-get install gitlab-ee
 ```
 
+### Changing the external URL of an instance
+
+It's possible to modify the `external_url` configured for your GitLab instance after the initial setup. 
+
+To change the URL:
+
+1. Change the `external_url` in your `/etc/gitlab/gitlab.rb` file to your new domain
+1. Reconfigure GitLab:
+
+```shell
+sudo gitlab-ctl reconfigure
+```
+
+
+
+
+
+
 ## Configure a relative URL for GitLab
 
 NOTE:
