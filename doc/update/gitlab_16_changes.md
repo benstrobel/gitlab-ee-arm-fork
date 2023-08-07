@@ -9,6 +9,29 @@ info: To determine the technical writer assigned to the Stage/Group associated w
 NOTE:
 When upgrading to a new major version, remember to first [check for background migrations](https://docs.gitlab.com/ee/update/index.html#checking-for-background-migrations-before-upgrading).
 
+## 16.3
+
+### Docker image and SHA-1 RSA support
+
+As communicated in 16.0, we upgraded the base Docker image, which has a new openssh-server version.
+Although, we didn't realize another side-effect of this new version, which disables accepting SSH RSA SHA-1 signatures
+by default. This should only impact users using very outdated SSH clients. The recommendation is that
+users updated their SSH clients, as the usage of SHA-1 signatures is discouraged by the upstream library for
+security reasons.
+
+For cases where users can't immediatelly upgrade their SSH clients, and find themselves in a transition period,
+as part of 16.3, we added support to the `GITLAB_ALLOW_SHA1_RSA` environment variable in our Dockerfile.
+If `GITLAB_ALLOW_SHA1_RSA=true`, then this deprecated support gets reactivated.
+
+Given that we want foster security best practices and follow the upstream recommendation, this environment variable will
+only be available until GitLab 17.0, when we plan to drop support for it.
+
+Read more about it on:
+
+- [Openssh release notes](https://www.openssh.com/txt/release-8.8).
+- [Informal explanation](https://gitlab.com/gitlab-org/gitlab/-/issues/416714#note_1482388504).
+- [Merge Request: Restore support for SHA-1 RSA cryptography](https://gitlab.com/gitlab-org/omnibus-gitlab/-/merge_requests/7035).
+
 ## 16.2
 
 ### Redis 7.0.12
