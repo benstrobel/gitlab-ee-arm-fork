@@ -626,7 +626,7 @@ manual-qa-full-suite:
       pipeline_variables: true
     include:
       - project: gitlab-org/gitlab
-        ref: master
+        ref: test-smoke-for-omnibus-mr
         file: .gitlab/ci/package-and-test/main.gitlab-ci.yml
   rules:
     - if: '$SKIP_QA_TEST == "true"'
