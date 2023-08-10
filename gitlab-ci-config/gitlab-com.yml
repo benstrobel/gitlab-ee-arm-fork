@@ -684,7 +684,7 @@ another-qa-job-to-test-empty-var:
     #   artifacts: false
 
 
-another-qa-job-to-test-empty-var:
+another-qa-job-to-test-empty-var-2:
   stage: trigger-qa
   variables:
     QA_RUN_ALL_TESTS: "false"
