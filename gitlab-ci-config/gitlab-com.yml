@@ -561,7 +561,6 @@ Trigger:gitlab-docker:
       optional: true
       artifacts: true
 
-
 .qa-template:
   variables:
     RELEASE: $QA_RELEASE
@@ -584,7 +583,7 @@ Trigger:gitlab-docker:
 
 qa-test:
   extends:
-    - .qa-template:
+    - .qa-template
   stage: trigger-qa
   variables:
     QA_RUN_SMOKE_AND_RELIABLE_TESTS: "true"
@@ -616,7 +615,7 @@ qa-test:
 
 manual-qa-full-suite:
   extends:
-    - .qa-template:
+    - .qa-template
   stage: trigger-qa
   variables:
     QA_RUN_ALL_TESTS: "false"
@@ -643,7 +642,7 @@ manual-qa-full-suite:
 
 another-qa-job-to-test-empty-var:
   extends:
-    - .qa-template:
+    - .qa-template
   stage: trigger-qa
   variables:
     QA_RUN_ALL_TESTS: "false"
@@ -669,7 +668,7 @@ another-qa-job-to-test-empty-var:
 
 another-qa-job-to-test-empty-var-2:
   extends:
-    - .qa-template:
+    - .qa-template
   stage: trigger-qa
   variables:
     QA_RUN_ALL_TESTS: "false"
