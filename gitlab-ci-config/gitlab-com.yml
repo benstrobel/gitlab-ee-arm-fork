@@ -578,7 +578,7 @@ Trigger:gitlab-docker:
       pipeline_variables: true
     include:
       - project: gitlab-org/gitlab
-        ref: test-smoke-for-omnibus-mr
+        ref: vp/adding-rules-for-omnibus-mr
         file: .gitlab/ci/package-and-test/main.gitlab-ci.yml
 
 qa-test:
