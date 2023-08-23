@@ -150,7 +150,7 @@ libtensorflow_lite:
   alternative: "https://gitlab.com/gitlab-org/build/omnibus-mirror/tensorflow.git"
 spamcheck:
   remote: "git@dev.gitlab.org:gitlab/spamcheck.git"
-  alternative: "https://gitlab.com/gitlab-com/gl-security/engineering-and-research/automation-team/spam/spamcheck.git"
+  alternative: "https://gitlab.com/gitlab-org/gl-security/security-engineering/security-automation/spam/spamcheck.git"
 ncurses:
   remote: "git@dev.gitlab.org:omnibus-mirror/ncurses.git"
   alternative: "https://gitlab.com/gitlab-org/build/omnibus-mirror/ncurses.git"

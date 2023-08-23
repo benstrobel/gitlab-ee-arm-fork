@@ -17,7 +17,7 @@
 #
 
 name 'spamcheck'
-version = Gitlab::Version.new('spamcheck', '1.2.3')
+version = Gitlab::Version.new('spamcheck', '2.1.3')
 
 default_version version.print
 
@@ -39,6 +39,7 @@ arch = if OhaiHelper.raspberry_pi?
        end
 
 numpy_libs = "#{install_dir}/embedded/lib/python3.9/site-packages/numpy.libs"
+scipy_libs = "#{install_dir}/embedded/lib/python3.9/site-packages/scipy.libs"
 
 build do
   env = with_standard_compiler_flags(with_embedded_path)
@@ -49,19 +50,16 @@ build do
   command("curl -fL --retry 3 -o #{release_archive} #{release_url}")
   command("tar -xvf #{release_archive}")
 
-  # TODO: Migrate to using a requirements.txt file once it is supported in spamcheck
-  command "#{install_dir}/embedded/bin/pip3 install tflite-runtime==2.10.0", env: env
-  command "#{install_dir}/embedded/bin/pip3 install grpcio==1.44.0", env: env
-  command "#{install_dir}/embedded/bin/pip3 install grpcio_reflection==1.44.0", env: env
-  command "#{install_dir}/embedded/bin/pip3 install grpcio_tools==1.44.0", env: env
-  command "#{install_dir}/embedded/bin/pip3 install python-json-logger==2.0.2", env: env
-  command "#{install_dir}/embedded/bin/pip3 install ulid-py==1.1.0", env: env
-  command "#{install_dir}/embedded/bin/pip3 install vyper-config==1.1.1", env: env
+  command "#{install_dir}/embedded/bin/pip3 install pipenv", env: env
+  command "#{install_dir}/embedded/bin/pipenv requirements > requirements.txt", env: env
+  command "#{install_dir}/embedded/bin/pip3 install -r requirements.txt", env: env
 
   # Modify rpath for embedded libraries
   command "./bin/patchelf --set-rpath #{install_dir}/embedded/lib:#{numpy_libs} #{numpy_libs}/libgfortran*", env: {}
   command "./bin/patchelf --set-rpath #{install_dir}/embedded/lib:#{numpy_libs} #{numpy_libs}/libopenblas64*", env: {}
   command "./bin/patchelf --set-rpath #{install_dir}/embedded/lib:#{numpy_libs} #{numpy_libs}/libquadmath*", env: {}
+  command "./bin/patchelf --set-rpath #{install_dir}/embedded/lib:#{scipy_libs} #{scipy_libs}/libgfortran*", env: {}
+  command "./bin/patchelf --set-rpath #{install_dir}/embedded/lib:#{scipy_libs} #{scipy_libs}/libopenblasp*", env: {}
 
   # Generate gRPC code
   command "#{install_dir}/embedded/bin/python3 -m grpc_tools.protoc --proto_path=${PWD} --python_out=${PWD} --grpc_python_out=${PWD} ${PWD}/api/v1/*.proto", env: env

@@ -16,27 +16,12 @@
 
 account_helper = AccountHelper.new(node)
 omnibus_helper = OmnibusHelper.new(node)
-logfiles_helper = LogfilesHelper.new(node)
 
 data_dir = node['spamcheck']['dir']
-<<<<<<< HEAD
-sockets_dir = File.join(data_dir, 'sockets')
-=======
 log_dir = node['spamcheck']['log_directory']
->>>>>>> Update spamcheck version to 1.2.2
 env_dir = node['spamcheck']['env_directory']
 config_file = File.join(data_dir, 'config.yaml')
 
-<<<<<<< HEAD
-classifier_dir = "#{node['package']['install-dir']}/embedded/service/spam-classifier"
-preprocessor_dir = File.join(classifier_dir, 'preprocessor')
-preprocessor_model_path = File.join(classifier_dir, 'model/issues/tflite/model.tflite')
-preprocessor_socket_path = File.join(sockets_dir, 'preprocessor.sock')
-
-[
-  data_dir,
-  sockets_dir
-=======
 service_dir = "#{node['package']['install-dir']}/embedded/service/spamcheck"
 classifier_dir = "#{node['package']['install-dir']}/embedded/service/spam-classifier/classifiers"
 
@@ -44,24 +29,10 @@ classifier_dir = "#{node['package']['install-dir']}/embedded/service/spam-classi
   data_dir,
   log_dir,
   classifier_dir,
->>>>>>> Update spamcheck version to 1.2.2
 ].each do |dir|
   directory dir do
     owner account_helper.gitlab_user
     mode '0700'
-    recursive true
-  end
-end
-
-# log directory
-%w(spamcheck spam-classifier).each do |svc|
-  logging_settings = logfiles_helper.logging_settings(svc)
-  directory logging_settings[:log_directory] do
-    owner logging_settings[:log_directory_owner]
-    mode logging_settings[:log_directory_mode]
-    if log_group = logging_settings[:log_directory_group]
-      group log_group
-    end
     recursive true
   end
 end
@@ -80,38 +51,16 @@ env_dir env_dir do
   notifies :restart, 'runit_service[spamcheck]' if omnibus_helper.should_notify?('spamcheck')
 end
 
-spamcheck_logging_settings = logfiles_helper.logging_settings('spamcheck')
 runit_service 'spamcheck' do
   options({
-    log_directory: spamcheck_logging_settings[:log_directory],
-    log_user: spamcheck_logging_settings[:runit_owner],
-    log_group: spamcheck_logging_settings[:runit_group],
+    log_directory: log_dir,
     env_directory: env_dir,
     user: account_helper.gitlab_user,
     groupname: account_helper.gitlab_group,
-<<<<<<< HEAD
-    config_file: config_file
-  }.merge(params))
-  log_options spamcheck_logging_settings[:options]
-end
-
-classifier_logging_settings = logfiles_helper.logging_settings('spam-classifier')
-runit_service 'spam-classifier' do
-  options({
-    log_directory: classifier_logging_settings[:log_directory],
-    log_user: classifier_logging_settings[:runit_owner],
-    log_group: classifier_logging_settings[:runit_group],
-    env_directory: env_dir,
-    user: account_helper.gitlab_user,
-    groupname: account_helper.gitlab_group,
-    preprocessor_dir: preprocessor_dir,
-    sockets_dir: sockets_dir
-=======
     config_file: config_file,
     service_dir: service_dir
->>>>>>> Update spamcheck version to 1.2.2
   }.merge(params))
-  log_options classifier_logging_settings[:options]
+  log_options node['gitlab']['logging'].to_hash.merge(node['spamcheck'].to_hash)
 end
 
 # shutdown any existing legacy spam-classifier service
@@ -119,3 +68,4 @@ end
 runit_service 'spam-classifier' do
   action :disable
 end
+
