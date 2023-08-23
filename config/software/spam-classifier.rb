@@ -18,9 +18,9 @@
 
 name 'spam-classifier'
 
-default_version '2.0.1'
+default_version '3.1.0'
 source url: "https://glsec-spamcheck-ml-artifacts.storage.googleapis.com/spam-classifier/#{version}/gl-spam-classifier-#{version}.tar.gz",
-       sha256: '1c0fc6e621d095baf149c89dfe2e9ec04de95c2cb072d442d4476b23b0d3310c'
+       sha256: '9d38bcf3701e7261ba23069e1dde7e2136bab61c305fa2a323fe258e7ff06bbc'
 
 license 'proprietary'
 license_file 'LICENSE.md'
