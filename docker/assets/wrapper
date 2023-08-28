@@ -119,6 +119,7 @@ if old_version=$(cat /var/opt/gitlab/gitlab-rails/VERSION)
 then
     GITLAB_UPGRADE='true'
     new_version=$(awk '/^gitlab-(ce|ee|jh)/ {print $NF}' /opt/gitlab/version-manifest.txt)
+    new_version="16.4.0"
     gitlab-ctl upgrade-check "${old_version}" "${new_version}"
 fi
 
