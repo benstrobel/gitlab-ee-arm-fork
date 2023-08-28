@@ -700,6 +700,12 @@ production: &base
       cron: "<%= @ci_runners_stale_group_runners_prune_worker_cron %>"
     <% end %>
 
+    # Worker for pruning failed builds' helper table
+    <% unless @ci_runners_failed_builds_cleanup_worker_cron.nil? %>
+    ci_runners_failed_builds_cleanup_worker:
+      cron: "<%= @ci_runners_failed_builds_cleanup_worker_cron %>"
+    <% end %>
+
   ## Geo
   # NOTE: These settings will only take effect if Geo is enabled
   geo:
