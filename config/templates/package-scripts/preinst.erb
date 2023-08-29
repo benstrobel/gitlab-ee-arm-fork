@@ -44,9 +44,9 @@ upgrade_check() {
 
   if [ -n "${OLD_VERSION_STRING}" ] ; then
     # Checking
-    # (i) if it is a major version jump
-    # (ii) if existing version is less than required minimum version
+    # (i) if existing version is less than required minimum version
     if ! greater_version $OLD_MINOR_VERSION $MIN_VERSION; then
+      # (ii) if it is a major version jump
       if test ${OLD_MAJOR_VERSION} -lt ${NEW_MAJOR_VERSION}; then
         notify "It seems you are upgrading from major version ${OLD_MAJOR_VERSION} to major version ${NEW_MAJOR_VERSION}."
       fi
