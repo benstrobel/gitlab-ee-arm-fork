@@ -29,7 +29,22 @@ class SentinelHelper
   def running_version
     return unless OmnibusHelper.new(@node).service_up?('sentinel')
 
-    command = "/opt/gitlab/embedded/bin/redis-cli -h #{sentinel['bind']} -p #{sentinel['port']} INFO"
+    command = "/opt/gitlab/embedded/bin/redis-cli -h #{sentinel['bind']}"
+
+    # If Sentinel is configured to run behind SSL, we attempt to connect to the
+    # port specified for TLS
+    if sentinel['tls_port'].to_i.positive?
+      command += " -p #{sentinel['tls_port']} --tls"
+
+      # If client authentication is mandated, we reuse the server certificates
+      # for it
+      command += " --cert '#{sentinel['tls_cert_file']}' --key '#{sentinel['tls_key_file']}'" if sentinel['tls_auth_clients'] == 'yes'
+    else
+      command += " -p #{sentinel['port']}"
+    end
+
+    command += " INFO"
+
     env =
       if sentinel['password']
         { 'REDISCLI_AUTH' => sentinel['password'] }
