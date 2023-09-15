@@ -80,12 +80,16 @@ module Redis
       redis_bind = Gitlab['redis']['bind'] || node['redis']['bind']
 
       Gitlab['gitlab_rails']['redis_host'] ||= redis_bind
-      Gitlab['gitlab_rails']['redis_port'] ||= Gitlab['redis']['port']
+
+      # If Redis is running available over TLS, use the TLS port
+      redis_port = Gitlab['redis'].key?('tls_port') && Gitlab['redis']['tls_port'].to_i.positive? ? Gitlab['redis']['tls_port'] : Gitlab['redis']['port']
+      Gitlab['gitlab_rails']['redis_port'] ||= redis_port
+
       Gitlab['gitlab_rails']['redis_password'] ||= Gitlab['redis']['master_password']
 
       Chef::Log.warn "gitlab-rails 'redis_host' is different than 'bind' value defined for managed redis instance. Are you sure you are pointing to the same redis instance?" if Gitlab['gitlab_rails']['redis_host'] != redis_bind
 
-      Chef::Log.warn "gitlab-rails 'redis_port' is different than 'port' value defined for managed redis instance. Are you sure you are pointing to the same redis instance?" if Gitlab['gitlab_rails']['redis_port'] != Gitlab['redis']['port']
+      Chef::Log.warn "gitlab-rails 'redis_port' is different than 'port' (or `tls_port`) value defined for managed redis instance. Are you sure you are pointing to the same redis instance?" if Gitlab['gitlab_rails']['redis_port'] != Gitlab['redis']['port'] && Gitlab['gitlab_rails']['redis_port'] != Gitlab['redis']['tls_port']
 
       Chef::Log.warn "gitlab-rails 'redis_password' is different than 'master_password' value defined for managed redis instance. Are you sure you are pointing to the same redis instance?" if Gitlab['gitlab_rails']['redis_password'] != Gitlab['redis']['master_password']
     end

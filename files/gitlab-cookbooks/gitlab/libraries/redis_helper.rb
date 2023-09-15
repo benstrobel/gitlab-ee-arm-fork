@@ -9,14 +9,17 @@ class RedisHelper
     @node = node
   end
 
+  def redis
+    @node['redis']
+  end
+
   def redis_params(support_sentinel_groupname: true)
     gitlab_rails_config = @node['gitlab']['gitlab_rails']
-    redis_config = @node['redis']
 
-    raise 'Redis announce_ip and announce_ip_from_hostname are mutually exclusive, please unset one of them' if redis_config['announce_ip'] && redis_config['announce_ip_from_hostname']
+    raise 'Redis announce_ip and announce_ip_from_hostname are mutually exclusive, please unset one of them' if redis['announce_ip'] && redis['announce_ip_from_hostname']
 
     params = if RedisHelper::Checks.has_sentinels? && support_sentinel_groupname
-               [redis_config['master_name'], redis_config['master_port'], redis_config['master_password']]
+               [redis['master_name'], redis['master_port'], redis['master_password']]
              else
                host = gitlab_rails_config['redis_host'] || Gitlab['redis']['master_ip']
                port = gitlab_rails_config['redis_port'] || Gitlab['redis']['master_port']
@@ -119,13 +122,7 @@ class RedisHelper
     return unless OmnibusHelper.new(@node).service_up?('redis')
 
     commands = ['/opt/gitlab/embedded/bin/redis-cli']
-
-    commands << if RedisHelper::Checks.is_redis_tcp?
-                  "-h #{@node['redis']['bind']} -p #{@node['redis']['port']}"
-                else
-                  "-s #{@node['redis']['unixsocket']}"
-                end
-
+    commands << redis_daemon_details
     commands << "-a '#{Gitlab['redis']['password']}'" if Gitlab['redis']['password']
 
     commands << "INFO"
@@ -138,6 +135,26 @@ class RedisHelper
     raise "Execution of the command `#{command}` generated unexpected output `#{command_output.strip}`" unless version_match
 
     version_match['redis_version']
+  end
+
+  def redis_daemon_details
+    return "-s #{@node['redis']['unixsocket']}" unless RedisHelper::Checks.is_redis_tcp?
+
+    command = "-h #{@node['redis']['bind']} "
+
+    # If Redis is configured to run behind SSL, we attempt to connect to the
+    # port specified for TLS
+    if redis['tls_port'].to_i.positive?
+      command += "-p #{redis['tls_port']} --tls"
+
+      # If client authentication is mandated, we reuse the server certificates
+      # for it
+      command += " --cert '#{redis['tls_cert_file']}' --key '#{redis['tls_key_file']}'" if redis['tls_auth_clients'] == 'yes'
+    else
+      command += "-p #{@node['redis']['port']}"
+    end
+
+    command
   end
 
   def installed_version
@@ -157,7 +174,7 @@ class RedisHelper
   class Checks
     class << self
       def is_redis_tcp?
-        Gitlab['redis']['port'] && Gitlab['redis']['port'].positive?
+        (Gitlab['redis']['port'] && Gitlab['redis']['port'].positive?) || (Gitlab['redis']['tls_port'] && Gitlab['redis']['tls_port'].positive?)
       end
 
       def is_redis_replica?
