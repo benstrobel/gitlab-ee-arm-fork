@@ -42,7 +42,25 @@ add_command 'get-redis-master', 'Get connection details to Redis master', 2 do |
   redis_sentinels.each do |sentinel|
     host = sentinel['host']
     port = sentinel['port']
-    command = "/opt/gitlab/embedded/bin/redis-cli -h #{host} -p #{port} SENTINEL get-master-addr-by-name #{redis_master_name}"
+
+    # If a sentinel is specified to be running behind TLS, we should add the
+    # necessary flag to the command.
+    ssl = sentinel.key?('ssl') ? !!sentinel['ssl'] : false
+    if ssl
+      tls_arg = '--tls'
+
+      # If CA cert file and dir has been specified, we pass that also.
+      tls_arg += " --cacert #{sentinel['ca_cert_file']}" if sentinel.key?('ca_cert_file')
+      tls_arg += " --cacertdir #{sentinel['ca_cert_dir']}" if sentinel.key?('ca_cert_dir')
+
+      # If client authentication is used, we pass the client certificate and key.
+      tls_arg += " --cert #{sentinel['client_cert_file']}" if sentinel.key?('client_cert_file')
+      tls_arg += " --key #{sentinel['client_key_file']}" if sentinel.key?('client_key_file')
+    else
+      tls_arg = ''
+    end
+
+    command = "/opt/gitlab/embedded/bin/redis-cli -h #{host} -p #{port} #{tls_arg} SENTINEL get-master-addr-by-name #{redis_master_name}"
     output = GitlabCtl::Util.get_command_output(command).strip
     master_host, master_port = output.split("\n")
     break
