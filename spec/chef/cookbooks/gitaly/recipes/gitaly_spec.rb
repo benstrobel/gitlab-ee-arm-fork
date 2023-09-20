@@ -41,6 +41,7 @@ RSpec.describe 'gitaly' do
 
   let(:gitlab_url) { 'http://localhost:3000' }
   let(:workhorse_addr) { 'localhost:4000' }
+  let(:gitlab_secret_path) { '/path/to/gitlab/secret' }
   let(:gitaly_custom_hooks_dir) { '/path/to/gitaly/custom/hooks' }
   let(:user) { 'user123' }
   let(:password) { 'password321' }
@@ -93,12 +94,13 @@ RSpec.describe 'gitaly' do
             ignore_gitconfig: true,
             use_bundled_binaries: true
           },
+          hooks: {
+            custom_hooks_dir: '/opt/gitlab/embedded/service/gitlab-shell/hooks'
+          },
           gitlab: {
             relative_url_root: '',
-            url: 'http+unix://%2Fvar%2Fopt%2Fgitlab%2Fgitlab-workhorse%2Fsockets%2Fsocket'
-          },
-          'gitlab-shell': {
-            dir: '/opt/gitlab/embedded/service/gitlab-shell'
+            url: 'http+unix://%2Fvar%2Fopt%2Fgitlab%2Fgitlab-workhorse%2Fsockets%2Fsocket',
+            secret_file: '/opt/gitlab/embedded/service/gitlab-shell/.gitlab_shell_secret'
           },
           logging: {
             dir: '/var/log/gitlab/gitaly',
@@ -412,9 +414,6 @@ RSpec.describe 'gitaly' do
     it 'renders config.toml with' do
       expect(get_rendered_toml(chef_run, '/var/opt/gitlab/gitaly/config.toml')).to eq(
         {
-          'gitlab-shell': {
-            dir: '/opt/gitlab/embedded/service/gitlab-shell'
-          },
           bin_dir: '/opt/gitlab/embedded/bin',
           custom_section: { custom_key: 'custom_value' },
           git: {
@@ -425,6 +424,10 @@ RSpec.describe 'gitaly' do
           gitlab: {
             url: 'http+unix://%2Fvar%2Fopt%2Fgitlab%2Fgitlab-workhorse%2Fsockets%2Fsocket',
             relative_url_root: '',
+            secret_file: '/opt/gitlab/embedded/service/gitlab-shell/.gitlab_shell_secret'
+          },
+          hooks: {
+            custom_hooks_dir: '/opt/gitlab/embedded/service/gitlab-shell/hooks'
           },
           logging: {
             dir: 'overridden_logging_path',
@@ -464,6 +467,9 @@ RSpec.describe 'gitaly' do
               bin_path: git_bin_path,
               catfile_cache_size: git_catfile_cache_size,
               use_bundled_binaries: false,
+            },
+            gitlab: {
+              secret_file: gitlab_secret_path
             },
             prometheus: {
               grpc_latency_buckets: prometheus_grpc_latency_buckets
@@ -618,10 +624,8 @@ RSpec.describe 'gitaly' do
               read_timeout: 123,
               user: 'user123'
             },
-            url: 'http://localhost:3000'
-          },
-          'gitlab-shell': {
-            dir: '/opt/gitlab/embedded/service/gitlab-shell'
+            url: 'http://localhost:3000',
+            secret_file: gitlab_secret_path
           },
           graceful_restart_timeout: '20m',
           hooks: {

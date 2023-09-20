@@ -85,6 +85,7 @@ env_dir env_directory do
 end
 
 gitlab_url, gitlab_relative_path = WebServerHelper.internal_api_url(node)
+gitlab_shell_dir = node.dig('gitaly', 'configuration', 'gitlab-shell', 'dir') || '/opt/gitlab/embedded/service/gitlab-shell'
 
 template "Create Gitaly config.toml" do
   path config_path
@@ -101,7 +102,8 @@ template "Create Gitaly config.toml" do
           gitlab: {
             url: gitlab_url,
             relative_url_root: gitlab_relative_path,
-            'http-settings': node.dig('gitlab', 'gitlab_shell', 'http_settings')
+            'http-settings': node.dig('gitlab', 'gitlab_shell', 'http_settings'),
+            secret_file: node.dig('gitaly', 'configuration', 'gitlab', 'secret_file') || File.join(gitlab_shell_dir, '.gitlab_shell_secret')
           }.compact,
 
           # These options below were historically hard coded values in the template. They
@@ -115,11 +117,9 @@ template "Create Gitaly config.toml" do
               ignore_gitconfig: true
             }
           ),
-          'gitlab-shell': (node.dig('gitaly', 'configuration', 'gitlab-shell') || {}).merge(
-            {
-              dir: '/opt/gitlab/embedded/service/gitlab-shell'
-            }
-          ),
+          hooks: {
+            custom_hooks_dir: node.dig('gitaly', 'configuration', 'hooks', 'custom_hooks_dir') || File.join(gitlab_shell_dir, 'hooks')
+          }
         }
       )
     }
