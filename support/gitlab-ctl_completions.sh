@@ -14,8 +14,8 @@ _gitlab-ctl_completions()
     #  3. Ending with zero or more lowercase words separate by dashes.
     COMPREPLY=($(compgen -W \
         "$(gitlab-ctl --help \
-        | awk '/^ *[a-z]+(-[a-z]*)*$/' \
-        | sed 's/ //g' \
+        | awk '/^ *[a-z]+(-[a-z]*)*$/
+            { gsub(/ /, ""); print }'
         )" -- "${COMP_WORDS[1]}"))
 }
 
