@@ -1,4 +1,4 @@
-!#/bin/bash
+#!/bin/bash
 
 _gitlab-ctl_completions()
 {
