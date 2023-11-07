@@ -28,7 +28,7 @@ class RedisHelper
     params
   end
 
-  def redis_url(support_sentinel_groupname: true)
+  def redis_url(support_sentinel_groupname: true, embed_password: true)
     gitlab_rails = @node['gitlab']['gitlab_rails']
 
     redis_socket = gitlab_rails['redis_socket']
@@ -45,7 +45,8 @@ class RedisHelper
         host: params[0],
         port: params[1],
         password: params[2],
-        path: "/#{gitlab_rails['redis_database']}"
+        path: "/#{gitlab_rails['redis_database']}",
+        embed_password: embed_password
       )
     end
 
@@ -89,14 +90,14 @@ class RedisHelper
     raise "Cluster mode is not allowed for #{instance}" unless ALLOWED_REDIS_CLUSTER_INSTANCE.include?(instance)
   end
 
-  def build_redis_url(ssl:, host:, port:, path:, password:)
+  def build_redis_url(ssl:, host:, port:, path:, password:, embed_password: true)
     scheme = ssl ? 'rediss:/' : 'redis:/'
     uri = URI(scheme)
     uri.host = host
     uri.port = port
     uri.path = path
     # In case the password has non-alphanumeric passwords, be sure to encode it
-    uri.password = CGI.escape(password) if password
+    uri.password = CGI.escape(password) if password && embed_password
 
     uri
   end

@@ -208,7 +208,8 @@ templatesymlink "Create a clickhouse.yml and create a symlink to Rails root" do
   sensitive true
 end
 
-redis_url = redis_helper.redis_url
+redis_url = redis_helper.redis_url(embed_password: false)
+redis_password = redis_helper.redis_params[2]
 redis_sentinels = node['gitlab']['gitlab_rails']['redis_sentinels']
 redis_sentinels_password = node['gitlab']['gitlab_rails']['redis_sentinels_password']
 redis_enable_client = node['gitlab']['gitlab_rails']['redis_enable_client']
@@ -246,6 +247,7 @@ templatesymlink "Create a resque.yml and create a symlink to Rails root" do
   mode "0644"
   variables(
     redis_url: redis_url,
+    redis_password: redis_password,
     redis_sentinels: redis_sentinels,
     redis_sentinels_password: redis_sentinels_password,
     redis_enable_client: redis_enable_client,
@@ -287,7 +289,12 @@ templatesymlink "Create a cable.yml and create a symlink to Rails root" do
   owner "root"
   group "root"
   mode "0644"
-  variables(redis_url: url, redis_sentinels: sentinels, redis_sentinels_password: sentinels_password, redis_enable_client: redis_enable_client)
+  variables(redis_url: url,
+            redis_password: redis_password,
+            redis_sentinels: sentinels,
+            redis_sentinels_password: sentinels_password,
+            redis_enable_client: redis_enable_client
+           )
   dependent_services.each { |svc| notifies :restart, svc }
   sensitive true
 end
