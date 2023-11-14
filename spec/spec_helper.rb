@@ -16,7 +16,7 @@ end
 require 'rubocop'
 require 'fantaskspec'
 require 'knapsack'
-require 'gitlab/util'
+require 'omnibus_gitlab/util'
 require 'rspec-parameterized'
 
 # Because our library directory is also named `gitlab`, it collides with
@@ -33,13 +33,13 @@ Dir["./spec/support/**/*.rb"].each { |f| require f }
 $LOAD_PATH << './files/gitlab-ctl-commands-ee/lib'
 $LOAD_PATH << './files/gitlab-ctl-commands/lib'
 
-Knapsack::Adapters::RSpecAdapter.bind if Gitlab::Util.get_env('USE_KNAPSACK')
+Knapsack::Adapters::RSpecAdapter.bind if OmnibusGitlab::Util.get_env('USE_KNAPSACK')
 Knapsack.report.config({
                          test_file_pattern: 'spec/chef/**/*_spec.rb'
                        })
 
 RSpec.configure do |config|
-  config.example_status_persistence_file_path = './spec/examples.txt' unless Gitlab::Util.get_env('CI')
+  config.example_status_persistence_file_path = './spec/examples.txt' unless OmnibusGitlab::Util.get_env('CI')
   config.filter_run focus: true
   config.run_all_when_everything_filtered = true
 

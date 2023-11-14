@@ -14,7 +14,7 @@ RSpec.describe Rubocop::Cop::AvoidUsingEnv do
     expect_offense(<<~RUBY)
       call do
         ENV['foo'] = 'blah'
-        ^^^^^^^^^^^^^^^^^^^ Do not use ENV directly to set environment variables, use Gitlab::Util.set_env or Gitlab::Util.set_env_if_missing methods instead.
+        ^^^^^^^^^^^^^^^^^^^ Do not use ENV directly to set environment variables, use OmnibusGitlab::Util.set_env or OmnibusGitlab::Util.set_env_if_missing methods instead.
       end
     RUBY
   end
@@ -23,7 +23,7 @@ RSpec.describe Rubocop::Cop::AvoidUsingEnv do
     expect_offense(<<~RUBY)
       call do
       value = ENV['foo']
-              ^^^^^^^^^^ Do not use ENV directly to retrieve environment variables. Use Gitlab::Util.get_env method instead.
+              ^^^^^^^^^^ Do not use ENV directly to retrieve environment variables. Use OmnibusGitlab::Util.get_env method instead.
       end
     RUBY
   end
@@ -32,9 +32,9 @@ RSpec.describe Rubocop::Cop::AvoidUsingEnv do
     expect_offense(<<~RUBY)
       call do
       ENV['bar'] ||= ENV['foo']
-                     ^^^^^^^^^^ Do not use ENV directly to retrieve environment variables. Use Gitlab::Util.get_env method instead.
-      ^^^^^^^^^^ Do not use ENV directly to retrieve environment variables. Use Gitlab::Util.get_env method instead.
-      ^^^^^^^^^^^^^^^^^^^^^^^^^ Do not use ENV directly to set environment variables, use Gitlab::Util.set_env or Gitlab::Util.set_env_if_missing methods instead.
+                     ^^^^^^^^^^ Do not use ENV directly to retrieve environment variables. Use OmnibusGitlab::Util.get_env method instead.
+      ^^^^^^^^^^ Do not use ENV directly to retrieve environment variables. Use OmnibusGitlab::Util.get_env method instead.
+      ^^^^^^^^^^^^^^^^^^^^^^^^^ Do not use ENV directly to set environment variables, use OmnibusGitlab::Util.set_env or OmnibusGitlab::Util.set_env_if_missing methods instead.
       end
     RUBY
   end

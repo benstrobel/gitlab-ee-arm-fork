@@ -16,12 +16,12 @@
 ##
 #
 
-require "#{Omnibus::Config.project_root}/lib/gitlab/build_iteration"
-require "#{Omnibus::Config.project_root}/lib/gitlab/build/info"
-require "#{Omnibus::Config.project_root}/lib/gitlab/version"
-require "#{Omnibus::Config.project_root}/lib/gitlab/util"
-require "#{Omnibus::Config.project_root}/lib/gitlab/ohai_helper.rb"
-require "#{Omnibus::Config.project_root}/lib/gitlab/openssl_helper"
+require "#{Omnibus::Config.project_root}/lib/omnibus_gitlab/build_iteration"
+require "#{Omnibus::Config.project_root}/lib/omnibus_gitlab/build/info"
+require "#{Omnibus::Config.project_root}/lib/omnibus_gitlab/version"
+require "#{Omnibus::Config.project_root}/lib/omnibus_gitlab/util"
+require "#{Omnibus::Config.project_root}/lib/omnibus_gitlab/ohai_helper.rb"
+require "#{Omnibus::Config.project_root}/lib/omnibus_gitlab/openssl_helper"
 require "#{Omnibus::Config.project_root}/files/gitlab-cookbooks/package/libraries/helpers/selinux_distro_helper.rb"
 
 gitlab_package_name = Build::Info::Package.name
@@ -54,9 +54,9 @@ install_dir     '/opt/gitlab'
 # This will be resolved as part of
 # https://gitlab.com/gitlab-org/omnibus-gitlab/issues/1007
 #
-# Also check lib/gitlab/build.rb for Docker version forming
+# Also check lib/omnibus_gitlab/build.rb for Docker version forming
 build_version Build::Info::Package.semver_version
-build_iteration Gitlab::BuildIteration.new.build_iteration
+build_iteration OmnibusGitlab::BuildIteration.new.build_iteration
 
 # Openssh needs to be installed
 
@@ -274,10 +274,10 @@ exclude 'embedded/lib/python*/**/*.whl'
 # Enable signing packages
 package :rpm do
   vendor 'GitLab, Inc. <support@gitlab.com>'
-  signing_passphrase Gitlab::Util.get_env('GPG_PASSPHRASE')
+  signing_passphrase OmnibusGitlab::Util.get_env('GPG_PASSPHRASE')
 
   # Enable XZ compression if selected
-  compress_xz = Gitlab::Util.get_env('COMPRESS_XZ') || 'false'
+  compress_xz = OmnibusGitlab::Util.get_env('COMPRESS_XZ') || 'false'
   if compress_xz == 'true'
     compression_type :xz
     compression_level 6
@@ -286,10 +286,10 @@ end
 
 package :deb do
   vendor 'GitLab, Inc. <support@gitlab.com>'
-  signing_passphrase Gitlab::Util.get_env('GPG_PASSPHRASE')
+  signing_passphrase OmnibusGitlab::Util.get_env('GPG_PASSPHRASE')
 
   # Enable XZ compression if selected
-  compress_xz = Gitlab::Util.get_env('COMPRESS_XZ') || 'true'
+  compress_xz = OmnibusGitlab::Util.get_env('COMPRESS_XZ') || 'true'
   if compress_xz == 'true'
     compression_type :xz
     compression_level 6

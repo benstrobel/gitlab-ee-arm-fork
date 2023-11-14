@@ -14,12 +14,12 @@
 # limitations under the License.
 #
 
-require "#{Omnibus::Config.project_root}/lib/gitlab/version"
+require "#{Omnibus::Config.project_root}/lib/omnibus_gitlab/version"
 
 name 'config_guess'
 
 # Locking version to a specific commit so that cache doesn't get invalidated unannounced
-version = Gitlab::Version.new('config_guess', 'c9092d05347c925a26f6887980e185206e13f9d6')
+version = OmnibusGitlab::Version.new('config_guess', 'c9092d05347c925a26f6887980e185206e13f9d6')
 default_version version.print(false)
 
 # occasionally http protocol downloads get 500s, so we use git://

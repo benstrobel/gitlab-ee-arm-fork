@@ -16,11 +16,11 @@
 ##
 #
 
-require "#{Omnibus::Config.project_root}/lib/gitlab/version"
-require "#{Omnibus::Config.project_root}/lib/gitlab/prometheus_helper"
+require "#{Omnibus::Config.project_root}/lib/omnibus_gitlab/version"
+require "#{Omnibus::Config.project_root}/lib/omnibus_gitlab/prometheus_helper"
 
 name 'alertmanager'
-version = Gitlab::Version.new('alertmanager', '0.26.0')
+version = OmnibusGitlab::Version.new('alertmanager', '0.26.0')
 default_version version.print
 
 license 'APACHE-2.0'

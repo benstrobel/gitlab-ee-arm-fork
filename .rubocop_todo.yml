@@ -16,7 +16,7 @@ Cop/AvoidReturnFromBlocks:
     - 'files/gitlab-cookbooks/consul/libraries/consul_helper.rb'
     - 'files/gitlab-ctl-commands-ee/lib/patroni.rb'
     - 'files/gitlab-ctl-commands-ee/lib/postgresql/ee.rb'
-    - 'lib/gitlab/tasks/build.rake'
+    - 'lib/omnibus_gitlab/tasks/build.rake'
 
 # Offense count: 41
 # This cop supports safe autocorrection (--autocorrect).
@@ -95,7 +95,7 @@ Lint/BinaryOperatorWithIdenticalOperands:
     - 'spec/chef/cookbooks/gitlab/recipes/gitlab-rails_spec.rb'
     - 'spec/chef/cookbooks/gitlab/recipes/gitlab-workhorse_spec.rb'
     - 'spec/chef/cookbooks/pgbouncer/libraries/pgbouncer_helper_spec.rb'
-    - 'spec/lib/gitlab/version_spec.rb'
+    - 'spec/lib/omnibus_gitlab/version_spec.rb'
 
 # Offense count: 11
 # Configuration parameters: AllowedMethods.
@@ -107,7 +107,7 @@ Lint/ConstantDefinitionInBlock:
     - 'spec/chef/gitlab-ctl-commands/gitlab_ctl_spec.rb'
     - 'spec/chef/support/shared_examples/geo_promotion_command_accepts_option_shared_examples.rb'
     - 'spec/chef/support/shared_examples/gitlab_geo_promotion_commands_shared_examples.rb'
-    - 'spec/lib/gitlab/build/image_spec.rb'
+    - 'spec/lib/omnibus_gitlab/build/image_spec.rb'
 
 # Offense count: 1
 Lint/DuplicateMethods:
@@ -169,7 +169,7 @@ Naming/PredicateName:
     - 'files/gitlab-cookbooks/monitoring/libraries/prometheus_helper.rb'
     - 'files/gitlab-cookbooks/package/libraries/certificate_helper.rb'
     - 'files/gitlab-cookbooks/package/libraries/omnibus_helper.rb'
-    - 'lib/gitlab/build/check.rb'
+    - 'lib/omnibus_gitlab/build/check.rb'
 
 # Offense count: 2
 # Configuration parameters: MinSize.
@@ -223,7 +223,7 @@ Style/CaseLikeIf:
     - 'files/gitlab-cookbooks/package/libraries/deprecations.rb'
     - 'files/gitlab-ctl-commands-ee/lib/geo/replication_toggle_command.rb'
     - 'files/gitlab-ctl-commands/pg-upgrade.rb'
-    - 'lib/gitlab/license/analyzer.rb'
+    - 'lib/omnibus_gitlab/license/analyzer.rb'
 
 # Offense count: 2
 # This cop supports safe autocorrection (--autocorrect).
@@ -253,7 +253,7 @@ Style/GlobalStdStream:
     - 'files/gitlab-ctl-commands-ee/lib/geo/promotion_preflight_checks.rb'
     - 'files/gitlab-ctl-commands-ee/lib/geo/replication.rb'
     - 'files/gitlab-ctl-commands/lib/gitlab_ctl/util.rb'
-    - 'lib/gitlab/build/trigger.rb'
+    - 'lib/omnibus_gitlab/build/trigger.rb'
     - 'spec/chef/gitlab-ctl-commands-ee/lib/geo/promotion_preflight_checks_spec.rb'
     - 'spec/chef/gitlab-ctl-commands-ee/lib/geo/replication_spec.rb'
     - 'spec/chef/gitlab-ctl-commands/lib/gitlab_ctl_backup_spec.rb'
@@ -263,7 +263,7 @@ Style/GlobalStdStream:
 # This cop supports unsafe autocorrection (--autocorrect-all).
 Style/HashTransformKeys:
   Exclude:
-    - 'lib/gitlab/deployer_helper.rb'
+    - 'lib/omnibus_gitlab/deployer_helper.rb'
 
 # Offense count: 1
 # This cop supports unsafe autocorrection (--autocorrect-all).
@@ -277,7 +277,7 @@ Style/HashTransformation:
   Exclude:
     - 'files/gitlab-cookbooks/gitaly/libraries/gitaly.rb'
     - 'files/gitlab-cookbooks/gitlab/libraries/nginx.rb'
-    - 'lib/gitlab/deployer_helper.rb'
+    - 'lib/omnibus_gitlab/deployer_helper.rb'
 
 # Offense count: 43
 # This cop supports safe autocorrection (--autocorrect).
@@ -366,7 +366,7 @@ Style/SoleNestedConditional:
   Exclude:
     - 'files/gitlab-ctl-commands/lib/gitlab_ctl/upgrade_check.rb'
     - 'files/gitlab-ctl-commands/pg-upgrade.rb'
-    - 'lib/gitlab/version.rb'
+    - 'lib/omnibus_gitlab/version.rb'
 
 # Offense count: 34
 # This cop supports safe autocorrection (--autocorrect).
@@ -390,7 +390,7 @@ Style/StringConcatenation:
     - 'files/gitlab-cookbooks/gitlab/libraries/redis_uri.rb'
     - 'files/gitlab-cookbooks/package/libraries/certificate_helper.rb'
     - 'files/gitlab-cookbooks/package/libraries/deprecations.rb'
-    - 'lib/gitlab/package_repository.rb'
+    - 'lib/omnibus_gitlab/package_repository.rb'
     - 'support/merge-reports'
 
 # Offense count: 2
@@ -399,7 +399,7 @@ Style/StringConcatenation:
 # AllowedMethods: respond_to, define_method
 Style/SymbolProc:
   Exclude:
-    - 'lib/gitlab/linker_helper.rb'
+    - 'lib/omnibus_gitlab/linker_helper.rb'
 
 # Offense count: 49
 # This cop supports safe autocorrection (--autocorrect).
@@ -426,7 +426,7 @@ Style/WordArray:
     - 'files/gitlab-cookbooks/package/libraries/deprecations.rb'
     - 'files/gitlab-ctl-commands-ee/lib/postgresql/ee.rb'
     - 'files/gitlab-ctl-commands/lib/praefect.rb'
-    - 'lib/gitlab/ohai_helper.rb'
+    - 'lib/omnibus_gitlab/ohai_helper.rb'
     - 'spec/chef/cookbooks/gitlab/recipes/gitlab-rails/gitlab_yml/omniauth_spec.rb'
     - 'spec/chef/cookbooks/gitlab/recipes/nginx_spec.rb'
     - 'spec/chef/cookbooks/logrotate/recipes/folders_and_configs_spec.rb'

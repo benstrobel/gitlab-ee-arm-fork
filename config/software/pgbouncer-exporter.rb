@@ -16,11 +16,11 @@
 ##
 #
 
-require "#{Omnibus::Config.project_root}/lib/gitlab/version"
-require "#{Omnibus::Config.project_root}/lib/gitlab/prometheus_helper"
+require "#{Omnibus::Config.project_root}/lib/omnibus_gitlab/version"
+require "#{Omnibus::Config.project_root}/lib/omnibus_gitlab/prometheus_helper"
 
 name 'pgbouncer-exporter'
-version = Gitlab::Version.new('pgbouncer-exporter', '0.7.0')
+version = OmnibusGitlab::Version.new('pgbouncer-exporter', '0.7.0')
 default_version version.print
 
 license 'MIT'

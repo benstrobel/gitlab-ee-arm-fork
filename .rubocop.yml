@@ -75,8 +75,8 @@ Cop/AvoidUsingEnv:
     - omnibus.rb
     - files/**/*
     - docker/**/*
-    - lib/gitlab/util.rb
-    - spec/lib/gitlab/util_spec.rb
+    - lib/omnibus_gitlab/util.rb
+    - spec/lib/omnibus_gitlab/util_spec.rb
 
 Style/MultilineIfModifier:
   Enabled: false

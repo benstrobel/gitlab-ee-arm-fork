@@ -16,10 +16,10 @@
 ##
 #
 
-require "#{Omnibus::Config.project_root}/lib/gitlab/version"
-require "#{Omnibus::Config.project_root}/lib/gitlab/ohai_helper.rb"
-require "#{Omnibus::Config.project_root}/lib/gitlab/build/info/components"
-version = Gitlab::Version.new('gitaly')
+require "#{Omnibus::Config.project_root}/lib/omnibus_gitlab/version"
+require "#{Omnibus::Config.project_root}/lib/omnibus_gitlab/ohai_helper.rb"
+require "#{Omnibus::Config.project_root}/lib/omnibus_gitlab/build/info/components"
+version = OmnibusGitlab::Version.new('gitaly')
 
 name 'git'
 
@@ -74,8 +74,8 @@ build do
     build_options << "GIT_APPEND_BUILD_OPTIONS += OPENSSLDIR=#{install_dir}/embedded"
   end
 
-  sm_version_override_git_repo_url = Gitlab::Util.get_env('SELF_MANAGED_VERSION_REGEX_OVERRIDE_GIT_REPO_URL')
-  git_repo_url = Gitlab::Util.get_env('GITALY_GIT_REPO_URL')
+  sm_version_override_git_repo_url = OmnibusGitlab::Util.get_env('SELF_MANAGED_VERSION_REGEX_OVERRIDE_GIT_REPO_URL')
+  git_repo_url = OmnibusGitlab::Util.get_env('GITALY_GIT_REPO_URL')
   if Build::Check.is_auto_deploy_tag?
     # Gitaly potentially bundles multiple different Git distributions with it.
     # It is possible to override the specific version that Gitaly compiles each

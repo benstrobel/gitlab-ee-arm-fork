@@ -16,10 +16,10 @@
 ##
 #
 
-require "#{Omnibus::Config.project_root}/lib/gitlab/version"
+require "#{Omnibus::Config.project_root}/lib/omnibus_gitlab/version"
 
 name 'registry'
-version = Gitlab::Version.new('registry', 'v3.86.1-gitlab')
+version = OmnibusGitlab::Version.new('registry', 'v3.86.1-gitlab')
 
 default_version version.print(false)
 display_version version.print(false).delete_suffix('-gitlab')

@@ -1,0 +1,52 @@
+require 'spec_helper'
+require 'omnibus_gitlab/build/qa_image'
+
+RSpec.describe Build::QAImage do
+  before do
+    allow(Build::GitlabImage).to receive(:dockerhub_image_name).and_return('gitlab/gitlab-ce')
+    allow(Build::GitlabImage).to receive(:gitlab_registry_image_name).and_return('gitlab-ce')
+
+    allow(OmnibusGitlab::Util).to receive(:get_env).and_call_original
+
+    allow(OmnibusGitlab::Util).to receive(:get_env).with('CI_JOB_TOKEN').and_return('dummy-token')
+    allow(OmnibusGitlab::Util).to receive(:get_env).with('CI_REGISTRY').and_return('registry.gitlab.com')
+    allow(OmnibusGitlab::Util).to receive(:get_env).with('CI_REGISTRY_IMAGE').and_return('registry.gitlab.com/gitlab-org/omnibus-gitlab')
+
+    allow(OmnibusGitlab::Util).to receive(:get_env).with('DOCKERHUB_USERNAME').and_return('dummy-dockerhub-username')
+    allow(OmnibusGitlab::Util).to receive(:get_env).with('DOCKERHUB_PASSWORD').and_return('dummy-dockerhub-password')
+  end
+
+  describe '.dockerhub_image_name' do
+    it 'returns a correct image name' do
+      expect(described_class.dockerhub_image_name).to eq('gitlab/gitlab-ce-qa')
+    end
+  end
+
+  describe '.gitlab_registry_image_name' do
+    it 'returns a correct image name' do
+      expect(described_class.gitlab_registry_image_name).to eq('gitlab-ce-qa')
+    end
+  end
+
+  describe '.copy_image_to_dockerhub' do
+    before do
+      allow(Build::Info::QA).to receive(:image).and_return('registry.gitlab.com/gitlab-org/gitlab/gitlab-ce-qa:1234567890')
+
+      allow(SkopeoHelper).to receive(:login).and_return(true)
+      allow(SkopeoHelper).to receive(:copy_image).and_return(true)
+    end
+
+    it 'logs in to both the registries' do
+      expect(SkopeoHelper).to receive(:login).with('gitlab-ci-token', 'dummy-token', 'registry.gitlab.com')
+      expect(SkopeoHelper).to receive(:login).with('dummy-dockerhub-username', 'dummy-dockerhub-password', 'docker.io')
+
+      described_class.copy_image_to_dockerhub('nightly')
+    end
+
+    it 'copies the image from gitlab rails registry to dockerhub' do
+      expect(SkopeoHelper).to receive(:copy_image).with('registry.gitlab.com/gitlab-org/gitlab/gitlab-ce-qa:1234567890', 'gitlab/gitlab-ce-qa:nightly')
+
+      described_class.copy_image_to_dockerhub('nightly')
+    end
+  end
+end

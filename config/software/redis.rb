@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-require "#{Omnibus::Config.project_root}/lib/gitlab/ohai_helper.rb"
+require "#{Omnibus::Config.project_root}/lib/omnibus_gitlab/ohai_helper.rb"
 
 name 'redis'
 
@@ -25,7 +25,7 @@ skip_transitive_dependency_licensing true
 dependency 'config_guess'
 dependency 'openssl' unless Build::Check.use_system_ssl?
 
-version = Gitlab::Version.new('redis', '7.0.14')
+version = OmnibusGitlab::Version.new('redis', '7.0.14')
 default_version version.print(false)
 
 source git: version.remote

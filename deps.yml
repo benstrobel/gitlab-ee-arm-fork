@@ -36,13 +36,13 @@ dependencies:
       https://github.com/schubergphilis/chef-acme.git:
         replace_in_files:
         - filename: config/software/chef-acme.rb
-          pattern: "version = Gitlab::Version.new\\(name, 'v(\\S+)'\\)"
+          pattern: "version = OmnibusGitlab::Version.new\\(name, 'v(\\S+)'\\)"
           tag_prefix: 'v'
       # alertmanager
       https://gitlab.com/gitlab-org/build/omnibus-mirror/alertmanager.git:
         replace_in_files:
         - filename: config/software/alertmanager.rb
-          pattern: "Gitlab::Version.new\\('alertmanager', '(\\S+)'\\)"
+          pattern: "OmnibusGitlab::Version.new\\('alertmanager', '(\\S+)'\\)"
           tag_prefix: 'v'
       # chef-gem
       https://github.com/chef/chef.git:
@@ -72,50 +72,50 @@ dependencies:
       https://github.com/chef-cookbooks/compat_resource.git:
         replace_in_files:
         - filename: config/software/compat_resource.rb
-          pattern: "version = Gitlab::Version.new\\('compat_resource', 'v(\\S+)'\\)"
+          pattern: "version = OmnibusGitlab::Version.new\\('compat_resource', 'v(\\S+)'\\)"
       # consul
       https://github.com/hashicorp/consul.git:
         replace_in_files:
         - filename: config/software/consul.rb
-          pattern: "version = Gitlab::Version.new\\('consul', 'v(\\S+)'\\)"
+          pattern: "version = OmnibusGitlab::Version.new\\('consul', 'v(\\S+)'\\)"
           range: '< 1.17.0'
       # go-crond
       https://github.com/webdevops/go-crond.git:
         replace_in_files:
         - filename: config/software/go-crond.rb
-          pattern: "version = Gitlab::Version.new\\('go-crond', '(\\S+)'\\)"
+          pattern: "version = OmnibusGitlab::Version.new\\('go-crond', '(\\S+)'\\)"
       # jemalloc
       https://github.com/jemalloc/jemalloc.git:
         replace_in_files:
         - filename: config/software/jemalloc.rb
-          pattern: "version = Gitlab::Version.new\\('jemalloc', '(\\S+)'\\)"
+          pattern: "version = OmnibusGitlab::Version.new\\('jemalloc', '(\\S+)'\\)"
       # libpng
       https://git.code.sf.net/p/libpng/code.git:
         replace_in_files:
         - filename: config/software/libpng.rb
-          pattern: "version = Gitlab::Version.new\\('libpng', 'v(\\S+)'\\)"
+          pattern: "version = OmnibusGitlab::Version.new\\('libpng', 'v(\\S+)'\\)"
           tag_prefix: 'v'
       # logrotate
       https://gitlab.com/gitlab-org/build/omnibus-mirror/logrotate.git:
         replace_in_files:
         - filename: config/software/logrotate.rb
-          pattern: "Gitlab::Version.new\\(name, '(\\S+)'\\)"
+          pattern: "OmnibusGitlab::Version.new\\(name, '(\\S+)'\\)"
       # nginx-module-vts
       https://gitlab.com/gitlab-org/build/omnibus-mirror/nginx-module-vts.git:
         replace_in_files:
         - filename: config/software/nginx-module-vts.rb
-          pattern: "Gitlab::Version.new\\('nginx-module-vts', '(\\S+)'\\)"
+          pattern: "OmnibusGitlab::Version.new\\('nginx-module-vts', '(\\S+)'\\)"
       # nginx
       https://github.com/nginx/nginx.git:
         replace_in_files:
         - filename: config/software/nginx.rb
-          pattern: "Gitlab::Version.new\\('nginx', 'release-(\\S+)'\\)"
+          pattern: "OmnibusGitlab::Version.new\\('nginx', 'release-(\\S+)'\\)"
           tag_prefix: 'release-'
       # openssl
       https://github.com/openssl/openssl.git:
         replace_in_files:
         - filename: config/software/openssl.rb
-          pattern: "Gitlab::Version.new\\('openssl', 'OpenSSL_1_1_(\\S+)'\\)"
+          pattern: "OmnibusGitlab::Version.new\\('openssl', 'OpenSSL_1_1_(\\S+)'\\)"
           tag_prefix: 'OpenSSL_1_1_'
           semver: false
       # remote-syslog
@@ -133,13 +133,13 @@ dependencies:
       https://github.com/madler/zlib.git:
         replace_in_files:
         - filename: config/software/zlib.rb
-          pattern: "Gitlab::Version.new\\('zlib', 'v(\\S+)'\\)"
+          pattern: "OmnibusGitlab::Version.new\\('zlib', 'v(\\S+)'\\)"
           tag_prefix: 'v'
       # prometheus
       https://gitlab.com/gitlab-org/build/omnibus-mirror/prometheus.git:
         replace_in_files:
         - filename: config/software/prometheus.rb
-          pattern: "Gitlab::Version.new\\('prometheus', '(\\S+)'\\)"
+          pattern: "OmnibusGitlab::Version.new\\('prometheus', '(\\S+)'\\)"
           tag_prefix: 'v'
       # gitlab-exporter
       https://gitlab.com/gitlab-org/gitlab-exporter.git:
@@ -150,43 +150,43 @@ dependencies:
       https://gitlab.com/gitlab-org/build/omnibus-mirror/node_exporter.git:
         replace_in_files:
         - filename: config/software/node-exporter.rb
-          pattern: "Gitlab::Version.new\\('node-exporter', '(\\S+)'\\)"
+          pattern: "OmnibusGitlab::Version.new\\('node-exporter', '(\\S+)'\\)"
           tag_prefix: 'v'
       # postgres-exporter
       https://gitlab.com/gitlab-org/build/omnibus-mirror/postgres_exporter.git:
         replace_in_files:
         - filename: config/software/postgres-exporter.rb
-          pattern: "Gitlab::Version.new\\('postgres-exporter', '(\\S+)'\\)"
+          pattern: "OmnibusGitlab::Version.new\\('postgres-exporter', '(\\S+)'\\)"
           tag_prefix: 'v'
       # pgbouncer-exporter
       https://gitlab.com/gitlab-org/build/omnibus-mirror/pgbouncer_exporter.git:
         replace_in_files:
         - filename: config/software/pgbouncer-exporter.rb
-          pattern: "Gitlab::Version.new\\('pgbouncer-exporter', '(\\S+)'\\)"
+          pattern: "OmnibusGitlab::Version.new\\('pgbouncer-exporter', '(\\S+)'\\)"
           tag_prefix: 'v'
       # redis-exporter
       https://gitlab.com/gitlab-org/build/omnibus-mirror/redis_exporter.git:
         replace_in_files:
         - filename: config/software/redis-exporter.rb
-          pattern: "Gitlab::Version.new\\('redis-exporter', '(\\S+)'\\)"
+          pattern: "OmnibusGitlab::Version.new\\('redis-exporter', '(\\S+)'\\)"
           tag_prefix: 'v'
       #libjpeg-turbo
       https://github.com/libjpeg-turbo/libjpeg-turbo.git:
         replace_in_files:
         - filename: config/software/libjpeg-turbo.rb
-          pattern: "Gitlab::Version.new\\('libjpeg-turbo', '(\\S+)'\\)"
+          pattern: "OmnibusGitlab::Version.new\\('libjpeg-turbo', '(\\S+)'\\)"
           range: '< 2.1.90'
       #libtiff
       https://gitlab.com/libtiff/libtiff.git:
         replace_in_files:
         - filename: config/software/libtiff.rb
-          pattern: "Gitlab::Version.new\\('libtiff', 'v(\\S+)'\\)"
+          pattern: "OmnibusGitlab::Version.new\\('libtiff', 'v(\\S+)'\\)"
           tag_prefix: 'v'
       # gitlab-registry
       https://gitlab.com/gitlab-org/container-registry.git:
         replace_in_files:
         - filename: config/software/registry.rb
-          pattern: "Gitlab::Version.new\\('registry', '(\\S+)'\\)"
+          pattern: "OmnibusGitlab::Version.new\\('registry', '(\\S+)'\\)"
           tag_filter:
             matching: 'v(\S+)-gitlab'
             sort_as: '$1'
@@ -194,7 +194,7 @@ dependencies:
       https://github.com/pgbouncer/pgbouncer.git:
         replace_in_files:
         - filename: config/software/pgbouncer.rb
-          pattern: "Gitlab::Version.new\\('pgbouncer', '(\\S+)'\\)"
+          pattern: "OmnibusGitlab::Version.new\\('pgbouncer', '(\\S+)'\\)"
           tag_filter:
             matching: 'pgbouncer_(\d+)_(\d+)_(\d+)'
             sort_as: '$1.$2.$3'
@@ -202,13 +202,13 @@ dependencies:
       https://github.com/redis/redis.git:
         replace_in_files:
         - filename: config/software/redis.rb
-          pattern: "Gitlab::Version.new\\('redis', '(\\S+)'\\)"
+          pattern: "OmnibusGitlab::Version.new\\('redis', '(\\S+)'\\)"
           range: '< 7.2.0'
        # exiftool
       https://github.com/exiftool/exiftool.git:
         replace_in_files:
         - filename: config/software/exiftool.rb
-          pattern: "Gitlab::Version.new\\('exiftool', '(\\S+)'\\)"
+          pattern: "OmnibusGitlab::Version.new\\('exiftool', '(\\S+)'\\)"
           tag_filter:
             matching: '(\d+).(\d+)'
             sort_as: '$1.$2.0'
@@ -216,7 +216,7 @@ dependencies:
       https://github.com/curl/curl.git:
         replace_in_files:
         - filename: config/software/curl.rb
-          pattern: "version = Gitlab::Version.new\\('curl', '(\\S+)'\\)"
+          pattern: "version = OmnibusGitlab::Version.new\\('curl', '(\\S+)'\\)"
           tag_filter:
             matching: 'curl-(\d+)_(\d+)_(\d+)'
             sort_as: '$1.$2.$3'
@@ -224,7 +224,7 @@ dependencies:
       https://github.com/PCRE2Project/pcre2.git:
         replace_in_files:
         - filename: config/software/pcre2.rb
-          pattern: "Gitlab::Version.new\\('pcre2', '(\\S+)'\\)"
+          pattern: "OmnibusGitlab::Version.new\\('pcre2', '(\\S+)'\\)"
           tag_filter:
             matching: 'pcre2-(\d+).(\d+)'
             sort_as: '$1.$2.0'
@@ -233,18 +233,18 @@ dependencies:
       # https://github.com/krb5/krb5.git:
       #   replace_in_files:
       #   - filename: config/software/krb5.rb
-      #     pattern: "Gitlab::Version.new\\('krb5', 'krb5-(\\S+)'\\)"
+      #     pattern: "OmnibusGitlab::Version.new\\('krb5', 'krb5-(\\S+)'\\)"
       #     tag_prefix: 'krb5-'
       # libevent
       # https://github.com/libevent/libevent.git:
       #   replace_in_files:
       #   - filename: config/software/libevent.rb
-      #     pattern: "version = Gitlab::Version.new\\('libevent', '(release-\\d+\\.\\d+\\.\\d+-stable)'\\)"
+      #     pattern: "version = OmnibusGitlab::Version.new\\('libevent', '(release-\\d+\\.\\d+\\.\\d+-stable)'\\)"
       #     semver: false
       # libicu
       # https://github.com/unicode-org/icu.git:
       #   replace_in_files:
       #   - filename: config/software/libicu.rb
-      #     pattern: "version = Gitlab::Version.new\\('libicu', 'release-(\\d+-\\d+)'\\)"
+      #     pattern: "version = OmnibusGitlab::Version.new\\('libicu', 'release-(\\d+-\\d+)'\\)"
       #     tag_prefix: 'release-'
       #     semver: false

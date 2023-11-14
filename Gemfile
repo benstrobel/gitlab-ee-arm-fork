@@ -1,8 +1,8 @@
 source 'https://rubygems.org'
 
-require_relative "lib/gitlab/version"
+require_relative "lib/omnibus_gitlab/version"
 
-omnibus_gem_version = Gitlab::Version.new('omnibus')
+omnibus_gem_version = OmnibusGitlab::Version.new('omnibus')
 
 # Note that omnibus is from a fork with additional gitlab changes.  You can
 # check what they are with the following comparison link:
@@ -20,7 +20,7 @@ omnibus_gem_version = Gitlab::Version.new('omnibus')
 # 4. Check that the changes to Gemfile.lock are propogated to the software
 #    definitions in `config/software`.  You can find them quickly with:
 #      grep "gem 'install " config/software/*
-gem 'omnibus', git: omnibus_gem_version.remote(Gitlab::Version::ALTERNATIVE_SOURCE), tag: omnibus_gem_version.print(false)
+gem 'omnibus', git: omnibus_gem_version.remote(OmnibusGitlab::Version::ALTERNATIVE_SOURCE), tag: omnibus_gem_version.print(false)
 source 'https://packagecloud.io/cinc-project/stable' do
   gem 'chef', '~> 17.10.0'
   gem 'chef-cli', '~> 5.6.1'

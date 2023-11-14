@@ -14,10 +14,10 @@
 # limitations under the License.
 #
 
-require "#{Omnibus::Config.project_root}/lib/gitlab/version"
+require "#{Omnibus::Config.project_root}/lib/omnibus_gitlab/version"
 
 name 'rb-readline'
-version = Gitlab::Version.new('rb-readline', 'master')
+version = OmnibusGitlab::Version.new('rb-readline', 'master')
 default_version 'master'
 
 license 'BSD-3-Clause'

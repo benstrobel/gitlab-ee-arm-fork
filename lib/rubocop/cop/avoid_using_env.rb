@@ -1,8 +1,8 @@
 module Rubocop
   module Cop
     class AvoidUsingEnv < RuboCop::Cop::Base
-      MSG_GET = 'Do not use ENV directly to retrieve environment variables. Use Gitlab::Util.get_env method instead.'.freeze
-      MSG_SET = 'Do not use ENV directly to set environment variables, use Gitlab::Util.set_env or Gitlab::Util.set_env_if_missing methods instead.'.freeze
+      MSG_GET = 'Do not use ENV directly to retrieve environment variables. Use OmnibusGitlab::Util.get_env method instead.'.freeze
+      MSG_SET = 'Do not use ENV directly to set environment variables, use OmnibusGitlab::Util.set_env or OmnibusGitlab::Util.set_env_if_missing methods instead.'.freeze
 
       def_node_matcher :env_or_assignment?, <<~PATTERN
         (or_asgn (send (const nil? :ENV) :[] (str ...)) ...)
@@ -55,15 +55,15 @@ module Rubocop
       end
 
       def get_env(key)
-        "Gitlab::Util.get_env(#{key})"
+        "OmnibusGitlab::Util.get_env(#{key})"
       end
 
       def set_env(key, val)
-        "Gitlab::Util.set_env(#{key}, #{val})"
+        "OmnibusGitlab::Util.set_env(#{key}, #{val})"
       end
 
       def set_env_if_missing(key, val)
-        "Gitlab::Util.set_env_if_missing(#{key}, #{val})"
+        "OmnibusGitlab::Util.set_env_if_missing(#{key}, #{val})"
       end
     end
   end

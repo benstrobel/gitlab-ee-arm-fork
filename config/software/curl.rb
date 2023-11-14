@@ -16,7 +16,7 @@
 
 name 'curl'
 
-version = Gitlab::Version.new('curl', 'curl-8_4_0')
+version = OmnibusGitlab::Version.new('curl', 'curl-8_4_0')
 
 default_version version.print(false)
 display_version version.print(false).delete_prefix('curl-').tr('_', '.')

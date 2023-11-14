@@ -14,8 +14,8 @@
 # limitations under the License.
 #
 
-require "#{Omnibus::Config.project_root}/lib/gitlab/version"
-version = Gitlab::Version.new('gitlab-elasticsearch-indexer')
+require "#{Omnibus::Config.project_root}/lib/omnibus_gitlab/version"
+version = OmnibusGitlab::Version.new('gitlab-elasticsearch-indexer')
 
 name 'gitlab-elasticsearch-indexer'
 default_version version.print

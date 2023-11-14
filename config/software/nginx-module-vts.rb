@@ -16,10 +16,10 @@
 # limitations under the License.
 #
 
-require "#{Omnibus::Config.project_root}/lib/gitlab/version"
+require "#{Omnibus::Config.project_root}/lib/omnibus_gitlab/version"
 
 name 'nginx-module-vts'
-version = Gitlab::Version.new('nginx-module-vts', '0.2.2')
+version = OmnibusGitlab::Version.new('nginx-module-vts', '0.2.2')
 default_version version.print
 
 license 'BSD-2-Clause'

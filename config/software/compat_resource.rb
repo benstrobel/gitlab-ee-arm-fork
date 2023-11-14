@@ -16,7 +16,7 @@
 
 name 'compat_resource'
 
-version = Gitlab::Version.new('compat_resource', 'v12.19.1')
+version = OmnibusGitlab::Version.new('compat_resource', 'v12.19.1')
 default_version version.print(false)
 
 license 'Apache-2.0'

@@ -14,11 +14,11 @@
 # limitations under the License.
 #
 
-require "#{Omnibus::Config.project_root}/lib/gitlab/version"
-require "#{Omnibus::Config.project_root}/lib/gitlab/prometheus_helper"
+require "#{Omnibus::Config.project_root}/lib/omnibus_gitlab/version"
+require "#{Omnibus::Config.project_root}/lib/omnibus_gitlab/prometheus_helper"
 
 name 'node-exporter'
-version = Gitlab::Version.new('node-exporter', '1.6.1')
+version = OmnibusGitlab::Version.new('node-exporter', '1.6.1')
 default_version version.print
 
 license 'APACHE-2.0'

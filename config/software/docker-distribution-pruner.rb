@@ -14,8 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-require "#{Omnibus::Config.project_root}/lib/gitlab/version"
-version = Gitlab::Version.new('docker-distribution-pruner', '0.2.0')
+require "#{Omnibus::Config.project_root}/lib/omnibus_gitlab/version"
+version = OmnibusGitlab::Version.new('docker-distribution-pruner', '0.2.0')
 
 name 'docker-distribution-pruner'
 default_version version.print

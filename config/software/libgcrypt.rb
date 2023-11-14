@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-require "#{Omnibus::Config.project_root}/lib/gitlab/ohai_helper.rb"
+require "#{Omnibus::Config.project_root}/lib/omnibus_gitlab/ohai_helper.rb"
 
 name 'libgcrypt'
 default_version '1.9.4'

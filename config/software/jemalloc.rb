@@ -16,7 +16,7 @@
 #
 
 name 'jemalloc'
-version = Gitlab::Version.new('jemalloc', '5.3.0')
+version = OmnibusGitlab::Version.new('jemalloc', '5.3.0')
 default_version version.print(false)
 
 license 'jemalloc'

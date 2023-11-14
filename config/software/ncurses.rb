@@ -16,7 +16,7 @@
 
 name 'ncurses'
 
-version = Gitlab::Version.new('ncurses', '6315e1a380ecdb706d4f6518d2e8c7eb0db8fbe2')
+version = OmnibusGitlab::Version.new('ncurses', '6315e1a380ecdb706d4f6518d2e8c7eb0db8fbe2')
 
 default_version version.print(false)
 display_version '6.4-20230225'

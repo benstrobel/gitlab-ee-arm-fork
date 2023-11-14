@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-require "#{Omnibus::Config.project_root}/lib/gitlab/ohai_helper.rb"
+require "#{Omnibus::Config.project_root}/lib/omnibus_gitlab/ohai_helper.rb"
 
 name 'openssl'
 
@@ -24,7 +24,7 @@ skip_transitive_dependency_licensing true
 
 dependency 'cacerts'
 
-version = Gitlab::Version.new('openssl', 'OpenSSL_1_1_1w')
+version = OmnibusGitlab::Version.new('openssl', 'OpenSSL_1_1_1w')
 
 default_version version.print(false)
 display_version version.print(false).delete_prefix('OpenSSL_').tr('_', '.')

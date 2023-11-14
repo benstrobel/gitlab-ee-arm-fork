@@ -14,9 +14,9 @@
 # limitations under the License.
 #
 
-require "#{Omnibus::Config.project_root}/lib/gitlab/version"
-require "#{Omnibus::Config.project_root}/lib/gitlab/ohai_helper.rb"
-version = Gitlab::Version.new('gitaly')
+require "#{Omnibus::Config.project_root}/lib/omnibus_gitlab/version"
+require "#{Omnibus::Config.project_root}/lib/omnibus_gitlab/ohai_helper.rb"
+version = OmnibusGitlab::Version.new('gitaly')
 
 name 'gitaly'
 default_version version.print

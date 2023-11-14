@@ -15,8 +15,8 @@
 ## limitations under the License.
 ##
 #
-require "#{Omnibus::Config.project_root}/lib/gitlab/version"
-version = Gitlab::Version.new('gitlab-shell')
+require "#{Omnibus::Config.project_root}/lib/omnibus_gitlab/version"
+version = OmnibusGitlab::Version.new('gitlab-shell')
 
 name 'gitlab-shell'
 default_version version.print

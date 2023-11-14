@@ -16,7 +16,7 @@
 #
 
 name 'psycopg2'
-version = Gitlab::Version.new('psycopg2', '2_8_6')
+version = OmnibusGitlab::Version.new('psycopg2', '2_8_6')
 default_version version.print(false)
 
 license 'LGPL'

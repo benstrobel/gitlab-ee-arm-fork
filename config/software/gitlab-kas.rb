@@ -14,8 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-require "#{Omnibus::Config.project_root}/lib/gitlab/version"
-version = Gitlab::Version.new('gitlab-kas')
+require "#{Omnibus::Config.project_root}/lib/omnibus_gitlab/version"
+version = OmnibusGitlab::Version.new('gitlab-kas')
 
 name 'gitlab-kas'
 default_version version.print
