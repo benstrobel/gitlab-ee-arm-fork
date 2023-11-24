@@ -38,7 +38,7 @@ RSpec.describe 'consul' do
     end
 
     describe 'consul::enable' do
-      it_behaves_like 'enabled runit service', 'consul', 'gitlab-consul', 'gitlab-consul', 'gitlab-consul', 'gitlab-consul'
+      it_behaves_like 'enabled runit service', 'consul', 'gitlab-consul', 'gitlab-consul', 'gitlab-consul', 'gitlab-consul', true
 
       it 'creates the consul system user and group' do
         expect(chef_run).to create_account('Consul user and group').with(username: 'gitlab-consul', groupname: 'gitlab-consul')
@@ -88,7 +88,7 @@ RSpec.describe 'consul' do
 
       it 'renders log run file with timestamp option' do
         expect(chef_run).to render_file('/opt/gitlab/sv/consul/log/run').with_content { |content|
-          expect(content).to match(%r{exec svlogd -tt /var/log/gitlab/consul})
+          expect(content).to match(%r{svlogd -tt /var/log/gitlab/consul})
         }
       end
     end
@@ -103,7 +103,8 @@ RSpec.describe 'consul' do
         expect(chef_run).to render_file(consul_conf).with_content { |content|
           expect(content).to match(%r{"datacenter":"gitlab_consul"})
           expect(content).to match(%r{"disable_update_check":true})
-          expect(content).to match(%r{"enable_script_checks":true})
+          expect(content).to match(%r{"enable_script_checks":false})
+          expect(content).to match(%r{"enable_local_script_checks":true})
           expect(content).to match(%r{"node_name":"fauxhai.local"})
           expect(content).to match(%r{"rejoin_after_leave":true})
           expect(content).to match(%r{"server":false})
@@ -139,7 +140,7 @@ RSpec.describe 'consul' do
 
       it 'renders log run file without timestamp option' do
         expect(chef_run).to render_file('/opt/gitlab/sv/consul/log/run').with_content { |content|
-          expect(content).to match(%r{exec svlogd /var/log/gitlab/consul})
+          expect(content).to match(%r{svlogd /var/log/gitlab/consul})
         }
       end
 
@@ -149,7 +150,7 @@ RSpec.describe 'consul' do
         }
       end
 
-      it_behaves_like 'enabled runit service', 'consul', 'foo', 'bar', 'foo', 'bar'
+      it_behaves_like 'enabled runit service', 'consul', 'foo', 'bar', 'foo', 'bar', true
     end
 
     context 'server enabled' do
@@ -475,6 +476,31 @@ RSpec.describe 'consul' do
 
       expect_logged_deprecation(%r{`consul\['configuration'\]\['acl'\]\['tokens'\]\['master'\]` has been deprecated.*`consul\['configuration'\]\['acl'\]\['tokens'\]\['initial_management'\]`})
       expect_logged_deprecation(%r{`consul\['configuration'\]\['acl'\]\['tokens'\]\['agent_master'\]` has been deprecated.*`consul\['configuration'\]\['acl'\]\['tokens'\]\['agent_recovery'\]`})
+    end
+  end
+
+  context 'log directory and runit group' do
+    context 'default values' do
+      before do
+        stub_gitlab_rb(
+          consul: {
+            enable: true,
+          }
+        )
+      end
+      it_behaves_like 'enabled logged service', 'consul', true, { log_directory_owner: 'gitlab-consul', log_directory_mode: '0755' }
+    end
+
+    context 'custom values' do
+      before do
+        stub_gitlab_rb(
+          consul: {
+            enable: true,
+            log_group: 'fugee'
+          }
+        )
+      end
+      it_behaves_like 'enabled logged service', 'consul', true, { log_directory_owner: 'gitlab-consul', log_group: 'fugee' }
     end
   end
 end

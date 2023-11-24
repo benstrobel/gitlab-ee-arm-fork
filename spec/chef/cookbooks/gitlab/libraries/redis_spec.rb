@@ -21,7 +21,7 @@ RSpec.describe 'Redis' do
   context '.parse_redis_settings' do
     context 'when no customization is made' do
       it 'keeps unixsocket' do
-        expect(node['gitlab']['gitlab-rails']['unixsocket']).not_to eq false
+        expect(node['gitlab']['gitlab_rails']['unixsocket']).not_to eq false
 
         subject.parse_redis_settings
       end
@@ -48,13 +48,13 @@ RSpec.describe 'Redis' do
         end
 
         it 'expects redis_host to match bind value from redis' do
-          expect(node['gitlab']['gitlab-rails']['redis_host']).to eq redis_host
+          expect(node['gitlab']['gitlab_rails']['redis_host']).to eq redis_host
 
           subject.parse_redis_settings
         end
 
         it 'expects redis_port to match port value from redis' do
-          expect(node['gitlab']['gitlab-rails']['redis_port']).to eq redis_port
+          expect(node['gitlab']['gitlab_rails']['redis_port']).to eq redis_port
 
           subject.parse_redis_settings
         end
@@ -159,6 +159,33 @@ RSpec.describe 'Redis' do
 
         it 'master_password is autofilled based on redis current password' do
           expect(node['redis']['master_password']).to eq redis_password
+        end
+
+        it 'instance Sentinel passwords are nil' do
+          RedisHelper::REDIS_INSTANCES.each do |instance|
+            expect(node['gitlab']['gitlab_rails']["redis_#{instance}_sentinels_password"]).to be_nil
+          end
+        end
+
+        context 'when sentinel password is defined' do
+          before do
+            stub_gitlab_rb(
+              sentinel: {
+                enable: true,
+                password: 'sentinel pass!'
+              },
+              redis: {
+                password: redis_password,
+                master_ip: '10.0.0.0'
+              }
+            )
+          end
+
+          it 'instance Sentinel passwords are autofilled based on Sentinel password' do
+            RedisHelper::REDIS_INSTANCES.each do |instance|
+              expect(node['gitlab']['gitlab_rails']["redis_#{instance}_sentinels_password"]).to eq('sentinel pass!')
+            end
+          end
         end
 
         context 'announce_ip is defined' do

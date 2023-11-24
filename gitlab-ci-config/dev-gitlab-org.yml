@@ -44,18 +44,13 @@
   stage: package
   script:
     - support/import_gpg_secrets.sh
-    - bundle exec rake cache:populate
-    - bundle exec rake cache:restore
-    - bundle exec rake build:project build:package:sync
-    - bundle exec rake cache:bundle
-    - bundle exec rake build:component_shas
+    - !reference [.build-package]
     # Run package size checks on nightlies. The job will create alerts, so we
     # don't need it to fail and block the pipeline. Hence the `|| true`.
     - if [ -n "$NIGHTLY" ]; then
       bundle exec rake check:package_size || true;
       fi
-  tags:
-  - docker-builder
+  tags: !reference [.distribution-amd64-tags]
   artifacts: !reference [.package-artifacts]
   needs:
     - job: fetch-assets
@@ -80,18 +75,22 @@
       when: manual
       allow_failure: true
 
+.arm64_branch_template: &arm64_branch_build
+  extends: .branch_template
+  tags: !reference [.distribution-arm64-tags]
+
 .rpi_branch_template: &rpi_branch_build
   extends: .branch_template
   stage: slow_jobs
   variables:
     NO_SOURCEMAPS: "true"
-  tags:
-  - docker-arm-builder
+  tags: !reference [.distribution-armhf-tags]
   retry: 1
   rules:
     - !reference [.default_rules, rules]
     - if: '$PIPELINE_TYPE == "CE_BRANCH_BUILD_PIPELINE"'
     - if: '$PIPELINE_TYPE == "CE_NIGHTLY_BUILD_PIPELINE"'
+    - if: '$PIPELINE_TYPE == "EE_BRANCH_BUILD_PIPELINE" && $CI_PIPELINE_SOURCE == "parent_pipeline"'
 
 .tag_template: &tag_build
   stage: package
@@ -114,8 +113,7 @@
     - bundle exec rake release:package
     - bundle exec rake cache:bundle
     - bundle exec rake build:component_shas
-  tags:
-  - docker-builder
+  tags: !reference [.distribution-amd64-tags]
   artifacts: !reference [.package-artifacts-release]
   needs:
     - job: fetch-assets
@@ -137,13 +135,16 @@
     - !reference [.default_rules, rules]
     - if: '$PIPELINE_TYPE =~ /^EE_(RC|TAG)_BUILD_PIPELINE$/'
 
+.arm64_tag_template: &arm64_tag_build
+  extends: .tag_template
+  tags: !reference [.distribution-arm64-tags]
+
 .rpi_tag_template: &rpi_tag_build
   extends: .tag_template
   stage: slow_jobs
   variables:
     NO_SOURCEMAPS: "true"
-  tags:
-  - docker-arm-builder
+  tags: !reference [.distribution-armhf-tags]
   rules:
     - !reference [.default_rules, rules]
     - if: '$PIPELINE_TYPE =~ /^CE_(RC|TAG)_BUILD_PIPELINE$/'
@@ -153,7 +154,7 @@
 ### 2. Always ran on dev.gitlab.org
 .staging_upload_template: &staging_upload
   stage: staging_upload
-  image: "${BUILDER_IMAGE_REGISTRY}/ubuntu_16.04:${BUILDER_IMAGE_REVISION}"
+  image: "${BUILDER_IMAGE_REGISTRY}/ubuntu_22.04:${BUILDER_IMAGE_REVISION}"
   variables:
     INCLUDE_PACKAGECLOUD: "true"
   script:
@@ -190,7 +191,7 @@
 ### 3. Only ran on dev.gitlab.org
 .production_release_template: &production_release
   stage: package-and-image-release
-  image: "${BUILDER_IMAGE_REGISTRY}/ubuntu_16.04:${BUILDER_IMAGE_REVISION}"
+  image: "${BUILDER_IMAGE_REGISTRY}/ubuntu_22.04:${BUILDER_IMAGE_REVISION}"
   variables:
     INCLUDE_PACKAGECLOUD: "true"
   script:
@@ -237,8 +238,7 @@
   - export AWS_ACCESS_KEY_ID=$AWS_AMI_ACCESS_KEY_ID
   - export AWS_SECRET_ACCESS_KEY=$AWS_AMI_SECRET_ACCESS_KEY
   - bundle exec rake aws:ami:create
-  tags:
-  - docker-builder
+  tags: !reference [.distribution-amd64-tags]
   cache: !reference [.tag-cache]
   artifacts:
     paths:
@@ -253,7 +253,7 @@
       when: manual
 
 .aws_marketplace_release: &aws_marketplace_release
-  image: "${BUILDER_IMAGE_REGISTRY}/ruby_docker:${BUILDER_IMAGE_REVISION}"
+  image: "${BUILDER_IMAGE_REGISTRY}/distribution_ci_tools:${BUILDER_IMAGE_REVISION}"
   stage: aws-marketplace-release
   script:
     - export AWS_ACCESS_KEY_ID=$AWS_AMI_ACCESS_KEY_ID
@@ -271,11 +271,6 @@
 # fetch-assets job from .gitlab-ci.yml file runs here
 # generate-assets job from .gitlab-ci.yml file runs here
 
-# We build package for deploying to GitLab.com first
-Ubuntu-16.04-branch:
-  image: "${BUILDER_IMAGE_REGISTRY}/ubuntu_16.04:${BUILDER_IMAGE_REVISION}"
-  extends: .branch_template
-
 Ubuntu-18.04-branch:
   image: "${BUILDER_IMAGE_REGISTRY}/ubuntu_18.04:${BUILDER_IMAGE_REVISION}"
   extends: .branch_template
@@ -291,81 +286,87 @@ Ubuntu-22.04-branch:
 Debian-10-branch:
   image: "${BUILDER_IMAGE_REGISTRY}/debian_10:${BUILDER_IMAGE_REVISION}"
   extends: .branch_template
-Debian-10-arm-branch:
+Debian-10-arm64-branch:
   image: "${BUILDER_IMAGE_REGISTRY}/debian_10_arm64:${BUILDER_IMAGE_REVISION}"
-  extends: .branch_template
-  tags:
-  - docker-arm-builder
+  extends: .arm64_branch_template
 Debian-11-branch:
   image: "${BUILDER_IMAGE_REGISTRY}/debian_11:${BUILDER_IMAGE_REVISION}"
   extends: .branch_template
-Debian-11-arm-branch:
+Debian-11-arm64-branch:
   image: "${BUILDER_IMAGE_REGISTRY}/debian_11_arm64:${BUILDER_IMAGE_REVISION}"
+  extends: .arm64_branch_template
+Debian-12-branch:
+  image: "${BUILDER_IMAGE_REGISTRY}/debian_12:${BUILDER_IMAGE_REVISION}"
   extends: .branch_template
-  tags:
-  - docker-arm-builder
-Ubuntu-20.04-arm-branch:
+Debian-12-arm64-branch:
+  image: "${BUILDER_IMAGE_REGISTRY}/debian_12_arm64:${BUILDER_IMAGE_REVISION}"
+  extends: .arm64_branch_template
+Ubuntu-20.04-arm64-branch:
   image: "${BUILDER_IMAGE_REGISTRY}/ubuntu_20.04_arm64:${BUILDER_IMAGE_REVISION}"
-  extends: .branch_template
-  tags:
-  - docker-arm-builder
-Ubuntu-22.04-arm-branch:
+  extends: .arm64_branch_template
+Ubuntu-22.04-arm64-branch:
   image: "${BUILDER_IMAGE_REGISTRY}/ubuntu_22.04_arm64:${BUILDER_IMAGE_REVISION}"
-  extends: .branch_template
-  tags:
-  - docker-arm-builder
+  extends: .arm64_branch_template
 CentOS-7-branch:
   image: "${BUILDER_IMAGE_REGISTRY}/centos_7:${BUILDER_IMAGE_REVISION}"
   extends: .branch_template
-CentOS-8-branch:
-  image: "${BUILDER_IMAGE_REGISTRY}/centos_8:${BUILDER_IMAGE_REVISION}"
+AlmaLinux-8-branch:
+  image: "${BUILDER_IMAGE_REGISTRY}/almalinux_8:${BUILDER_IMAGE_REVISION}"
   extends: .branch_template
-CentOS-8-arm64-branch:
-  image: "${BUILDER_IMAGE_REGISTRY}/centos_8_arm64:${BUILDER_IMAGE_REVISION}"
+AlmaLinux-8-arm64-branch:
+  image: "${BUILDER_IMAGE_REGISTRY}/almalinux_8_arm64:${BUILDER_IMAGE_REVISION}"
+  extends: .arm64_branch_template
+AlmaLinux-9-branch:
+  image: "${BUILDER_IMAGE_REGISTRY}/almalinux_9:${BUILDER_IMAGE_REVISION}"
   extends: .branch_template
-  tags:
-  - docker-arm-builder
-OpenSUSE-15.3-branch:
-  image: "${BUILDER_IMAGE_REGISTRY}/opensuse_15.3:${BUILDER_IMAGE_REVISION}"
-  extends: .branch_template
-OpenSUSE-15.3-arm64-branch:
-  image: "${BUILDER_IMAGE_REGISTRY}/opensuse_15.3_arm64:${BUILDER_IMAGE_REVISION}"
-  extends: .branch_template
-  tags:
-  - docker-arm-builder
+AlmaLinux-9-arm64-branch:
+  image: "${BUILDER_IMAGE_REGISTRY}/almalinux_9_arm64:${BUILDER_IMAGE_REVISION}"
+  extends: .arm64_branch_template
 OpenSUSE-15.4-branch:
   image: "${BUILDER_IMAGE_REGISTRY}/opensuse_15.4:${BUILDER_IMAGE_REVISION}"
   extends: .branch_template
 OpenSUSE-15.4-arm64-branch:
   image: "${BUILDER_IMAGE_REGISTRY}/opensuse_15.4_arm64:${BUILDER_IMAGE_REVISION}"
+  extends: .arm64_branch_template
+OpenSUSE-15.5-branch:
+  image: "${BUILDER_IMAGE_REGISTRY}/opensuse_15.5:${BUILDER_IMAGE_REVISION}"
   extends: .branch_template
-  tags:
-  - docker-arm-builder
+OpenSUSE-15.5-arm64-branch:
+  image: "${BUILDER_IMAGE_REGISTRY}/opensuse_15.5_arm64:${BUILDER_IMAGE_REVISION}"
+  extends: .arm64_branch_template
 AmazonLinux-2-branch:
   image: "${BUILDER_IMAGE_REGISTRY}/amazonlinux_2:${BUILDER_IMAGE_REVISION}"
   extends: .branch_template
 AmazonLinux-2-arm64-branch:
   image: "${BUILDER_IMAGE_REGISTRY}/amazonlinux_2_arm64:${BUILDER_IMAGE_REVISION}"
+  extends: .arm64_branch_template
+AmazonLinux-2023-branch:
+  image: "${BUILDER_IMAGE_REGISTRY}/amazonlinux_2023:${BUILDER_IMAGE_REVISION}"
   extends: .branch_template
-  tags:
-  - docker-arm-builder
+AmazonLinux-2023-arm64-branch:
+  image: "${BUILDER_IMAGE_REGISTRY}/amazonlinux_2023_arm64:${BUILDER_IMAGE_REVISION}"
+  extends: .arm64_branch_template
 SLES-12.5-branch:
-  image: "${BUILDER_IMAGE_REGISTRY}/sles_12sp5:${BUILDER_IMAGE_REVISION}"
+  image: "${DEV_BUILDER_IMAGE_REGISTRY}/sles_12sp5:${BUILDER_IMAGE_REVISION}"
   extends: .branch_template
+  variables:
+    DOCKER_AUTH_CONFIG: $DEV_BUILDER_DOCKER_AUTH_CONFIG
   rules:
     - !reference [.default_rules, rules]
     - if: '$PIPELINE_TYPE =~ /EE_(NIGHTLY|BRANCH)_BUILD_PIPELINE$/'
 SLES-15.2-branch:
-  image: "${BUILDER_IMAGE_REGISTRY}/sles_15sp2:${BUILDER_IMAGE_REVISION}"
+  image: "${DEV_BUILDER_IMAGE_REGISTRY}/sles_15sp2:${BUILDER_IMAGE_REVISION}"
   extends: .branch_template
+  variables:
+    DOCKER_AUTH_CONFIG: $DEV_BUILDER_DOCKER_AUTH_CONFIG
   rules:
     - !reference [.default_rules, rules]
     - if: '$PIPELINE_TYPE =~ /EE_(NIGHTLY|BRANCH)_BUILD_PIPELINE$/'
 AmazonLinux-2-fips-branch:
   image: "${BUILDER_IMAGE_REGISTRY}/amazonlinux_2_fips:${BUILDER_IMAGE_REVISION}"
   extends: .fips_branch_template
-CentOS-8-fips-branch:
-  image: "${BUILDER_IMAGE_REGISTRY}/centos_8_fips:${BUILDER_IMAGE_REVISION}"
+AlmaLinux-8-fips-branch:
+  image: "${BUILDER_IMAGE_REGISTRY}/almalinux_8_fips:${BUILDER_IMAGE_REVISION}"
   extends: .fips_branch_template
 Ubuntu-18.04-fips-branch:
   image: "${BUILDER_IMAGE_REGISTRY}/ubuntu_18.04_fips:${BUILDER_IMAGE_REVISION}"
@@ -381,11 +382,10 @@ Docker-branch:
   - bundle exec rake docker:build:image
   - bundle exec rake docker:push:staging
   - bundle exec rake docker:push:nightly
-  tags:
-  - docker-builder
+  tags: !reference [.distribution-amd64-tags]
   cache: !reference [.branch-cache]
   needs:
-    - job: Ubuntu-20.04-branch
+    - job: Ubuntu-22.04-branch
       artifacts: false
     - job: generate-facts
       optional: true
@@ -408,18 +408,16 @@ QA-branch:
         bundle exec rake qa:push:staging;
       else
         bundle exec rake qa:copy:nightly;
-        bundle exec rake qa:copy:staging;
       fi
   artifacts:
     when: on_failure
     expire_in: 7d
     paths:
     - screenshots/
-  tags:
-  - docker-builder
+  tags: !reference [.distribution-amd64-tags]
   cache: !reference [.branch-cache]
   needs:
-    - job: Ubuntu-20.04-branch
+    - job: Ubuntu-22.04-branch
       artifacts: false
     - job: generate-facts
       optional: true
@@ -440,12 +438,12 @@ Raspberry-Pi-2-Bullseye-branch:
 # This job runs only on nightly EE builds
 RAT-Nightly:
   stage: slow_jobs
-  image: "${BUILDER_IMAGE_REGISTRY}/ubuntu_16.04:${BUILDER_IMAGE_REVISION}"
+  image: "${BUILDER_IMAGE_REGISTRY}/ubuntu_22.04:${BUILDER_IMAGE_REVISION}"
   script:
     - bundle exec rake qa:rat:nightly
   cache: !reference [.branch-cache]
   needs:
-    - Ubuntu-20.04-branch
+    - Ubuntu-22.04-branch
   allow_failure: true
   rules:
     - !reference [.default_rules, rules]
@@ -454,7 +452,7 @@ RAT-Nightly:
 # This job runs only on nightly EE builds
 RAT-Nightly-FIPS:
   stage: slow_jobs
-  image: "${BUILDER_IMAGE_REGISTRY}/ubuntu_16.04:${BUILDER_IMAGE_REVISION}"
+  image: "${BUILDER_IMAGE_REGISTRY}/almalinux_8_fips:${BUILDER_IMAGE_REVISION}"
   variables:
     USE_SYSTEM_SSL: "true"
     RAT_REFERENCE_ARCHITECTURE: "omnibus-gitlab-mrs-fips"
@@ -462,7 +460,7 @@ RAT-Nightly-FIPS:
     - bundle exec rake qa:rat:nightly
   cache: !reference [.branch-cache]
   needs:
-    - CentOS-8-fips-branch
+    - AlmaLinux-8-fips-branch
   allow_failure: true
   rules:
     - !reference [.default_rules, rules]
@@ -473,16 +471,6 @@ RAT-Nightly-FIPS:
 ############################
 
 # fetch-assets job from .gitlab-ci.yml file runs here
-
-# We build package for deploying to GitLab.com first
-Ubuntu-16.04:
-  image: "${BUILDER_IMAGE_REGISTRY}/ubuntu_16.04:${BUILDER_IMAGE_REVISION}"
-  stage: package
-  extends: .tag_template
-  rules:
-    - !reference [.default_rules, rules]
-  # Also build for auto-deploy tags
-    - if: '$PIPELINE_TYPE =~ /(_RC|_TAG|AUTO_DEPLOY)_BUILD_PIPELINE$/'
 
 Ubuntu-18.04:
   image: "${BUILDER_IMAGE_REGISTRY}/ubuntu_18.04:${BUILDER_IMAGE_REVISION}"
@@ -506,6 +494,10 @@ Ubuntu-22.04:
   image: "${BUILDER_IMAGE_REGISTRY}/ubuntu_22.04:${BUILDER_IMAGE_REVISION}"
   stage: package
   extends: .tag_template
+  rules:
+    - !reference [.default_rules, rules]
+  # Also build for auto-deploy tags
+    - if: '$PIPELINE_TYPE =~ /(_RC|_TAG|AUTO_DEPLOY)_BUILD_PIPELINE$/'
 
 ## Build the docker image for QA
 ## This is necessary for the deployment
@@ -515,16 +507,10 @@ Docker-QA:
   extends: .docker_job
   stage: image
   script:
-    # For downstream users like JiHu to retain original behavior
-    - if [ "$BUILD_GITLAB_QA_IMAGE" == "true" ]; then
-        bundle exec rake qa:build;
-        bundle exec rake qa:push:staging;
-      else
-        bundle exec rake qa:copy:staging;
-      fi
+    - bundle exec rake qa:build
+    - bundle exec rake qa:push:staging
   cache: !reference [.tag-cache]
-  tags:
-  - docker-builder
+  tags: !reference [.distribution-amd64-tags]
   needs:
     - job: generate-facts
       optional: true
@@ -532,6 +518,9 @@ Docker-QA:
   retry: 1
   rules:
     - !reference [.default_rules, rules]
+    # For downstream users like JiHu to retain original behavior
+    - if: '$BUILD_GITLAB_QA_IMAGE != "true"'
+      when: never
     - if: '$PIPELINE_TYPE =~ /(_RC|_TAG)_BUILD_PIPELINE$/'
 
 ###########################################################
@@ -541,21 +530,10 @@ Docker-QA:
 ##   not auto-deploys are deployed to
 ##   $PATCH_DEPLOY_ENVIRONMENT, set in CI vars
 ##
-##  Ubuntu 16.04: used for all omnibus installation
+##  Ubuntu 22.04: used for all omnibus installation
 ##  Ubuntu 18.04: used on some non-omnibus infrastructure, we
 ##                will eventually need to trigger deployments
 ##                after this package is built
-
-Ubuntu-16.04-upload-deploy:
-  extends: .staging_upload_with_deployment_template
-  needs:
-    - job: Ubuntu-16.04
-      optional: true
-    - job: Ubuntu-16.04-branch
-      optional: true
-  rules:
-    - !reference [.default_rules, rules]
-    - if: '$PIPELINE_TYPE =~ /(_RC|_TAG|AUTO_DEPLOY|NIGHTLY)_BUILD_PIPELINE$/'
 
 Ubuntu-18.04-staging:
   extends: .staging_upload_with_deployment_template
@@ -586,69 +564,85 @@ Ubuntu-22.04-staging:
       optional: true
     - job: Ubuntu-22.04-branch
       optional: true
+  rules:
+    - !reference [.default_rules, rules]
+    - if: '$PIPELINE_TYPE =~ /(_RC|_TAG|AUTO_DEPLOY|NIGHTLY)_BUILD_PIPELINE$/'
+
+Ubuntu-22.04-arm64-staging:
+  extends: .staging_upload_template
+  needs:
+    - job: Ubuntu-22.04-arm64
+      optional: true
+    - job: Ubuntu-22.04-arm64-branch
+      optional: true
+  rules:
+    - !reference [.default_rules, rules]
+    - if: '$PIPELINE_TYPE =~ /(_RC|_TAG|NIGHTLY)_BUILD_PIPELINE$/'
 
 ### Package builds
 Debian-10:
   image: "${BUILDER_IMAGE_REGISTRY}/debian_10:${BUILDER_IMAGE_REVISION}"
   extends: .tag_template
-Debian-10-arm:
+Debian-10-arm64:
   image: "${BUILDER_IMAGE_REGISTRY}/debian_10_arm64:${BUILDER_IMAGE_REVISION}"
-  extends: .tag_template
-  tags:
-  - docker-arm-builder
+  extends: .arm64_tag_template
 Debian-11:
   image: "${BUILDER_IMAGE_REGISTRY}/debian_11:${BUILDER_IMAGE_REVISION}"
   extends: .tag_template
-Debian-11-arm:
+Debian-11-arm64:
   image: "${BUILDER_IMAGE_REGISTRY}/debian_11_arm64:${BUILDER_IMAGE_REVISION}"
+  extends: .arm64_tag_template
+Debian-12:
+  image: "${BUILDER_IMAGE_REGISTRY}/debian_12:${BUILDER_IMAGE_REVISION}"
   extends: .tag_template
-  tags:
-  - docker-arm-builder
-Ubuntu-20.04-arm:
+Debian-12-arm64:
+  image: "${BUILDER_IMAGE_REGISTRY}/debian_12_arm64:${BUILDER_IMAGE_REVISION}"
+  extends: .arm64_tag_template
+Ubuntu-20.04-arm64:
   image: "${BUILDER_IMAGE_REGISTRY}/ubuntu_20.04_arm64:${BUILDER_IMAGE_REVISION}"
-  extends: .tag_template
-  tags:
-  - docker-arm-builder
-Ubuntu-22.04-arm:
+  extends: .arm64_tag_template
+Ubuntu-22.04-arm64:
   image: "${BUILDER_IMAGE_REGISTRY}/ubuntu_22.04_arm64:${BUILDER_IMAGE_REVISION}"
-  extends: .tag_template
-  tags:
-  - docker-arm-builder
+  extends: .arm64_tag_template
 CentOS-7:
   image: "${BUILDER_IMAGE_REGISTRY}/centos_7:${BUILDER_IMAGE_REVISION}"
   extends: .tag_template
-CentOS-8:
-  image: "${BUILDER_IMAGE_REGISTRY}/centos_8:${BUILDER_IMAGE_REVISION}"
+AlmaLinux-8:
+  image: "${BUILDER_IMAGE_REGISTRY}/almalinux_8:${BUILDER_IMAGE_REVISION}"
   extends: .tag_template
-CentOS-8-arm64:
-  image: "${BUILDER_IMAGE_REGISTRY}/centos_8_arm64:${BUILDER_IMAGE_REVISION}"
+AlmaLinux-8-arm64:
+  image: "${BUILDER_IMAGE_REGISTRY}/almalinux_8_arm64:${BUILDER_IMAGE_REVISION}"
+  extends: .arm64_tag_template
+AlmaLinux-9:
+  image: "${BUILDER_IMAGE_REGISTRY}/almalinux_9:${BUILDER_IMAGE_REVISION}"
   extends: .tag_template
-  tags:
-  - docker-arm-builder
-OpenSUSE-15.3:
-  image: "${BUILDER_IMAGE_REGISTRY}/opensuse_15.3:${BUILDER_IMAGE_REVISION}"
-  extends: .tag_template
-OpenSUSE-15.3-arm64:
-  image: "${BUILDER_IMAGE_REGISTRY}/opensuse_15.3_arm64:${BUILDER_IMAGE_REVISION}"
-  extends: .tag_template
-  tags:
-  - docker-arm-builder
+AlmaLinux-9-arm64:
+  image: "${BUILDER_IMAGE_REGISTRY}/almalinux_9_arm64:${BUILDER_IMAGE_REVISION}"
+  extends: .arm64_tag_template
 OpenSUSE-15.4:
   image: "${BUILDER_IMAGE_REGISTRY}/opensuse_15.4:${BUILDER_IMAGE_REVISION}"
   extends: .tag_template
 OpenSUSE-15.4-arm64:
   image: "${BUILDER_IMAGE_REGISTRY}/opensuse_15.4_arm64:${BUILDER_IMAGE_REVISION}"
+  extends: .arm64_tag_template
+OpenSUSE-15.5:
+  image: "${BUILDER_IMAGE_REGISTRY}/opensuse_15.5:${BUILDER_IMAGE_REVISION}"
   extends: .tag_template
-  tags:
-  - docker-arm-builder
+OpenSUSE-15.5-arm64:
+  image: "${BUILDER_IMAGE_REGISTRY}/opensuse_15.5_arm64:${BUILDER_IMAGE_REVISION}"
+  extends: .arm64_tag_template
 AmazonLinux-2:
   image: "${BUILDER_IMAGE_REGISTRY}/amazonlinux_2:${BUILDER_IMAGE_REVISION}"
   extends: .tag_template
 AmazonLinux-2-arm64:
   image: "${BUILDER_IMAGE_REGISTRY}/amazonlinux_2_arm64:${BUILDER_IMAGE_REVISION}"
+  extends: .arm64_tag_template
+AmazonLinux-2023:
+  image: "${BUILDER_IMAGE_REGISTRY}/amazonlinux_2023:${BUILDER_IMAGE_REVISION}"
   extends: .tag_template
-  tags:
-  - docker-arm-builder
+AmazonLinux-2023-arm64:
+  image: "${BUILDER_IMAGE_REGISTRY}/amazonlinux_2023_arm64:${BUILDER_IMAGE_REVISION}"
+  extends: .arm64_tag_template
 SLES-12.5:
   image: "${BUILDER_IMAGE_REGISTRY}/sles_12sp5:${BUILDER_IMAGE_REVISION}"
   extends: .tag_template
@@ -664,8 +658,8 @@ SLES-15.2:
 AmazonLinux-2-fips:
   image: "${BUILDER_IMAGE_REGISTRY}/amazonlinux_2_fips:${BUILDER_IMAGE_REVISION}"
   extends: .fips_tag_template
-CentOS-8-fips:
-  image: "${BUILDER_IMAGE_REGISTRY}/centos_8_fips:${BUILDER_IMAGE_REVISION}"
+AlmaLinux-8-fips:
+  image: "${BUILDER_IMAGE_REGISTRY}/almalinux_8_fips:${BUILDER_IMAGE_REVISION}"
   extends: .fips_tag_template
 Ubuntu-18.04-fips:
   image: "${BUILDER_IMAGE_REGISTRY}/ubuntu_18.04_fips:${BUILDER_IMAGE_REVISION}"
@@ -680,11 +674,10 @@ Docker:
   script:
   - bundle exec rake docker:build:image
   - bundle exec rake docker:push:staging
-  tags:
-  - docker-builder
+  tags: !reference [.distribution-amd64-tags]
   cache: !reference [.tag-cache]
   needs:
-    - job: Ubuntu-20.04
+    - job: Ubuntu-22.04
       artifacts: false
     - job: generate-facts
       optional: true
@@ -702,12 +695,12 @@ Debian-10-staging:
       optional: true
     - job: Debian-10-branch
       optional: true
-Debian-10-arm-staging:
+Debian-10-arm64-staging:
   extends: .staging_upload_template
   needs:
-    - job: Debian-10-arm
+    - job: Debian-10-arm64
       optional: true
-    - job: Debian-10-arm-branch
+    - job: Debian-10-arm64-branch
       optional: true
 Debian-11-staging:
   extends: .staging_upload_template
@@ -716,26 +709,33 @@ Debian-11-staging:
       optional: true
     - job: Debian-11-branch
       optional: true
-Debian-11-arm-staging:
+Debian-11-arm64-staging:
   extends: .staging_upload_template
   needs:
-    - job: Debian-11-arm
+    - job: Debian-11-arm64
       optional: true
-    - job: Debian-11-arm-branch
+    - job: Debian-11-arm64-branch
       optional: true
-Ubuntu-20.04-arm-staging:
+Debian-12-staging:
   extends: .staging_upload_template
   needs:
-    - job: Ubuntu-20.04-arm
+    - job: Debian-12
       optional: true
-    - job: Ubuntu-20.04-arm-branch
+    - job: Debian-12-branch
       optional: true
-Ubuntu-22.04-arm-staging:
+Debian-12-arm64-staging:
   extends: .staging_upload_template
   needs:
-    - job: Ubuntu-22.04-arm
+    - job: Debian-12-arm64
       optional: true
-    - job: Ubuntu-22.04-arm-branch
+    - job: Debian-12-arm64-branch
+      optional: true
+Ubuntu-20.04-arm64-staging:
+  extends: .staging_upload_template
+  needs:
+    - job: Ubuntu-20.04-arm64
+      optional: true
+    - job: Ubuntu-20.04-arm64-branch
       optional: true
 CentOS-7-staging:
   extends: .staging_upload_template
@@ -744,33 +744,33 @@ CentOS-7-staging:
       optional: true
     - job: CentOS-7-branch
       optional: true
-CentOS-8-staging:
+AlmaLinux-8-staging:
   extends: .staging_upload_template
   needs:
-    - job: CentOS-8
+    - job: AlmaLinux-8
       optional: true
-    - job: CentOS-8-branch
+    - job: AlmaLinux-8-branch
       optional: true
-CentOS-8-arm64-staging:
+AlmaLinux-8-arm64-staging:
   extends: .staging_upload_template
   needs:
-    - job: CentOS-8-arm64
+    - job: AlmaLinux-8-arm64
       optional: true
-    - job: CentOS-8-arm64-branch
+    - job: AlmaLinux-8-arm64-branch
       optional: true
-OpenSUSE-15.3-staging:
+AlmaLinux-9-staging:
   extends: .staging_upload_template
   needs:
-    - job: OpenSUSE-15.3
+    - job: AlmaLinux-9
       optional: true
-    - job: OpenSUSE-15.3-branch
+    - job: AlmaLinux-9-branch
       optional: true
-OpenSUSE-15.3-arm64-staging:
+AlmaLinux-9-arm64-staging:
   extends: .staging_upload_template
   needs:
-    - job: OpenSUSE-15.3-arm64
+    - job: AlmaLinux-9-arm64
       optional: true
-    - job: OpenSUSE-15.3-arm64-branch
+    - job: AlmaLinux-9-arm64-branch
       optional: true
 OpenSUSE-15.4-staging:
   extends: .staging_upload_template
@@ -786,6 +786,20 @@ OpenSUSE-15.4-arm64-staging:
       optional: true
     - job: OpenSUSE-15.4-arm64-branch
       optional: true
+OpenSUSE-15.5-staging:
+  extends: .staging_upload_template
+  needs:
+    - job: OpenSUSE-15.5
+      optional: true
+    - job: OpenSUSE-15.5-branch
+      optional: true
+OpenSUSE-15.5-arm64-staging:
+  extends: .staging_upload_template
+  needs:
+    - job: OpenSUSE-15.5-arm64
+      optional: true
+    - job: OpenSUSE-15.5-arm64-branch
+      optional: true
 AmazonLinux-2-staging:
   extends: .staging_upload_template
   needs:
@@ -799,6 +813,20 @@ AmazonLinux-2-arm64-staging:
     - job: AmazonLinux-2-arm64
       optional: true
     - job: AmazonLinux-2-arm64-branch
+      optional: true
+AmazonLinux-2023-staging:
+  extends: .staging_upload_template
+  needs:
+    - job: AmazonLinux-2023
+      optional: true
+    - job: AmazonLinux-2023-branch
+      optional: true
+AmazonLinux-2023-arm64-staging:
+  extends: .staging_upload_template
+  needs:
+    - job: AmazonLinux-2023-arm64
+      optional: true
+    - job: AmazonLinux-2023-arm64-branch
       optional: true
 SLES-12.5-staging:
   extends: .staging_upload_template
@@ -827,12 +855,12 @@ AmazonLinux-2-fips-staging:
       optional: true
     - job: AmazonLinux-2-fips-branch
       optional: true
-CentOS-8-fips-staging:
+AlmaLinux-8-fips-staging:
   extends: .fips_staging_upload_template
   needs:
-    - job: CentOS-8-fips
+    - job: AlmaLinux-8-fips
       optional: true
-    - job: CentOS-8-fips-branch
+    - job: AlmaLinux-8-fips-branch
       optional: true
 Ubuntu-18.04-fips-staging:
   extends: .fips_staging_upload_template
@@ -862,50 +890,58 @@ Ubuntu-22.04-release:
   extends: .production_release_template
   needs:
     - Ubuntu-22.04
-Ubuntu-20.04-arm-release:
+Ubuntu-20.04-arm64-release:
   extends: .production_release_template
   needs:
-    - Ubuntu-20.04-arm
-Ubuntu-22.04-arm-release:
+    - Ubuntu-20.04-arm64
+Ubuntu-22.04-arm64-release:
   extends: .production_release_template
   needs:
-    - Ubuntu-22.04-arm
+    - Ubuntu-22.04-arm64
 Debian-10-release:
   extends: .production_release_template
   needs:
     - Debian-10
-Debian-10-arm-release:
+Debian-10-arm64-release:
   extends: .production_release_template
   needs:
-    - Debian-10-arm
+    - Debian-10-arm64
 Debian-11-release:
   extends: .production_release_template
   needs:
     - Debian-11
-Debian-11-arm-release:
+Debian-11-arm64-release:
   extends: .production_release_template
   needs:
-    - Debian-11-arm
+    - Debian-11-arm64
+Debian-12-release:
+  extends: .production_release_template
+  needs:
+    - Debian-12
+Debian-12-arm64-release:
+  extends: .production_release_template
+  needs:
+    - Debian-12-arm64
 CentOS-7-release:
   extends: .production_release_template
   needs:
     - CentOS-7
-CentOS-8-release:
+AlmaLinux-8-release:
   extends: .production_release_template
   needs:
-    - CentOS-8
-CentOS-8-arm64-release:
+    - AlmaLinux-8
+AlmaLinux-8-arm64-release:
   extends: .production_release_template
   needs:
-    - CentOS-8-arm64
-OpenSUSE-15.3-release:
+    - AlmaLinux-8-arm64
+AlmaLinux-9-release:
   extends: .production_release_template
   needs:
-    - OpenSUSE-15.3
-OpenSUSE-15.3-arm64-release:
+    - AlmaLinux-9
+AlmaLinux-9-arm64-release:
   extends: .production_release_template
   needs:
-    - OpenSUSE-15.3-arm64
+    - AlmaLinux-9-arm64
 OpenSUSE-15.4-release:
   extends: .production_release_template
   needs:
@@ -914,6 +950,14 @@ OpenSUSE-15.4-arm64-release:
   extends: .production_release_template
   needs:
     - OpenSUSE-15.4-arm64
+OpenSUSE-15.5-release:
+  extends: .production_release_template
+  needs:
+    - OpenSUSE-15.5
+OpenSUSE-15.5-arm64-release:
+  extends: .production_release_template
+  needs:
+    - OpenSUSE-15.5-arm64
 AmazonLinux-2-release:
   extends: .production_release_template
   needs:
@@ -922,6 +966,14 @@ AmazonLinux-2-arm64-release:
   extends: .production_release_template
   needs:
     - AmazonLinux-2-arm64
+AmazonLinux-2023-release:
+  extends: .production_release_template
+  needs:
+    - AmazonLinux-2023
+AmazonLinux-2023-arm64-release:
+  extends: .production_release_template
+  needs:
+    - AmazonLinux-2023-arm64
 SLES-12.5-release:
   extends: .production_release_template
   needs:
@@ -944,10 +996,10 @@ AmazonLinux-2-fips-release:
   extends: .fips_release_template
   needs:
     - AmazonLinux-2-fips
-CentOS-8-fips-release:
+AlmaLinux-8-fips-release:
   extends: .fips_release_template
   needs:
-    - CentOS-8-fips
+    - AlmaLinux-8-fips
 Ubuntu-18.04-fips-release:
   extends: .fips_release_template
   needs:
@@ -973,6 +1025,7 @@ Docker-Release:
     - !reference [.skip_release_jobs, rules]
     - if: '$PIPELINE_TYPE =~ /_(RC|TAG)_BUILD_PIPELINE$/'
       when: manual
+  tags: !reference [.distribution-amd64-tags]
 
 AWS:
   extends: .aws_ami_build
@@ -1004,7 +1057,7 @@ AWS-Premium:
 
 QA-Tag:
   extends: .docker_job
-  stage: package-and-image-release
+  stage: qa-release
   variables:
     QA_SCREENSHOTS_DIR: $CI_PROJECT_DIR/screenshots
   script:
@@ -1014,11 +1067,9 @@ QA-Tag:
     expire_in: 7d
     paths:
     - screenshots/
-  tags:
-  - docker-builder
+  tags: !reference [.distribution-amd64-tags]
   cache: !reference [.tag-cache]
   needs:
-    - Docker-QA
     - job: generate-facts
       optional: true
       artifacts: true
@@ -1026,16 +1077,19 @@ QA-Tag:
   rules:
     - !reference [.default_rules, rules]
     - !reference [.skip_release_jobs, rules]
+    # For downstream users like JiHu to retain original behavior
+    - if: '$BUILD_GITLAB_QA_IMAGE != "true"'
+      when: never
     - if: '$PIPELINE_TYPE =~ /_(RC|TAG)_BUILD_PIPELINE$/'
       when: manual
+      allow_failure: true
 
 license-upload:
   stage: metrics
   image: "${BUILDER_IMAGE_REGISTRY}/ubuntu_18.04:${BUILDER_IMAGE_REVISION}"
   script:
     - bundle exec rake license:upload
-  tags:
-  - docker-builder
+  tags: !reference [.distribution-amd64-tags]
   cache: !reference [.tag-cache]
   needs:
     - Ubuntu-18.04
@@ -1045,14 +1099,30 @@ license-upload:
     - if: '$PIPELINE_TYPE =~ /_(RC|TAG)_BUILD_PIPELINE$/'
       when: manual
 
+manifest-upload:
+  stage: metrics
+  image: "${BUILDER_IMAGE_REGISTRY}/ubuntu_18.04:${BUILDER_IMAGE_REVISION}"
+  script:
+    - bundle exec rake manifest:upload
+  tags: !reference [.distribution-amd64-tags]
+  cache: !reference [.tag-cache]
+  needs:
+    - Ubuntu-18.04
+  allow_failure: true
+  rules:
+    - !reference [.default_rules, rules]
+    - !reference [.skip_release_jobs, rules]
+    - if: '$PIPELINE_TYPE =~ /_(RC|TAG)_BUILD_PIPELINE$/'
+      when: manual
+
 RAT-Tag:
   stage: slow_jobs
-  image: "dev.gitlab.org:5005/cookbooks/gitlab-omnibus-builder/ubuntu_16.04:${BUILDER_IMAGE_REVISION}"
+  image: "dev.gitlab.org:5005/cookbooks/gitlab-omnibus-builder/ubuntu_22.04:${BUILDER_IMAGE_REVISION}"
   script:
     - bundle exec rake qa:rat:tag
   cache: !reference [.tag-cache]
   needs:
-    - Ubuntu-20.04
+    - Ubuntu-22.04
   allow_failure: true
   rules:
     - !reference [.default_rules, rules]
@@ -1109,9 +1179,9 @@ check-packages:
     - !reference [.default_rules, rules]
     - if: '$PIPELINE_TYPE =~ /_TAG_BUILD_PIPELINE$/'
 
-print-release-contents:
+create-gitlab-release:
   stage: package-and-image-release
-  image: "${BUILDER_IMAGE_REGISTRY}/ubuntu_20.04-ruby:${BUILDER_IMAGE_REVISION}"
+  image: "${BUILDER_IMAGE_REGISTRY}/distribution_ci_tools:${BUILDER_IMAGE_REVISION}"
   needs:
     - job: AWS
       artifacts: true
@@ -1124,7 +1194,11 @@ print-release-contents:
       artifacts: true
       optional: true
   script:
-    - bundle exec rake release:print_details
+    - bundle exec rake release:print_details | tee release_info.txt
+  release:
+    name: "GitLab ${GITLAB_EDITION} ${CI_COMMIT_TAG}"
+    tag_name: $CI_COMMIT_TAG
+    description: './release_info.txt'
   allow_failure: true
   rules:
     - !reference [.default_rules, rules]

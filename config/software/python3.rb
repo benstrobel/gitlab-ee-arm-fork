@@ -23,7 +23,7 @@ name 'python3'
 # files/gitlab-cookbooks/gitlab/attributes/default.rb
 # spec/chef/recipes/gitaly_spec.rb
 # spec/chef/recipes/gitlab-rails_spec.rb
-default_version '3.9.6'
+default_version '3.9.17'
 
 dependency 'libedit'
 dependency 'ncurses'
@@ -40,7 +40,7 @@ license_file 'LICENSE'
 skip_transitive_dependency_licensing true
 
 source url: "https://www.python.org/ftp/python/#{version}/Python-#{version}.tgz",
-       sha256: 'd0a35182e19e416fc8eae25a3dcd4d02d4997333e4ad1f2eee6010aadc3fe866'
+       sha256: '8ead58f669f7e19d777c3556b62fae29a81d7f06a7122ff9bc57f7dd82d7e014'
 
 relative_path "Python-#{version}"
 
@@ -59,13 +59,20 @@ build do
   # linked to system `nsl` and `tirpc` libraries and thus fails omnibus
   # healthcheck in Debian 11 and Ubuntu 22.04.
   patch source: 'skip-nis-build.patch' if
-    (ohai['platform_family'] =~ /^debian/ && ohai['platform_version'] =~ /^11/) ||
+    (ohai['platform_family'] =~ /^debian/ && (ohai['platform_version'] =~ /^11/ || ohai['platform_version'] =~ /^12/)) ||
       (ohai['platform'] =~ /^ubuntu/ && ohai['platform_version'] =~ /^22/)
+
+  with_openssl = ''
+  if (ohai['platform'] =~ /^amzn/ || ohai['platform'] =~ /^amazon/) && (ohai['platform_version'] == "2023")
+    patch source: 'custom-openssl.patch'
+    with_openssl = "--with-opensssl=/usr/local/openssl"
+  end
 
   command ['./configure',
            "--prefix=#{install_dir}/embedded",
            '--enable-shared',
            '--with-readline=editline',
+           with_openssl,
            '--with-dbmliborder='].join(' '), env: env
   make env: env
   make 'install', env: env

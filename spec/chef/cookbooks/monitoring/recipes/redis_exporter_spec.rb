@@ -21,13 +21,13 @@ RSpec.describe 'monitoring::redis-exporter' do
     end
 
     it 'defaults the redis-exporter to being disabled' do
-      expect(node['monitoring']['redis-exporter']['enable']).to eq false
+      expect(node['monitoring']['redis_exporter']['enable']).to eq false
     end
 
     it 'allows redis-exporter to be explicitly enabled' do
       stub_gitlab_rb(redis_exporter: { enable: true })
 
-      expect(node['monitoring']['redis-exporter']['enable']).to eq true
+      expect(node['monitoring']['redis_exporter']['enable']).to eq true
     end
   end
 
@@ -56,15 +56,7 @@ RSpec.describe 'monitoring::redis-exporter' do
         }
 
       expect(chef_run).to render_file('/opt/gitlab/sv/redis-exporter/log/run')
-        .with_content(/exec svlogd -tt \/var\/log\/gitlab\/redis-exporter/)
-    end
-
-    it 'creates default set of directories' do
-      expect(chef_run).to create_directory('/var/log/gitlab/redis-exporter').with(
-        owner: 'gitlab-redis',
-        group: nil,
-        mode: '0700'
-      )
+        .with_content(/svlogd -tt \/var\/log\/gitlab\/redis-exporter/)
     end
 
     it 'sets default flags' do
@@ -87,7 +79,7 @@ RSpec.describe 'monitoring::redis-exporter' do
 
     it 'populates the files with expected configuration' do
       expect(chef_run).to render_file('/opt/gitlab/sv/redis-exporter/log/run')
-        .with_content(/exec svlogd -tt foo/)
+        .with_content(/svlogd -tt foo/)
     end
   end
 
@@ -125,6 +117,27 @@ RSpec.describe 'monitoring::redis-exporter' do
           }
         )
       )
+    end
+  end
+
+  context 'log directory and runit group' do
+    context 'default values' do
+      before do
+        stub_gitlab_rb(redis_exporter: { enable: true })
+      end
+      it_behaves_like 'enabled logged service', 'redis-exporter', true, { log_directory_owner: 'gitlab-redis' }
+    end
+
+    context 'custom values' do
+      before do
+        stub_gitlab_rb(
+          redis_exporter: {
+            enable: true,
+            log_group: 'fugee'
+          }
+        )
+      end
+      it_behaves_like 'enabled logged service', 'redis-exporter', true, { log_directory_owner: 'gitlab-redis', log_group: 'fugee' }
     end
   end
 

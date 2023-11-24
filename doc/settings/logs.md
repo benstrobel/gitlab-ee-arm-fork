@@ -1,12 +1,13 @@
 ---
-stage: Monitor
-group: Monitor
+stage: Systems
+group: Distribution
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://about.gitlab.com/handbook/product/ux/technical-writing/#assignments
 ---
 
-# Omnibus GitLab logs **(FREE SELF)**
+# Logs on Linux package installations **(FREE SELF)**
 
-GitLab includes an [advanced log system](https://docs.gitlab.com/ee/administration/logs/index.html) where every service and component within GitLab will output system logs. Here are the Omnibus configuration settings and tools for managing these logs.
+GitLab includes an [advanced log system](https://docs.gitlab.com/ee/administration/logs/index.html) where every service and component within GitLab will output system logs.
+Here are the configuration settings and tools for managing these logs on Linux package installations.
 
 ## Tail logs in a console on the server
 
@@ -47,11 +48,18 @@ registry['log_directory'] = "/var/log/gitlab/registry"
 ...
 ```
 
+Gitaly and Mattermost have different log directory configs:
+
+```ruby
+gitaly['configuration']['logging']['dir'] = "/var/log/gitlab/registry"
+mattermost['log_file_directory'] = "/var/log/gitlab/registry"
+```
+
 Run `sudo gitlab-ctl reconfigure` to configure your instance with these settings.
 
 ## runit logs
 
-The [runit-managed](../architecture/index.md#runit) services in Omnibus GitLab generate log data using
+The [runit-managed](../architecture/index.md#runit) services in Linux package installations generate log data using
 `svlogd`.
 
 - Logs are written to a file called `current`.
@@ -156,8 +164,8 @@ To manually trigger GitLab log rotation with `logrotate`, use the following comm
 
 ## UDP log forwarding **(PREMIUM SELF)**
 
-Omnibus GitLab can utilize the UDP logging feature in svlogd as well as sending non-svlogd logs to a syslog-compatible remote system using UDP.
-To configure Omnibus GitLab to send syslog-protocol messages via UDP, use the following settings:
+Linux package installations can utilize the UDP logging feature in svlogd as well as sending non-svlogd logs to a syslog-compatible remote system using UDP.
+To configure a Linux package installation to send syslog-protocol messages via UDP, use the following settings:
 
 ```ruby
 logging['udp_log_shipping_host'] = '1.2.3.4' # Your syslog server
@@ -199,8 +207,7 @@ mattermost_nginx['log_format'] = 'my format string $foo $bar'
 
 Structured logs can be exported via JSON to be parsed by Elasticsearch,
 Splunk, or another log management system.
-[Beginning in Omnibus GitLab 12.0](https://gitlab.com/gitlab-org/omnibus-gitlab/-/issues/4102),
-the JSON format is enabled by default for all services that support it.
+The JSON format is enabled by default for all services that support it.
 
 NOTE:
 PostgreSQL does not support JSON logging without an
@@ -226,7 +233,7 @@ gitaly['logging_format'] = ''
 gitlab_shell['log_format'] = 'text'
 gitlab_workhorse['log_format'] = 'text'
 registry['log_formatter'] = 'text'
-sidekiq['log_format'] = 'default'
+sidekiq['log_format'] = 'text'
 gitlab_pages['log_format'] = 'text'
 ```
 
@@ -238,14 +245,14 @@ There are a few variations in attribute names for the log format depending on th
 GitLab ships with [`rbtrace`](https://github.com/tmm1/rbtrace), which
 allows you to trace Ruby code, view all running threads, take memory dumps,
 and more. However, this is not enabled by default. To enable it, define the
-`ENABLE_RBTRACE` variable to the environment. In Omnibus:
+`ENABLE_RBTRACE` variable to the environment:
 
 ```ruby
 gitlab_rails['env'] = {"ENABLE_RBTRACE" => "1"}
 ```
 
 Then reconfigure the system and restart Puma and Sidekiq. To run this
-in Omnibus, run as root:
+in a Linux package installation, run as root:
 
 ```ruby
 /opt/gitlab/embedded/bin/ruby /opt/gitlab/embedded/bin/rbtrace
@@ -274,3 +281,29 @@ NOTE:
 You [cannot edit](https://gitlab.com/groups/gitlab-org/-/epics/6034)
 the `log_level` for other GitLab logs, for example
 `production_json.log`, `sidekiq.log`, and so on.
+
+## Setting a custom log group
+
+GitLab supports assigning a custom group to the configured [log directories](#configure-default-log-directories)
+
+A global `logging['log_group']` setting in your `/etc/gitlab/gitlab.rb` file can
+be configured as well as per-service `log_group` settings such as `gitaly['log_group']`.
+You will need to run `sudo gitlab-ctl reconfigure` to configure your instance
+when adding `log_group` settings.
+
+Setting a global or per-service `log_group` will:
+
+- Change the permissions on the per-service log directories (or all log directories
+if using the global setting) to `0750` to allow the configured group members to
+read the contents of the log directory.
+
+- Configure [runit](#runit-logs) to write and rotate logs using the specified
+`log_group` : either per-service or for all runit-managed services.
+
+### Custom log group limitations
+
+Logs for services not managed by runit (e.g. the `gitlab-rails` logs in
+`/var/log/gitlab/gitlab-rails`) will not inherit the configured `log_group` setting.
+
+The group must already exist on the host. Linux package installations don't create the group
+when running `sudo gitlab-ctl reconfigure`.

@@ -16,19 +16,20 @@
 #
 account_helper = AccountHelper.new(node)
 omnibus_helper = OmnibusHelper.new(node)
+logfiles_helper = LogfilesHelper.new(node)
+logging_settings = logfiles_helper.logging_settings('gitaly')
 
 working_dir = node['gitaly']['dir']
-log_directory = node['gitaly']['log_directory']
 env_directory = node['gitaly']['env_directory']
 config_path = File.join(working_dir, "config.toml")
 gitaly_path = node['gitaly']['bin_path']
 wrapper_path = "#{gitaly_path}-wrapper"
 pid_file = File.join(working_dir, "gitaly.pid")
-json_logging = node['gitaly']['logging_format'].eql?('json')
+json_logging = node.dig('gitaly', 'configuration', 'logging', 'format').eql?('json')
 open_files_ulimit = node['gitaly']['open_files_ulimit']
-runtime_dir = node['gitaly']['runtime_dir']
-cgroups_mountpoint = node['gitaly']['cgroups_mountpoint']
-cgroups_hierarchy_root = node['gitaly']['cgroups_hierarchy_root']
+runtime_dir = node.dig('gitaly', 'configuration', 'runtime_dir')
+cgroups_mountpoint = node.dig('gitaly', 'configuration', 'cgroups', 'mountpoint')
+cgroups_hierarchy_root = node.dig('gitaly', 'configuration', 'cgroups', 'hierarchy_root')
 
 directory working_dir do
   owner account_helper.gitlab_user
@@ -42,9 +43,12 @@ directory runtime_dir do
   recursive true
 end
 
-directory log_directory do
-  owner account_helper.gitlab_user
-  mode '0700'
+directory logging_settings[:log_directory] do
+  owner logging_settings[:log_directory_owner]
+  mode logging_settings[:log_directory_mode]
+  if log_group = logging_settings[:log_directory_group]
+    group log_group
+  end
   recursive true
 end
 
@@ -81,7 +85,6 @@ env_dir env_directory do
 end
 
 gitlab_url, gitlab_relative_path = WebServerHelper.internal_api_url(node)
-custom_hooks_dir = node.dig('gitaly', 'custom_hooks_dir')
 
 template "Create Gitaly config.toml" do
   path config_path
@@ -90,12 +93,39 @@ template "Create Gitaly config.toml" do
   group account_helper.gitlab_group
   mode "0640"
   variables node['gitaly'].to_hash.merge(
-    { gitlab_shell: node['gitlab']['gitlab-shell'].to_hash,
-      gitlab_url: gitlab_url,
-      gitlab_relative_path: gitlab_relative_path,
-      custom_hooks_dir: custom_hooks_dir }
+    {
+      configuration: node.dig('gitaly', 'configuration').merge(
+        {
+          # The gitlab section is not configured by the user directly. Its values are derived
+          # from other configuration.
+          gitlab: {
+            url: gitlab_url,
+            relative_url_root: gitlab_relative_path,
+            'http-settings': node.dig('gitlab', 'gitlab_shell', 'http_settings')
+          }.compact,
+
+          # These options below were historically hard coded values in the template. They
+          # are set here to retain the behavior of them not being overridable by the user.
+          bin_dir: '/opt/gitlab/embedded/bin',
+          git: (node.dig('gitaly', 'configuration', 'git') || {}).merge(
+            {
+              # Ignore gitconfig files so that the only source of truth for how Git commands
+              # are configured are Gitaly's own defaults and the Git configuration injected
+              # in this file.
+              ignore_gitconfig: true
+            }
+          ),
+          'gitlab-shell': (node.dig('gitaly', 'configuration', 'gitlab-shell') || {}).merge(
+            {
+              dir: '/opt/gitlab/embedded/service/gitlab-shell'
+            }
+          ),
+        }
+      )
+    }
   )
   notifies :hup, "runit_service[gitaly]" if omnibus_helper.should_notify?('gitaly')
+  sensitive true
 end
 
 runit_service 'gitaly' do
@@ -108,13 +138,15 @@ runit_service 'gitaly' do
     bin_path: gitaly_path,
     wrapper_path: wrapper_path,
     config_path: config_path,
-    log_directory: log_directory,
+    log_directory: logging_settings[:log_directory],
+    log_user: logging_settings[:runit_owner],
+    log_group: logging_settings[:runit_group],
     json_logging: json_logging,
     open_files_ulimit: open_files_ulimit,
     cgroups_mountpoint: cgroups_mountpoint,
     cgroups_hierarchy_root: cgroups_hierarchy_root,
   }.merge(params))
-  log_options node['gitlab']['logging'].to_hash.merge(node['gitaly'].to_hash)
+  log_options logging_settings[:options]
 end
 
 if node['gitlab']['bootstrap']['enable']
@@ -129,17 +161,10 @@ version_file 'Create version file for Gitaly' do
   notifies :hup, "runit_service[gitaly]"
 end
 
-# If a version of ruby changes restart gitaly-ruby
-version_file 'Create Ruby version file for Gitaly' do
-  version_file_path File.join(working_dir, 'RUBY_VERSION')
-  version_check_cmd '/opt/gitlab/embedded/bin/ruby --version'
-  notifies :hup, "runit_service[gitaly]"
-end
-
 consul_service node['gitaly']['consul_service_name'] do
   id 'gitaly'
   meta node['gitaly']['consul_service_meta']
   action Prometheus.service_discovery_action
-  socket_address node['gitaly']['prometheus_listen_addr']
+  socket_address node.dig('gitaly', 'configuration', 'prometheus_listen_addr')
   reload_service false unless Services.enabled?('consul')
 end

@@ -1,4 +1,5 @@
 require_relative "info.rb"
+require_relative "info/git"
 require_relative "../util.rb"
 
 module Build
@@ -12,13 +13,23 @@ module Build
           is_auto_deploy?
       end
 
+      def is_jh?
+        Gitlab::Util.get_env('jh') == 'true' || \
+          Gitlab::Util.get_env('GITLAB_VERSION')&.end_with?('-jh') || \
+          File.read('VERSION').strip.end_with?('-jh')
+      end
+
       def include_ee?
-        is_ee?
+        is_ee? || is_jh?
       end
 
       def fips?
         # TODO: Add code to automatically set to true on FIPS supported OSs
         false
+      end
+
+      def boringcrypto_supported?
+        system({ 'GOEXPERIMENT' => 'boringcrypto' }, *%w(go version))
       end
 
       def use_system_ssl?
@@ -36,7 +47,7 @@ module Build
       end
 
       def is_auto_deploy_tag?
-        AUTO_DEPLOY_TAG_REGEX.match?(Build::Info.current_git_tag)
+        AUTO_DEPLOY_TAG_REGEX.match?(Build::Info::Git.tag_name)
       end
 
       def is_auto_deploy_branch?
@@ -45,11 +56,11 @@ module Build
 
       def is_patch_release?
         # Major and minor releases have patch component as zero
-        Info.semver_version.split(".")[-1] != "0"
+        Info::Package.semver_version.split(".")[-1] != "0"
       end
 
       def is_rc_tag?
-        Build::Info.current_git_tag.include?("+rc")
+        Build::Info::Git.tag_name&.include?("+rc")
       end
 
       def ci_commit_tag?
@@ -57,11 +68,11 @@ module Build
       end
 
       def is_latest_stable_tag?
-        match_tag?(Info.latest_stable_tag)
+        match_tag?(Info::Git.latest_stable_tag)
       end
 
       def is_latest_tag?
-        match_tag?(Info.latest_tag)
+        match_tag?(Info::Git.latest_tag)
       end
 
       def is_nightly?
@@ -76,8 +87,16 @@ module Build
         system('git describe --exact-match > /dev/null 2>&1')
       end
 
+      def on_regular_tag?
+        on_tag? && !is_auto_deploy_tag?
+      end
+
       def on_stable_branch?
-        Build::Info.branch_name&.match?(/^\d+-\d+-stable$/)
+        Build::Info::Git.branch_name&.match?(/^\d+-\d+-stable$/)
+      end
+
+      def on_regular_branch?
+        Build::Info::Git.branch_name && !on_stable_branch?
       end
     end
   end

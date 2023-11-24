@@ -39,8 +39,8 @@ RSpec.describe 'qa', type: :rake do
 
   describe 'qa:copy' do
     before do
-      allow(Build::Info).to receive(:gitlab_version).and_return(gitlab_version)
-      allow(Build::Info).to receive(:commit_sha).and_return(commit_sha)
+      allow(Build::Info::Components::GitLabRails).to receive(:version).and_return(gitlab_version)
+      allow(Build::Info::Git).to receive(:commit_sha).and_return(commit_sha)
     end
 
     describe ':nightly' do
@@ -56,28 +56,12 @@ RSpec.describe 'qa', type: :rake do
       end
     end
 
-    describe ':staging' do
-      before do
-        Rake::Task['qa:copy:staging'].reenable
-      end
-
-      it 'copies staging images correctly' do
-        stub_is_auto_deploy(false)
-
-        expect(Build::QAImage).to receive(:copy_image_to_omnibus_registry).with(gitlab_version)
-        expect(Build::QAImage).to receive(:copy_image_to_omnibus_registry).with(commit_sha)
-
-        Rake::Task['qa:copy:staging'].invoke
-      end
-    end
-
     describe ':stable' do
       before do
         Rake::Task['qa:copy:stable'].reenable
       end
 
       it 'copies stable images correctly' do
-        expect(Build::QAImage).to receive(:copy_image_to_omnibus_registry).with(gitlab_version)
         expect(Build::QAImage).to receive(:copy_image_to_dockerhub).with(gitlab_version)
 
         Rake::Task['qa:copy:stable'].invoke
@@ -116,7 +100,7 @@ RSpec.describe 'qa', type: :rake do
       Rake::Task['qa:push:rc'].reenable
       Rake::Task['qa:push:latest'].reenable
 
-      allow(Build::Info).to receive(:gitlab_version).and_return(gitlab_version)
+      allow(Build::Info::Components::GitLabRails).to receive(:version).and_return(gitlab_version)
     end
 
     it 'pushes stable images correctly' do
@@ -154,8 +138,8 @@ RSpec.describe 'qa', type: :rake do
       before do
         Rake::Task['qa:push:staging'].reenable
 
-        allow(Build::Info).to receive(:gitlab_version).and_return(gitlab_version)
-        allow(Build::Info).to receive(:commit_sha).and_return(commit_sha)
+        allow(Build::Info::Components::GitLabRails).to receive(:version).and_return(gitlab_version)
+        allow(Build::Info::Git).to receive(:commit_sha).and_return(commit_sha)
       end
 
       it 'pushes staging images correctly' do

@@ -2,12 +2,12 @@
 stage: Systems
 group: Distribution
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://about.gitlab.com/handbook/product/ux/technical-writing/#assignments
-comments: false
 ---
 
-# Omnibus GitLab Documentation **(FREE SELF)**
+# Linux package documentation **(FREE SELF)**
 
-Omnibus GitLab is a way to package different services and tools required to run GitLab, so that most users can install it without laborious configuration.
+The Linux package has different services and tools required to run GitLab. Most users can install it without laborious
+configuration.
 
 ## Package information
 
@@ -21,7 +21,7 @@ Omnibus GitLab is a way to package different services and tools required to run 
 
 ## Installation
 
-For installation details, see [Installing Omnibus GitLab](installation/index.md).
+For installation details, see [Install GitLab with the Linux package](installation/index.md).
 
 ## Running on a low-resource device (like a Raspberry Pi)
 
@@ -44,7 +44,7 @@ to work best with the available resources. Check out the [documentation](setting
 - [Storing Git data in an alternative directory](settings/configuration.md#store-git-data-in-an-alternative-directory)
 - [Changing the name of the Git user group](settings/configuration.md#change-the-name-of-the-git-user-or-group)
 - [Specify numeric user and group identifiers](settings/configuration.md#specify-numeric-user-and-group-identifiers)
-- [Only start Omnibus GitLab services after a given file system is mounted](settings/configuration.md#start-omnibus-gitlab-services-only-after-a-given-file-system-is-mounted)
+- [Start Linux package installation services only after a given file system is mounted](settings/configuration.md#start-linux-package-installation-services-only-after-a-given-file-system-is-mounted)
 - [Disable user and group account management](settings/configuration.md#disable-user-and-group-account-management)
 - [Disable storage directory management](settings/configuration.md#disable-storage-directories-management)
 - [Failed authentication ban](settings/configuration.md#configure-a-failed-authentication-ban)
@@ -65,6 +65,7 @@ to work best with the available resources. Check out the [documentation](setting
 - [GitLab and Registry](https://docs.gitlab.com/ee/administration/packages/container_registry.html)
 - [Configuring an asset proxy server](https://docs.gitlab.com/ee/security/asset_proxy.html)
 - [Image scaling](settings/image_scaling.md)
+- [GitLab Agent](https://docs.gitlab.com/ee/administration/clusters/kas.html)
 
 ## Upgrading
 
@@ -72,9 +73,8 @@ to work best with the available resources. Check out the [documentation](setting
 - [Upgrade from Community Edition to Enterprise Edition](https://docs.gitlab.com/ee/update/package/convert_to_ee.html)
 - [Upgrade to the latest version](https://docs.gitlab.com/ee/update/package/#upgrade-using-the-official-repositories)
 - [Downgrade to an earlier version](https://docs.gitlab.com/ee/update/package/downgrade.html)
-- [Upgrade from a non-Omnibus installation to an Omnibus installation using a backup](update/convert_to_omnibus.md#upgrading-from-non-omnibus-postgresql-to-an-omnibus-installation-using-a-backup)
-- [Upgrade from non-Omnibus PostgreSQL to an Omnibus installation in-place](update/convert_to_omnibus.md#upgrading-from-non-omnibus-postgresql-to-an-omnibus-installation-in-place)
-- [Upgrade from non-Omnibus MySQL to an Omnibus installation (version 6.8+)](update/convert_to_omnibus.md#upgrading-from-non-omnibus-mysql-to-an-omnibus-installation-version-68)
+- [Upgrade from a non-Linux package PostgreSQL to a Linux package installation using a backup](update/convert_to_omnibus.md#upgrading-from-a-non-linux-package-postgresql-to-a-linux-package-installation-using-a-backup)
+- [Upgrade from a non-Linux package PostgreSQL to a Linux package installation in-place](update/convert_to_omnibus.md#upgrading-from-a-non-linux-package-postgresql-to-a-linux-package-installation-in-place)
 
 ## Troubleshooting
 

@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-if node['gitlab']['gitlab-rails']['database_reindexing']['schedules'].any?
+if node['gitlab']['gitlab_rails']['database_reindexing']['schedules'].any?
 
   # Delete existing cronjob if it exists so that we don't get doubleups.
   crond_job 'database-reindexing' do
@@ -23,7 +23,7 @@ if node['gitlab']['gitlab-rails']['database_reindexing']['schedules'].any?
     command "/opt/gitlab/bin/gitlab-rake gitlab:db:reindex"
   end
 
-  schedules = node['gitlab']['gitlab-rails']['database_reindexing']['schedules']
+  schedules = node['gitlab']['gitlab_rails']['database_reindexing']['schedules']
 
   schedules.each_with_index do |schedule, index|
     crond_job "database-reindexing-#{index}" do
@@ -38,7 +38,7 @@ if node['gitlab']['gitlab-rails']['database_reindexing']['schedules'].any?
     end
   end
 else
-  reindexing = node['gitlab']['gitlab-rails']['database_reindexing']
+  reindexing = node['gitlab']['gitlab_rails']['database_reindexing']
 
   execute 'delete-existing-reindexing-jobs' do
     command 'find  . -name \'database-reindexing*\' -exec rm {} \;'

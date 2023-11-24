@@ -60,6 +60,7 @@ RSpec.describe 'gitlab::redis' do
             expect(content).to match(%r{sentinel failover-timeout gitlab-redis 60000})
             expect(content).to match(%r{sentinel auth-pass gitlab-redis blahblahblah})
             expect(content).not_to match(%r{^tls})
+            expect(content).not_to match(%r{^requirepass})
             expect(content).to match(%r{SENTINEL resolve-hostnames no})
             expect(content).to match(%r{SENTINEL announce-hostnames no})
           }
@@ -164,6 +165,22 @@ RSpec.describe 'gitlab::redis' do
           }
         end
       end
+
+      context 'user sets sentinel password' do
+        before do
+          stub_gitlab_rb(
+            sentinel: {
+              password: 'some pass'
+            }
+          )
+        end
+
+        it 'enables requirepass' do
+          expect(chef_run).to render_file(sentinel_conf).with_content { |content|
+            expect(content).to match(%r{requirepass "some pass"})
+          }
+        end
+      end
     end
 
     context 'with tls settings specified' do
@@ -219,6 +236,45 @@ RSpec.describe 'gitlab::redis' do
             expect(content).to match(%r{^tls-session-cache-timeout 120$})
           }
       end
+    end
+  end
+
+  context 'log directory and runit group' do
+    context 'default values' do
+      before do
+        stub_gitlab_rb(
+          redis: {
+            enable: true,
+            master_ip: redis_master_ip,
+            announce_ip: redis_announce_ip,
+            master_password: redis_master_password
+          },
+          redis_sentinel_role: {
+            enable: true,
+          }
+        )
+      end
+      it_behaves_like 'enabled logged service', 'sentinel', true, { log_directory_owner: 'gitlab-redis' }
+    end
+
+    context 'custom values' do
+      before do
+        stub_gitlab_rb(
+          redis: {
+            enable: true,
+            master_ip: redis_master_ip,
+            announce_ip: redis_announce_ip,
+            master_password: redis_master_password
+          },
+          redis_sentinel_role: {
+            enable: true,
+          },
+          sentinel: {
+            log_group: 'fugee'
+          }
+        )
+      end
+      it_behaves_like 'enabled logged service', 'sentinel', true, { log_directory_owner: 'gitlab-redis', log_group: 'fugee' }
     end
   end
 end

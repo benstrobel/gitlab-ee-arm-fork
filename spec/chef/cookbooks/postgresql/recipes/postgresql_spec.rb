@@ -39,7 +39,7 @@ RSpec.describe 'postgresql' do
   end
 
   context 'with default settings' do
-    it_behaves_like 'enabled runit service', 'postgresql', 'root', 'root', 'gitlab-psql', 'gitlab-psql'
+    it_behaves_like 'enabled runit service', 'postgresql', 'root', 'root', 'gitlab-psql', 'gitlab-psql', true
 
     context 'when rendering postgresql.conf' do
       it 'correctly sets the shared_preload_libraries default setting' do
@@ -337,7 +337,7 @@ RSpec.describe 'postgresql' do
                      })
     end
 
-    it_behaves_like 'enabled runit service', 'postgresql', 'root', 'root', 'foo', 'bar'
+    it_behaves_like 'enabled runit service', 'postgresql', 'root', 'root', 'foo', 'bar', true
 
     context 'when rendering postgresql.conf' do
       it 'correctly sets the shared_preload_libraries setting' do
@@ -592,6 +592,41 @@ RSpec.describe 'postgresql' do
         expect(chef_run).not_to create_postgresql_user('gitlab_replicator')
       end
     end
+  end
+
+  context 'log directory and runit group' do
+    context 'default values' do
+      it_behaves_like 'enabled logged service', 'postgresql', true, { log_directory_owner: 'gitlab-psql' }
+    end
+
+    context 'custom values' do
+      before do
+        stub_gitlab_rb(
+          postgresql: {
+            log_group: 'fugee'
+          }
+        )
+      end
+      it_behaves_like 'enabled logged service', 'postgresql', true, { log_directory_owner: 'gitlab-psql', log_group: 'fugee' }
+    end
+  end
+end
+
+RSpec.describe 'postgresql 14' do
+  let(:chef_run) { ChefSpec::SoloRunner.new(step_into: %w(runit_service postgresql_config)).converge('gitlab::default') }
+  let(:postgresql_conf) { File.join(postgresql_data_dir, 'postgresql.conf') }
+  let(:runtime_conf) { '/var/opt/gitlab/postgresql/data/runtime.conf' }
+
+  before do
+    allow_any_instance_of(PgHelper).to receive(:version).and_return(PGVersion.new('14.0'))
+    allow_any_instance_of(PgHelper).to receive(:database_version).and_return(PGVersion.new('14.0'))
+  end
+
+  it 'configures wal_keep_size instead of wal_keep_segments' do
+    expect(chef_run).to render_file(runtime_conf).with_content { |content|
+      expect(content).to include("wal_keep_size")
+      expect(content).not_to include("wal_keep_segments")
+    }
   end
 end
 

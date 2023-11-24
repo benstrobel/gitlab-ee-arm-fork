@@ -22,8 +22,9 @@ require "#{Omnibus::Config.project_root}/lib/gitlab/version"
 require "#{Omnibus::Config.project_root}/lib/gitlab/util"
 require "#{Omnibus::Config.project_root}/lib/gitlab/ohai_helper.rb"
 require "#{Omnibus::Config.project_root}/lib/gitlab/openssl_helper"
+require "#{Omnibus::Config.project_root}/files/gitlab-cookbooks/package/libraries/helpers/selinux_distro_helper.rb"
 
-gitlab_package_name = Build::Info.package
+gitlab_package_name = Build::Info::Package.name
 gitlab_package_file = File.join(Omnibus::Config.project_dir, 'gitlab', "#{gitlab_package_name}.rb")
 
 # Include package specific details like package name and descrption (for gitlab-ee/gitlab-ce/etc)
@@ -54,7 +55,7 @@ install_dir     '/opt/gitlab'
 # https://gitlab.com/gitlab-org/omnibus-gitlab/issues/1007
 #
 # Also check lib/gitlab/build.rb for Docker version forming
-build_version Build::Info.semver_version
+build_version Build::Info::Package.semver_version
 build_iteration Gitlab::BuildIteration.new.build_iteration
 
 # Openssh needs to be installed
@@ -73,12 +74,17 @@ if rhel?
   case OhaiHelper.get_centos_version
   when '6', '7'
     runtime_dependency 'policycoreutils-python'
-  when '8'
+  when '8', '9'
+    runtime_dependency 'policycoreutils-python-utils'
+  end
+elsif amazon?
+  case OhaiHelper.get_amazon_version
+  when '2'
+    runtime_dependency 'policycoreutils-python'
+  when '2023'
     runtime_dependency 'policycoreutils-python-utils'
   end
 end
-
-runtime_dependency 'policycoreutils-python' if amazon? && OhaiHelper.get_amazon_version == '2'
 
 # Arm targets need libatomic
 if OhaiHelper.arm?
@@ -99,6 +105,7 @@ if Build::Check.use_system_ssl?
 end
 
 dependency 'cacerts'
+dependency 'gitlab-selinux' if SELinuxDistroHelper.selinux_supported?
 dependency 'redis'
 dependency 'nginx'
 dependency 'mixlib-log'
@@ -112,20 +119,19 @@ dependency 'runit'
 dependency 'go-crond'
 dependency 'docker-distribution-pruner'
 
-dependency 'mail_room'
-dependency 'grafana-dashboards'
 if Build::Check.include_ee?
   dependency 'consul'
   dependency 'pgbouncer-exporter'
-  dependency 'spamcheck'
-  dependency 'spam-classifier'
+  unless OhaiHelper.raspberry_pi?
+    dependency 'spamcheck'
+    dependency 'spam-classifier'
+  end
 end
 dependency 'alertmanager'
 dependency 'node-exporter'
 dependency 'redis-exporter'
 dependency 'postgres-exporter'
 dependency 'prometheus'
-dependency 'grafana'
 dependency 'gitlab-exporter'
 dependency 'mattermost'
 
@@ -142,7 +148,7 @@ dependency 'gitlab-ctl'
 dependency 'gitlab-psql'
 dependency 'gitlab-redis-cli'
 dependency 'gitlab-healthcheck'
-dependency 'gitlab-selinux'
+
 dependency 'gitlab-scripts'
 dependency 'gitlab-config-template'
 
@@ -257,6 +263,7 @@ exclude 'embedded/lib/ruby/gems/*/gems/grpc-*/third_party'
 exclude 'embedded/lib/ruby/gems/*/gems/nokogumbo-*/ext'
 exclude 'embedded/lib/ruby/gems/*/gems/rbtrace-*/ext/src'
 exclude 'embedded/lib/ruby/gems/*/gems/rbtrace-*/ext/dst'
+exclude 'embedded/lib/ruby/gems/*/gems/re2-*/ports'
 exclude 'embedded/lib/ruby/gems/*/gems/*pg_query-*/ext'
 
 # Exclude exe files from Python libraries
@@ -268,11 +275,25 @@ exclude 'embedded/lib/python*/**/*.whl'
 package :rpm do
   vendor 'GitLab, Inc. <support@gitlab.com>'
   signing_passphrase Gitlab::Util.get_env('GPG_PASSPHRASE')
+
+  # Enable XZ compression if selected
+  compress_xz = Gitlab::Util.get_env('COMPRESS_XZ') || 'true'
+  if compress_xz == 'true'
+    compression_type :xz
+    compression_level 6
+  end
 end
 
 package :deb do
   vendor 'GitLab, Inc. <support@gitlab.com>'
   signing_passphrase Gitlab::Util.get_env('GPG_PASSPHRASE')
+
+  # Enable XZ compression if selected
+  compress_xz = Gitlab::Util.get_env('COMPRESS_XZ') || 'true'
+  if compress_xz == 'true'
+    compression_type :xz
+    compression_level 6
+  end
 end
 
 resources_path "#{Omnibus::Config.project_root}/resources"

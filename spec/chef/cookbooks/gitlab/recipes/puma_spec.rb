@@ -18,31 +18,7 @@ RSpec.describe 'gitlab::puma with Ubuntu 16.04' do
   context 'when puma is enabled' do
     it_behaves_like 'enabled runit service', 'puma', 'root', 'root'
 
-    describe 'logrotate settings' do
-      context 'default values' do
-        it_behaves_like 'configured logrotate service', 'puma', 'git', 'git'
-      end
-
-      context 'specified username and group' do
-        before do
-          stub_gitlab_rb(
-            user: {
-              username: 'foo',
-              group: 'bar'
-            }
-          )
-        end
-
-        it_behaves_like 'configured logrotate service', 'puma', 'foo', 'bar'
-      end
-    end
-
     it 'creates runtime directories' do
-      expect(chef_run).to create_directory('/var/log/gitlab/puma').with(
-        owner: 'git',
-        group: nil,
-        mode: '0700'
-      )
       expect(chef_run).to create_directory('/opt/gitlab/var/puma').with(
         owner: 'git',
         group: nil,
@@ -53,6 +29,24 @@ RSpec.describe 'gitlab::puma with Ubuntu 16.04' do
         group: 'gitlab-www',
         mode: '0750'
       )
+    end
+
+    context 'log directory and runit group' do
+      context 'default values' do
+        it_behaves_like 'enabled logged service', 'puma', true, { log_directory_owner: 'git' }
+      end
+
+      context 'custom values' do
+        before do
+          stub_gitlab_rb(
+            puma: {
+              log_group: 'fugee'
+            }
+          )
+        end
+        it_behaves_like 'configured logrotate service', 'puma', 'git', 'fugee'
+        it_behaves_like 'enabled logged service', 'puma', true, { log_directory_owner: 'git', log_group: 'fugee' }
+      end
     end
 
     it 'renders the runit configuration with expected configuration' do
@@ -66,6 +60,8 @@ RSpec.describe 'gitlab::puma with Ubuntu 16.04' do
           expect(content).to match(/chmod 0700 \/run\/gitlab\/puma/)
           expect(content).to match(/chown git \/run\/gitlab\/puma/)
           expect(content).to match(/export prometheus_run_dir=\'\/run\/gitlab\/puma\'/)
+          expect(content).to match(/rubyopt=\"-W:no-experimental\"/)
+          expect(content).to include(%(RUBYOPT="${rubyopt}"))
           expect(content).to match(%r(/opt/gitlab/embedded/bin/bundle exec puma -C /var/opt/gitlab/gitlab-rails/etc/puma.rb))
         }
     end
@@ -86,7 +82,7 @@ RSpec.describe 'gitlab::puma with Ubuntu 16.04' do
       )
       expect(chef_run).to render_file('/var/opt/gitlab/gitlab-rails/etc/puma.rb').with_content { |content|
         expect(content).to match(/lowlevel_error_handler/)
-        expect(content).to include('Raven.capture_exception')
+        expect(content).to include('require "/opt/gitlab/embedded/service/gitlab-rails/lib/gitlab/puma/error_handler"')
       }
     end
 
@@ -143,7 +139,8 @@ RSpec.describe 'gitlab::puma with Ubuntu 16.04' do
           ssl_listen: '192.168.0.1',
           ssl_port: 9999,
           ssl_certificate: '/tmp/test.crt',
-          ssl_certificate_key: '/tmp/test.key'
+          ssl_certificate_key: '/tmp/test.key',
+          ssl_key_password_command: 'echo mypassword'
         }
       }
     end
@@ -155,6 +152,9 @@ RSpec.describe 'gitlab::puma with Ubuntu 16.04' do
 
     it 'renders the puma.rb file' do
       expect(chef_run).to create_puma_config('/var/opt/gitlab/gitlab-rails/etc/puma.rb').with(
+        ssl_certificate: '/tmp/test.crt',
+        ssl_certificate_key: '/tmp/test.key',
+        ssl_key_password_command: 'echo mypassword',
         ssl_listen_host: '192.168.0.1',
         ssl_port: 9999,
         listen_socket: '/tmp/puma.socket',
@@ -165,7 +165,7 @@ RSpec.describe 'gitlab::puma with Ubuntu 16.04' do
       )
 
       expect(chef_run).to render_file('/var/opt/gitlab/gitlab-rails/etc/puma.rb').with_content { |content|
-        expect(content).to match(/ssl_bind '192.168.0.1', 9999, {\n  cert: '\/tmp\/test.crt',\n  key: '\/tmp\/test.key',\n  verify_mode: 'none'\n}/m)
+        expect(content).to match(/ssl_bind '192.168.0.1', 9999, {\n  cert: '\/tmp\/test.crt',\n  key: '\/tmp\/test.key',\n  key_password_command: 'echo mypassword',\n  verify_mode: 'none'\n}/m)
       }
     end
 
@@ -192,13 +192,17 @@ RSpec.describe 'gitlab::puma with Ubuntu 16.04' do
             ssl_listen: '192.168.0.1',
             ssl_port: 9999,
             ssl_certificate: '/tmp/test.crt',
-            ssl_certificate_key: '/tmp/test.key'
+            ssl_certificate_key: '/tmp/test.key',
+            ssl_key_password_command: nil
           }
         }
       end
 
       it 'omits the UNIX socket and TCP binds from the Puma config' do
         expect(chef_run).to create_puma_config('/var/opt/gitlab/gitlab-rails/etc/puma.rb').with(
+          ssl_certificate: '/tmp/test.crt',
+          ssl_certificate_key: '/tmp/test.key',
+          ssl_key_password_command: nil,
           ssl_listen_host: '192.168.0.1',
           ssl_port: 9999,
           listen_socket: '',
@@ -224,6 +228,7 @@ RSpec.describe 'gitlab::puma with Ubuntu 16.04' do
         base_params.tap do |config|
           config[:puma][:ssl_client_certificate] = client_cert
           config[:puma][:ssl_cipher_filter] = filter
+          config[:puma][:ssl_key_password_command] = nil
           config[:puma][:ssl_verify_mode] = 'peer'
         end
       end
@@ -234,6 +239,7 @@ RSpec.describe 'gitlab::puma with Ubuntu 16.04' do
           ssl_port: 9999,
           listen_socket: '/tmp/puma.socket',
           listen_tcp: '10.0.0.1:9000',
+          ssl_client_certificate: client_cert,
           ssl_cipher_filter: filter,
           worker_processes: 4,
           min_threads: 5,

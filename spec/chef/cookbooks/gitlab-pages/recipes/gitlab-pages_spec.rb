@@ -45,10 +45,6 @@ RSpec.describe 'gitlab::gitlab-pages' do
       expect(chef_run).to render_file("/opt/gitlab/sv/gitlab-pages/run").with_content(%r{-config="/var/opt/gitlab/gitlab-pages/gitlab-pages-config"})
     end
 
-    it 'renders the pages log run file' do
-      expect(chef_run).to render_file("/opt/gitlab/sv/gitlab-pages/log/run").with_content(%r{exec svlogd /var/log/gitlab/gitlab-pages})
-    end
-
     it 'deletes old admin.secret file' do
       expect(chef_run).to delete_file("/var/opt/gitlab/gitlab-pages/admin.secret")
     end
@@ -149,6 +145,28 @@ RSpec.describe 'gitlab::gitlab-pages' do
             expect(content).to match(%r{auth-secret=auth_secret})
             expect(content).to match(%r{auth-scope=read_api})
           }
+        end
+      end
+
+      context 'when generating gitlab-secrets.json file is disabled' do
+        before do
+          stub_gitlab_rb(
+            package: {
+              generate_secrets_json_file: false
+            }
+          )
+
+          allow(LoggingHelper).to receive(:warning).and_call_original
+        end
+
+        it 'does not register as an oauth app with GitLab' do
+          expect(chef_run).not_to run_ruby_block('authorize pages with gitlab')
+        end
+
+        it 'displays a warning about disabling automatic oauth registration' do
+          expect(LoggingHelper).to receive(:warning).with(/not automatically registering GitLab Pages as an Oauth App/)
+
+          chef_run
         end
       end
     end
@@ -322,22 +340,21 @@ RSpec.describe 'gitlab::gitlab-pages' do
       end
     end
 
-    describe 'logrotate settings' do
+    context 'log directory and runit group' do
       context 'default values' do
-        it_behaves_like 'configured logrotate service', 'gitlab-pages', 'git', 'git'
+        it_behaves_like 'enabled logged service', 'gitlab-pages', true, { log_directory_owner: 'git' }
       end
 
-      context 'specified username and group' do
+      context 'custom values' do
         before do
           stub_gitlab_rb(
-            user: {
-              username: 'foo',
-              group: 'bar'
+            gitlab_pages: {
+              log_group: 'fugee'
             }
           )
         end
-
-        it_behaves_like 'configured logrotate service', 'gitlab-pages', 'foo', 'bar'
+        it_behaves_like 'configured logrotate service', 'gitlab-pages', 'git', 'fugee'
+        it_behaves_like 'enabled logged service', 'gitlab-pages', true, { log_directory_owner: 'git', log_group: 'fugee' }
       end
     end
   end

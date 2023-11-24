@@ -33,7 +33,7 @@ RSpec.describe 'gitlab-ee::geo' do
 
     context 'in geo_logcursor settings' do
       it 'is not enabled' do
-        expect(node['gitlab']['geo-logcursor']['enable']).to eq(nil)
+        expect(node['gitlab']['geo_logcursor']['enable']).to eq(nil)
       end
     end
 
@@ -82,13 +82,13 @@ RSpec.describe 'gitlab-ee::geo' do
 
     context 'in geo_postgres settings' do
       it 'is enabled' do
-        expect(node['gitlab']['geo-postgresql']['enable']).to eq(true)
+        expect(node['gitlab']['geo_postgresql']['enable']).to eq(true)
       end
     end
 
     context 'in geo_logcursor settings' do
       it 'is enabled' do
-        expect(node['gitlab']['geo-logcursor']['enable']).to eq(true)
+        expect(node['gitlab']['geo_logcursor']['enable']).to eq(true)
       end
     end
 
@@ -159,7 +159,7 @@ RSpec.describe 'gitlab-ee::geo' do
 
     context 'in gitlab-rails' do
       it 'disables auto_migrate' do
-        expect(node['gitlab']['gitlab-rails']['auto_migrate']).to eq(false)
+        expect(node['gitlab']['gitlab_rails']['auto_migrate']).to eq(false)
       end
     end
   end

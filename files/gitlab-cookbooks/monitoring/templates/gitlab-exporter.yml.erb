@@ -6,22 +6,22 @@ db_common: &db_common
 
 # Web server config
 server:
-  listen_address: <%= node['monitoring']['gitlab-exporter']['listen_address'] %>
-  listen_port: <%= node['monitoring']['gitlab-exporter']['listen_port'] %>
-  name: <%= node['monitoring']['gitlab-exporter']['server_name'] %>
-  <% if node['monitoring']['gitlab-exporter']['tls_enabled'] == true %>
+  listen_address: <%= node['monitoring']['gitlab_exporter']['listen_address'] %>
+  listen_port: <%= node['monitoring']['gitlab_exporter']['listen_port'] %>
+  name: <%= node['monitoring']['gitlab_exporter']['server_name'] %>
+  <% if node['monitoring']['gitlab_exporter']['tls_enabled'] == true %>
   tls_enabled: true
-    <% if node['monitoring']['gitlab-exporter']['tls_cert_path'] %>
-  tls_cert_path: <%= node['monitoring']['gitlab-exporter']['tls_cert_path'] %>
+    <% if node['monitoring']['gitlab_exporter']['tls_cert_path'] %>
+  tls_cert_path: <%= node['monitoring']['gitlab_exporter']['tls_cert_path'] %>
     <% end %>
-    <% if node['monitoring']['gitlab-exporter']['tls_key_path'] %>
-  tls_key_path: <%= node['monitoring']['gitlab-exporter']['tls_key_path'] %>
+    <% if node['monitoring']['gitlab_exporter']['tls_key_path'] %>
+  tls_key_path: <%= node['monitoring']['gitlab_exporter']['tls_key_path'] %>
     <% end %>
   <% end %>
 
 # Probes config
 probes:
-<% if node['gitlab']['gitlab-rails']['db_adapter'] == 'postgresql' -%>
+<% if node['gitlab']['gitlab_rails']['db_adapter'] == 'postgresql' -%>
   # We can group multiple probes under a single endpoint by setting the `multiple` key to `true`, followed
   # by probe definitions as usual.
   database:
@@ -56,6 +56,8 @@ probes:
     opts:
       redis_url: "<%= @redis_url %>"
       redis_enable_client: <%= @redis_enable_client %>
+      probe_non_namespaced: true
+      probe_namespaced: true
 <% end %>
 
 <% if @probe_elasticsearch && @elasticsearch_url %>
@@ -85,7 +87,7 @@ probes:
       <<: *elasticsearch
 <% end %>
 
-<% if node['gitlab']['gitlab-rails']['db_adapter'] == 'postgresql' -%>
+<% if node['gitlab']['gitlab_rails']['db_adapter'] == 'postgresql' -%>
     ci_builds:
       class_name: Database::CiBuildsProber
       <<: *db_common

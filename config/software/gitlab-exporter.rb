@@ -15,13 +15,14 @@
 #
 
 name 'gitlab-exporter'
-default_version '12.0.1'
+default_version '13.5.0'
 license 'MIT'
 license_file 'LICENSE'
 
 skip_transitive_dependency_licensing true
 
 dependency 'ruby'
+dependency 'rubygems'
 dependency 'postgresql_new'
 
 build do

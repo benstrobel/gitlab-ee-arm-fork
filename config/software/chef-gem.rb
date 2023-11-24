@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+require 'mixlib/shellout'
 
 name 'chef-gem'
 # The version here should be in agreement with /Gemfile.lock so that our rspec
@@ -27,6 +28,7 @@ license_file 'NOTICE'
 skip_transitive_dependency_licensing true
 
 dependency 'ruby'
+dependency 'rubygems'
 dependency 'libffi'
 dependency 'rb-readline'
 
@@ -42,4 +44,15 @@ build do
       " --version '#{version}'" \
       " --bindir '#{install_dir}/embedded/bin'" \
       ' --no-document', env: env
+
+  block 'patch Chef files' do
+    prefix_path = "#{install_dir}/embedded"
+    gem_path = shellout!("#{embedded_bin('ruby')} -e \"puts Gem.path.find { |path| path.start_with?(\'#{prefix_path}\') }\"", env: env).stdout.chomp
+
+    patch source: "Version-17-EOL-detection.patch",
+          target: "#{gem_path}/gems/chef-#{version}/lib/chef/client.rb"
+
+    patch source: "utf8-locale-support.patch",
+          target: "#{gem_path}/gems/chef-config-#{version}/lib/chef-config/config.rb"
+  end
 end

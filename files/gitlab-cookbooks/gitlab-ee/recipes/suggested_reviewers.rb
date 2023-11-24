@@ -18,11 +18,11 @@
 omnibus_helper = OmnibusHelper.new(node)
 
 gitlab_rails_source_dir = "/opt/gitlab/embedded/service/gitlab-rails"
-gitlab_rails_dir = node['gitlab']['gitlab-rails']['dir']
+gitlab_rails_dir = node['gitlab']['gitlab_rails']['dir']
 gitlab_rails_etc_dir = File.join(gitlab_rails_dir, "etc")
 
 dependent_services = []
-node['gitlab']['gitlab-rails']['dependent_services'].each do |name|
+node['gitlab']['gitlab_rails']['dependent_services'].each do |name|
   dependent_services << "runit_service[#{name}]" if omnibus_helper.should_notify?(name)
 end
 dependent_services << "sidekiq_service[sidekiq]" if omnibus_helper.should_notify?('sidekiq')
@@ -36,7 +36,7 @@ templatesymlink 'Create a gitlab_suggested_reviewers_secret and create a symlink
   group 'root'
   mode '0644'
   sensitive true
-  variables(secret_token: node['gitlab']['suggested-reviewers']['api_secret_key'])
+  variables(secret_token: node['gitlab']['suggested_reviewers']['api_secret_key'])
   dependent_services.each { |svc| notifies :restart, svc }
-  only_if { node['gitlab']['suggested-reviewers']['api_secret_key'] }
+  only_if { node['gitlab']['suggested_reviewers']['api_secret_key'] }
 end

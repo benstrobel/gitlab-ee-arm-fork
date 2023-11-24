@@ -9,7 +9,6 @@ mkdir -p /var/log/gitlab/reconfigure
 
 skip_backup_file=/etc/gitlab/skip-auto-backup
 skip_reconfigure_file=/etc/gitlab/skip-auto-reconfigure
-skip_unmigrated_data_check=/etc/gitlab/skip-unmigrated-data-check
 
 # environment may contain these - clear them out
 OLD_VERSION_STRING=""
@@ -40,25 +39,28 @@ fi
 upgrade_check() {
   # Minimum version from which jumps are permitted to current version.
   # Follows https://docs.gitlab.com/ee/update/index.html#upgrade-paths
-  MIN_VERSION=15.0
+  MIN_VERSION=16.3
 
   if [ -n "${OLD_VERSION_STRING}" ] ; then
     # Checking
-    # (i) if it is a major version jump
-    # (ii) if existing version is less than required minimum version
-    if test ${OLD_MAJOR_VERSION} -lt ${NEW_MAJOR_VERSION}; then
-      if ! greater_version $OLD_MINOR_VERSION $MIN_VERSION; then
-        notify "It seems you are upgrading from major version ${OLD_MAJOR_VERSION} to major version ${NEW_MAJOR_VERSION}."
-        notify "It is required to upgrade to the latest ${MIN_VERSION}.x version first before proceeding."
+    # If existing version is less than required minimum version, do not permit the upgrade.
+    if ! greater_version $OLD_MINOR_VERSION $MIN_VERSION; then
+      notify "It seems you are upgrading from ${OLD_MINOR_VERSION} to ${NEW_MINOR_VERSION}."
+      notify "It is required to upgrade to the latest ${MIN_VERSION}.x version first before proceeding."
+
+      # If the upgrade is a major version jump, print a major upgrade notification.
+      if test ${OLD_MAJOR_VERSION} -lt ${NEW_MAJOR_VERSION}; then
+        notify "Please follow the upgrade documentation at https://docs.gitlab.com/ee/update/#upgrading-to-a-new-major-version"
+      else
         notify "Please follow the upgrade documentation at https://docs.gitlab.com/ee/update/index.html#upgrade-paths"
-        exit 1
       fi
+      exit 1
     fi
   fi
 }
 
 pg_check() {
-  PG_MIN_VERSION=12
+  PG_MIN_VERSION=13
 
   # Fetch the currently running version from the database
   # If this doesn't work, assume this isn't a database node
@@ -82,48 +84,6 @@ pg_check() {
     notify "Upgrade failed. Retry the upgrade after upgrading your PostgreSQL version."
     exit 1
   fi
-}
-
-unmigrated_data_check() {
-  if [ -e "${skip_unmigrated_data_check}" ] ; then
-    # The user wants us to do nothing
-    return
-  fi
-
-  if ( [ ! -d ${DEST_DIR}/service/puma ] && [ ! -d ${DEST_DIR}/service/sidekiq ] ); then
-    notify
-    notify "This node does not appear to be running puma and/or sidekiq services"
-    notify "Skipping unmigrated data check, if you think this is an error exit now"
-    notify
-    return
-  fi
-
-  notify "Checking for unmigrated data on legacy storage"
-  output=$(gitlab-rake gitlab:storage:legacy_attachments gitlab:storage:legacy_projects 2>&1);
-
-  if [ $? -ne 0 ]; then
-    notify
-    notify "Upgrade failed. Could not check for unmigrated data on legacy storage."
-    notify
-    notify "${output}"
-    unmigrated_data_check_failed
-  fi
-
-  if ! (echo $output | grep 'Found 0 attachments' && echo $output | grep 'Found 0 projects') > /dev/null 2>&1; then
-    notify
-    notify "Legacy storage is no longer supported. Please migrate your data to hashed storage."
-    notify "Check https://docs.gitlab.com/ee/administration/raketasks/storage.html#migrate-to-hashed-storage for details."
-    unmigrated_data_check_failed
-  fi
-}
-
-unmigrated_data_check_failed() {
-  notify
-  notify "If you want to skip this check, run the following command and try again:"
-  notify
-  notify " sudo touch ${skip_unmigrated_data_check}"
-  notify
-  exit 1
 }
 
 main() {
@@ -171,7 +131,6 @@ case "$1" in
     upgrade_check
     config_check
     pg_check
-    unmigrated_data_check
     main
     ;;
   upgrade)
@@ -179,7 +138,6 @@ case "$1" in
     upgrade_check
     config_check
     pg_check
-    unmigrated_data_check
     main
     ;;
   *)

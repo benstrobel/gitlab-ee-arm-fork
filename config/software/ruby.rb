@@ -22,12 +22,37 @@ license_file 'LEGAL'
 
 skip_transitive_dependency_licensing true
 
-if Gitlab::Util.get_env('RUBY3_BUILD') == 'true'
-  default_version '3.0.5'
+# Follow the Ruby upgrade guide when changing the ruby version
+# link: https://docs.gitlab.com/ee/development/ruby_upgrade.html
+current_ruby_version = '3.0.6'
+
+# NOTE: When this value is updated, flip `USE_NEXT_RUBY_VERSION_IN_*` variable
+# to false to avoid surprises.
+next_ruby_version = Gitlab::Util.get_env('NEXT_RUBY_VERSION') || '3.0.6'
+
+# MRs targeting stable branches should use current Ruby version and ignore next
+# Ruby version. Also, we provide `USE_OLD_RUBY_VERSION` variable to force usage
+# of current Ruby version.
+if Gitlab::Util.get_env('RUBY2_BUILD') == "true" || Gitlab::Util.get_env('USE_OLD_RUBY_VERSION') == "true" || Gitlab::Util.get_env('CI_MERGE_REQUEST_TARGET_BRANCH_NAME')&.match?(/^\d+-\d+-stable$/)
+  default_version current_ruby_version
+# Regular branch builds are switched to newer Ruby version first. So once the
+# `NEXT_RUBY_VERSION` variable is updated, regular branches (master and feature
+# branches) start bundling that version of Ruby. Because nightlies are also
+# technically regular branch builds and because they get auto-deployed to
+# dev.gitlab.org, we provide a variable `USE_NEXT_RUBY_VERSION_IN_NIGHTLY` to
+# control it.
+elsif (Build::Check.on_regular_branch? && !Build::Check.is_nightly?) || (Build::Check.is_nightly? && Gitlab::Util.get_env('USE_NEXT_RUBY_VERSION_IN_NIGHTLY') == "true")
+  default_version next_ruby_version
+# Once feature branches and nightlies have switched to newer Ruby version and
+# we are ready to switch auto-deploy releases to GitLab.com to the new
+# version, flip the `USE_NEXT_RUBY_VERSION_IN_AUTODEPLOY` to `true`
+elsif Build::Check.is_auto_deploy_tag? && Gitlab::Util.get_env('USE_NEXT_RUBY_VERSION_IN_AUTODEPLOY') == "true"
+  default_version next_ruby_version
+# Once we see new Ruby version running fine in GitLab.com, set new Ruby version
+# as `current_ruby_version` so that they get used in stable branches and tag
+# builds. This change marks "Switch Ruby to new version" as complete.
 else
-  # Follow the Ruby upgrade guidelines when changing the ruby version
-  # link: https://docs.gitlab.com/ee/development/ruby_upgrade.html
-  default_version '2.7.7'
+  default_version current_ruby_version
 end
 
 fips_enabled = Build::Check.use_system_ssl?
@@ -41,8 +66,9 @@ dependency 'libyaml'
 dependency 'libiconv'
 dependency 'jemalloc'
 
-version('2.7.7') { source sha256: 'e10127db691d7ff36402cfe88f418c8d025a3f1eea92044b162dd72f0b8c7b90' }
-version('3.0.5') { source sha256: '9afc6380a027a4fe1ae1a3e2eccb6b497b9c5ac0631c12ca56f9b7beb4848776' }
+version('2.7.8') { source sha256: 'c2dab63cbc8f2a05526108ad419efa63a67ed4074dbbcf9fc2b1ca664cb45ba0' }
+version('3.0.6') { source sha256: '6e6cbd490030d7910c0ff20edefab4294dfcd1046f0f8f47f78b597987ac683e' }
+version('3.1.4') { source sha256: 'a3d55879a0dfab1d7141fdf10d22a07dbf8e5cdc4415da1bde06127d5cc3c7b6' }
 
 source url: "https://cache.ruby-lang.org/pub/ruby/#{version.match(/^(\d+\.\d+)/)[0]}/ruby-#{version}.tar.gz"
 
@@ -79,12 +105,16 @@ build do
     # be fixed.
   end
 
-  # Enable custom patch created by ayufan that allows to count memory allocations
-  # per-thread. This is asked to be upstreamed as part of https://github.com/ruby/ruby/pull/3978
-  if version.start_with?('2.7')
-    patch source: 'thread-memory-allocations-2.7.patch', plevel: 1, env: env
-  elsif version.start_with?('3.0')
-    patch source: 'thread-memory-allocations-3.0.patch', plevel: 1, env: env
+  # Two patches:
+  # 1. Enable custom patch created by ayufan that allows to count memory allocations
+  #    per-thread. This is asked to be upstreamed as part of https://github.com/ruby/ruby/pull/3978
+  # 2. Backport Ruby upstream patch to fix seg faults in libxml2/Nokogiri: https://bugs.ruby-lang.org/issues/19580
+  #    This has been merged for Ruby 3.3 but not yet backported: https://github.com/ruby/ruby/pull/7663
+  patches = %w[thread-memory-allocations fix-ruby-xfree-for-libxml2]
+  ruby_version = Gem::Version.new(version).canonical_segments[0..1].join('.')
+
+  patches.each do |patch_name|
+    patch source: "#{patch_name}-#{ruby_version}.patch", plevel: 1, env: env
   end
 
   # copy_file_range() has been disabled on recent RedHat kernels:

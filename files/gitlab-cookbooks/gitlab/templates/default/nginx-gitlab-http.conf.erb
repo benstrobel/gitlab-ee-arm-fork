@@ -184,6 +184,7 @@ server { ## HTTPS server
   }
 
   location ~ ^/api/v\d {
+    proxy_cache off;
     proxy_pass http://gitlab-workhorse;
     proxy_intercept_errors off;
     <% if @proxy_custom_buffer_size -%>
@@ -192,20 +193,14 @@ server { ## HTTPS server
     <% end -%>
   }
 
-  <% if node['monitoring']['grafana']['enable'] -%>
-  location <%= File.join(@path, '-/grafana/') %> {
-    proxy_pass http://<%= node['monitoring']['grafana']['http_addr'] %>:<%= node['monitoring']['grafana']['http_port'] %>/;
-  }
-
-  <% end -%>
-  <% if node['gitlab-kas']['enable'] -%>
+  <% if node['gitlab_kas']['enable'] -%>
   location = <%= File.join(@path, '-/kubernetes-agent/') %> {
-    proxy_pass http://<%= node['gitlab-kas']['listen_address'] %>/;
+    proxy_pass http://<%= node['gitlab_kas']['listen_address'] %>/;
     proxy_intercept_errors off;
   }
 
   location <%= File.join(@path, '-/kubernetes-agent/k8s-proxy/') %> {
-    proxy_pass http://<%= node['gitlab-kas']['kubernetes_api_listen_address'] %>/;
+    proxy_pass http://<%= node['gitlab_kas']['kubernetes_api_listen_address'] %>/;
     proxy_buffering off;
     proxy_intercept_errors off;
   }

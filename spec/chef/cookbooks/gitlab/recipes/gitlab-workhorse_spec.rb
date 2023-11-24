@@ -65,7 +65,7 @@ RSpec.describe 'gitlab::gitlab-workhorse' do
   context 'user and group' do
     context 'default values' do
       it_behaves_like "enabled runit service", "gitlab-workhorse", "root", "root"
-      it_behaves_like 'configured logrotate service', 'gitlab-workhorse', 'git', 'git'
+      it_behaves_like 'enabled logged service', 'gitlab-workhorse', true, { log_directory_owner: 'git' }
     end
 
     context 'custom values' do
@@ -79,7 +79,24 @@ RSpec.describe 'gitlab::gitlab-workhorse' do
       end
 
       it_behaves_like "enabled runit service", "gitlab-workhorse", "root", "root"
-      it_behaves_like 'configured logrotate service', 'gitlab-workhorse', 'foo', 'bar'
+    end
+  end
+
+  context 'log directory and runit group' do
+    context 'default values' do
+      it_behaves_like 'enabled logged service', 'gitlab-workhorse', true, { log_directory_owner: 'git' }
+    end
+
+    context 'custom values' do
+      before do
+        stub_gitlab_rb(
+          gitlab_workhorse: {
+            log_group: 'fugee'
+          }
+        )
+      end
+      it_behaves_like 'configured logrotate service', 'gitlab-workhorse', 'git', 'fugee'
+      it_behaves_like 'enabled logged service', 'gitlab-workhorse', true, { log_directory_owner: 'git', log_group: 'fugee' }
     end
   end
 
@@ -276,20 +293,48 @@ RSpec.describe 'gitlab::gitlab-workhorse' do
       end
     end
 
-    # Workhorse doesn't directly use a Google Cloud client and relies on
-    # pre-signed URLs, but include a test for completeness.
     context 'with Google Cloud config' do
-      let(:connection_hash) do
-        {
-          'provider' => 'Google',
-          'google_application_default' => true
-        }
+      where(:parameter_name, :parameter_value) do
+        'google_application_default' | true
+        'google_application_default' | ''
+        'google_application_default' | nil
+        'google_json_key_string'     | 'test'
+        'google_json_key_string'     | ''
+        'google_json_key_string'     | nil
+        'google_json_key_location'   | 'test'
+        'google_json_key_location'   | ''
+        'google_json_key_location'   | nil
       end
 
-      it 'does not include object storage config' do
-        expect(chef_run).to render_file(config_file).with_content { |content|
-          expect(content).not_to include(%([object_storage]))
-        }
+      with_them do
+        let(:connection_hash) do
+          {
+            'provider' => 'Google',
+            parameter_name => parameter_value
+          }
+        end
+        let(:expected_parameter_value) do
+          if parameter_name == 'google_json_key_string'
+            "'''#{parameter_value}'''"
+          else
+            parameter_value.to_json
+          end
+        end
+
+        if params[:parameter_value].nil?
+          it 'does not include object storage config' do
+            expect(chef_run).to render_file(config_file).with_content { |content|
+              expect(content).not_to include(%([object_storage]))
+            }
+          end
+        else
+          it 'includes the proper google configuration' do
+            expect(chef_run).to render_file(config_file).with_content { |content|
+              expect(content).to include(%([object_storage]\n  provider = "Google"\n))
+              expect(content).to include(%([object_storage.google]\n  #{parameter_name} = #{expected_parameter_value}))
+            }
+          end
+        end
       end
     end
   end
@@ -508,7 +553,7 @@ RSpec.describe 'gitlab::gitlab-workhorse' do
     end
 
     it 'should generate config file with the specified values' do
-      content = 'Sentinel = ["tcp://127.0.0.1:2637", "tcp://127.0.8.1:1234"]'
+      content = 'Sentinel = ["redis://127.0.0.1:2637","redis://127.0.8.1:1234"]'
       content_url = 'URL ='
       content_sentinel_master = 'SentinelMaster = "gitlab-redis"'
       expect(chef_run).to render_file("/var/opt/gitlab/gitlab-workhorse/config.toml").with_content(content)
@@ -534,7 +579,7 @@ RSpec.describe 'gitlab::gitlab-workhorse' do
     end
 
     it 'should generate config file with the specified values' do
-      content = 'Sentinel = ["tcp://127.0.0.1:26379", "tcp://127.0.8.1:12345"]'
+      content = 'Sentinel = ["redis://127.0.0.1:26379","redis://127.0.8.1:12345"]'
       content_sentinel_master = 'SentinelMaster = "examplemaster"'
       content_sentinel_password = 'Password = "examplepassword"'
       content_url = 'URL ='
@@ -542,6 +587,102 @@ RSpec.describe 'gitlab::gitlab-workhorse' do
       expect(chef_run).to render_file("/var/opt/gitlab/gitlab-workhorse/config.toml").with_content(content_sentinel_master)
       expect(chef_run).to render_file("/var/opt/gitlab/gitlab-workhorse/config.toml").with_content(content_sentinel_password)
       expect(chef_run).not_to render_file("/var/opt/gitlab/gitlab-workhorse/config.toml").with_content(content_url)
+    end
+  end
+
+  context 'with Sentinels password specified' do
+    before do
+      stub_gitlab_rb(
+        gitlab_rails: {
+          redis_sentinels: [
+            { 'host' => '127.0.0.1', 'port' => 26379 },
+            { 'host' => '127.0.8.1', 'port' => 12345 }
+          ],
+          redis_sentinels_password: 'some pass'
+        },
+        redis: {
+          master_name: 'examplemaster',
+          master_password: 'examplepassword'
+        }
+      )
+    end
+
+    it 'should generate config file with the specified values' do
+      content = 'Sentinel = ["redis://:some+pass@127.0.0.1:26379","redis://:some+pass@127.0.8.1:12345"]'
+      content_sentinel_master = 'SentinelMaster = "examplemaster"'
+      content_password = 'Password = "examplepassword"'
+      content_sentinel_password = 'SentinelPassword = "some pass"'
+      content_url = 'URL ='
+      expect(chef_run).to render_file("/var/opt/gitlab/gitlab-workhorse/config.toml").with_content(content)
+      expect(chef_run).to render_file("/var/opt/gitlab/gitlab-workhorse/config.toml").with_content(content_password)
+      expect(chef_run).to render_file("/var/opt/gitlab/gitlab-workhorse/config.toml").with_content(content_sentinel_master)
+      expect(chef_run).to render_file("/var/opt/gitlab/gitlab-workhorse/config.toml").with_content(content_sentinel_password)
+      expect(chef_run).not_to render_file("/var/opt/gitlab/gitlab-workhorse/config.toml").with_content(content_url)
+    end
+  end
+
+  context 'with separate workhorse redis details specified' do
+    context 'with standalone redis defined' do
+      before do
+        stub_gitlab_rb(
+          gitlab_rails: {
+            redis_sentinels: [
+              { 'host' => '127.0.0.1', 'port' => 26379 },
+              { 'host' => '127.0.8.1', 'port' => 12345 }
+            ],
+            redis_workhorse_instance: "unix:/home/random/path.socket",
+            redis_workhorse_password: 'some pass'
+          },
+          redis: {
+            master_name: 'examplemaster',
+            master_password: 'examplepassword'
+          }
+        )
+      end
+
+      it 'should generate config file with the specified values' do
+        content_url = 'URL = "unix:/home/random/path.socket"'
+        content_password = 'Password = "some pass"'
+        expect(chef_run).to render_file("/var/opt/gitlab/gitlab-workhorse/config.toml").with_content(content_url)
+        expect(chef_run).to render_file("/var/opt/gitlab/gitlab-workhorse/config.toml").with_content(content_password)
+        expect(chef_run).not_to render_file("/var/opt/gitlab/gitlab-workhorse/config.toml").with_content(/Sentinel/)
+        expect(chef_run).not_to render_file("/var/opt/gitlab/gitlab-workhorse/config.toml").with_content(/SentinelMaster/)
+      end
+    end
+
+    context 'with sentinels defined' do
+      before do
+        stub_gitlab_rb(
+          gitlab_rails: {
+            redis_sentinels: [
+              { 'host' => '127.0.0.1', 'port' => 26379 },
+              { 'host' => '127.0.8.1', 'port' => 12345 }
+            ],
+            redis_sentinels_password: 'some pass',
+            redis_workhorse_sentinels: [
+              { 'host' => '127.0.0.2', 'port' => 26379 },
+              { 'host' => '127.0.8.2', 'port' => 12345 }
+            ],
+            redis_workhorse_sentinels_password: 'some workhorse pass',
+            redis_workhorse_sentinel_master: 'worhorse.master'
+          },
+          redis: {
+            master_name: 'examplemaster',
+            master_password: 'examplepassword'
+          }
+        )
+      end
+
+      it 'should generate config file with the specified values' do
+        content = 'Sentinel = ["redis://:some+workhorse+pass@127.0.0.2:26379","redis://:some+workhorse+pass@127.0.8.2:12345"]'
+        content_sentinel_master = 'SentinelMaster = "worhorse.master"'
+        content_sentinel_password = 'Password = "some workhorse pass"'
+        content_url = 'URL ='
+        expect(chef_run).to render_file("/var/opt/gitlab/gitlab-workhorse/config.toml").with_content(content)
+        expect(chef_run).to render_file("/var/opt/gitlab/gitlab-workhorse/config.toml").with_content(content_sentinel_master)
+        expect(chef_run).to render_file("/var/opt/gitlab/gitlab-workhorse/config.toml").with_content(content_sentinel_password)
+        expect(chef_run).not_to render_file("/var/opt/gitlab/gitlab-workhorse/config.toml").with_content(content_url)
+      end
     end
   end
 

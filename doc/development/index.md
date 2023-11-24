@@ -4,7 +4,7 @@ group: Distribution
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://about.gitlab.com/handbook/product/ux/technical-writing/#assignments
 ---
 
-# Omnibus GitLab developer documentation
+# Contribute to Omnibus GitLab development
 
 ## Getting started
 
@@ -27,3 +27,7 @@ info: To determine the technical writer assigned to the Stage/Group associated w
 - [Version format of packages, Docker images and other artifacts](package_version_format.md)
 - [Handling broken master pipelines](broken_master.md)
 - [Handling vulnerabilities](vulnerabilities.md)
+
+## Technical notes
+
+- [AWS AMis and Marketplace Listing](aws_amis_and_marketplace_listings.md)

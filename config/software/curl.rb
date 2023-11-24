@@ -16,7 +16,7 @@
 
 name 'curl'
 
-version = Gitlab::Version.new('curl', 'curl-7_87_0')
+version = Gitlab::Version.new('curl', 'curl-8_4_0')
 
 default_version version.print(false)
 display_version version.print(false).delete_prefix('curl-').tr('_', '.')
@@ -67,7 +67,8 @@ build do
     "--with-zlib=#{install_dir}/embedded",
     "--without-ca-path",
     "--without-ca-bundle",
-    "--with-ca-fallback"
+    "--with-ca-fallback",
+    "--without-zstd"
   ]
 
   openssl_library_path = "=#{install_dir}/embedded" unless Build::Check.use_system_ssl?

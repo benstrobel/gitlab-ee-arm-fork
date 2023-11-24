@@ -16,6 +16,7 @@
 #
 
 require 'chef/mash'
+require 'tomlib'
 require_relative '../../package/libraries/helpers/output_helper.rb'
 
 module Gitaly
@@ -26,26 +27,12 @@ module Gitaly
       parse_git_data_dirs
       parse_gitaly_storages
       parse_gitconfig
-      parse_legacy_cgroup_variables
-    end
-
-    def parse_legacy_cgroup_variables
-      # maintain backwards compatibility with pre 15.0 Gitaly cgroups config
-      cgroups_repositories_memory_bytes = Gitlab['gitaly']['cgroups_repositories_memory_bytes'] || (Gitlab['gitaly']['cgroups_memory_limit'] if Gitlab['gitaly']['cgroups_memory_enabled'])
-      cgroups_repositories_cpu_shares = Gitlab['gitaly']['cgroups_repositories_cpu_shares'] || (Gitlab['gitaly']['cgroups_cpu_shares'] if Gitlab['gitaly']['cgroups_cpu_enabled'])
-      cgroups_repositories_count = Gitlab['gitaly']['cgroups_repositories_count'] || Gitlab['gitaly']['cgroups_count']
-      cgroups_cpu_shares = Gitlab['gitaly']['cgroups_cpu_shares'] if Gitlab['gitaly']['cgroups_repositories_count'] && cgroups_repositories_count&.positive?
-
-      Gitlab['gitaly']['cgroups_cpu_shares'] = cgroups_cpu_shares
-      Gitlab['gitaly']['cgroups_repositories_count'] = cgroups_repositories_count
-      Gitlab['gitaly']['cgroups_repositories_memory_bytes'] = cgroups_repositories_memory_bytes
-      Gitlab['gitaly']['cgroups_repositories_cpu_shares'] = cgroups_repositories_cpu_shares
     end
 
     def gitaly_address
-      socket_path     = user_config['socket_path']     || package_default['socket_path']
-      listen_addr     = user_config['listen_addr']     || package_default['listen_addr']
-      tls_listen_addr = user_config['tls_listen_addr'] || package_default['tls_listen_addr']
+      listen_addr = user_config.dig('configuration', 'listen_addr')         || package_default.dig('configuration', 'listen_addr')
+      socket_path = user_config.dig('configuration', 'socket_path')         || package_default.dig('configuration', 'socket_path')
+      tls_listen_addr = user_config.dig('configuration', 'tls_listen_addr') || package_default.dig('configuration', 'tls_listen_addr')
 
       # Default to using socket path if available
       if tls_listen_addr && !tls_listen_addr.empty?
@@ -76,7 +63,7 @@ module Gitaly
     end
 
     def parse_gitaly_storages
-      return unless Gitlab['gitaly']['storage'].nil?
+      return unless Gitlab['gitaly'].dig('configuration', 'storage').nil?
 
       storages = []
       Gitlab['gitlab_rails']['repositories_storages'].each do |key, value|
@@ -85,15 +72,16 @@ module Gitaly
           'path' => value['path']
         }
       end
-      Gitlab['gitaly']['storage'] = storages
+      Gitlab['gitaly']['configuration'] ||= {}
+      Gitlab['gitaly']['configuration']['storage'] = storages
     end
 
     # Compute the default gitconfig from the old Omnibus gitconfig setting.
     # This depends on the Gitlab cookbook having been parsed already.
     def parse_gitconfig
-      # If the administrator has set `gitaly['gitconfig']` then we do not add a
+      # If the administrator has set `gitaly[:configuration][:git][:config]` then we do not add a
       # fallback gitconfig.
-      return unless Gitlab['gitaly']['gitconfig'].nil?
+      return unless Gitlab['gitaly'].dig('configuration', 'git', 'config').nil?
 
       # Furthermore, if the administrator has not overridden the
       # `omnibus_gitconfig` we do not have to migrate anything either. Most
@@ -156,7 +144,20 @@ module Gitaly
 
       return unless gitaly_gitconfig.any?
 
-      Gitlab['gitaly']['gitconfig'] = gitaly_gitconfig
+      tmp_source_hash = {
+        configuration: {
+          git: {
+            config: gitaly_gitconfig.map do |entry|
+              {
+                key: [entry['section'], entry['subsection'], entry['key']].compact.join('.'),
+                value: entry['value']
+              }
+            end
+          }
+        }
+      }
+
+      Chef::Mixin::DeepMerge.deep_merge!(tmp_source_hash, Gitlab['gitaly'])
     end
 
     private

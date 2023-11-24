@@ -15,13 +15,11 @@ class ConsulHelper
       'client_addr' => nil,
       'datacenter' => 'gitlab_consul',
       'disable_update_check' => true,
-      'enable_script_checks' => true,
+      'enable_script_checks' => false,
+      'enable_local_script_checks' => true,
       'node_name' => node['consul']['node_name'] || node['fqdn'],
       'rejoin_after_leave' => true,
       'server' => false,
-      'telemetry' => {
-        'disable_compat_1.9' => false
-      }
     }
     .merge(encryption_configuration)
     .merge(ports_configuration)

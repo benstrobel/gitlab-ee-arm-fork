@@ -24,7 +24,8 @@ include_recipe 'gitlab::default'
   geo-postgresql
   geo-logcursor
 ].each do |service|
-  if node['gitlab'][service]['enable']
+  node_attribute_key = SettingsDSL::Utils.node_attribute_key(service)
+  if node['gitlab'][node_attribute_key]['enable']
     include_recipe "gitlab-ee::#{service}"
   else
     include_recipe "gitlab-ee::#{service}_disable"
@@ -44,9 +45,11 @@ end
   end
 end
 
+rails_enable = node['gitlab']['gitlab_rails']['enable']
+
 # Geo secondary
-if node['gitlab']['geo-secondary']['enable']
-  if node['gitlab']['gitlab-rails']['enable']
+if node['gitlab']['geo_secondary']['enable']
+  if rails_enable
     include_recipe 'gitlab-ee::geo-secondary'
     include_recipe 'gitlab-ee::geo_database_migrations'
   end
@@ -55,7 +58,7 @@ else
 end
 
 # Suggested Reviewers
-include_recipe 'gitlab-ee::suggested_reviewers'
+include_recipe 'gitlab-ee::suggested_reviewers' if rails_enable
 
 # Create the pgbouncer users
 include_recipe 'pgbouncer::user'

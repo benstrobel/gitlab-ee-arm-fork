@@ -38,6 +38,8 @@ class OhaiHelper
         verify_platform
       when 'centos'
         'el'
+      when 'almalinux'
+        'el'
       when 'opensuse', 'opensuseleap'
         'opensuse'
       when 'suse'
@@ -78,6 +80,8 @@ class OhaiHelper
         'buster'
       when /^11/
         'bullseye'
+      when /^12/
+        'bookworm'
       end
     end
 
@@ -89,6 +93,8 @@ class OhaiHelper
         '7'
       when /^8\./
         '8'
+      when /^9\./
+        '9'
       end
     end
 
@@ -122,6 +128,8 @@ class OhaiHelper
       when 'debian', 'raspbian'
         version = get_debian_version
       when 'centos'
+        version = get_centos_version
+      when 'almalinux'
         version = get_centos_version
       when 'opensuse', 'opensuseleap'
         version = get_opensuse_version
@@ -172,8 +180,20 @@ class OhaiHelper
       os_platform == 'raspbian'
     end
 
+    def is_32_bit?
+      `getconf LONG_BIT`.strip == "32"
+    end
+
     def gcc_target
       ohai['languages']['c']['gcc']['target']
+    end
+
+    def centos7?
+      ohai['platform'] == 'centos' && get_centos_version.to_i == 7
+    end
+
+    def sles12?
+      os_platform == 'sles' && get_suse_version.to_i == 12
     end
 
     # Currently rake-compiler-dock uses a Ubuntu 20.04 image to create the

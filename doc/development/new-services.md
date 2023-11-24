@@ -38,21 +38,46 @@ you want to define the [Default Attributes](../architecture/index.md#default-att
 for your service. For a service you should define an `enable` option by default.
 
 ```ruby
-default['gitlab']['best-service']['enable'] = false
-default['gitlab']['best-service']['dir'] = '/var/opt/gitlab/best-service'
-default['gitlab']['best-service']['log_directory'] = '/var/log/gitlab/best-service'
+default['gitlab']['best_service']['enable'] = false
+default['gitlab']['best_service']['dir'] = '/var/opt/gitlab/best-service'
+default['gitlab']['best_service']['log_directory'] = '/var/log/gitlab/best-service'
 ```
 
 - `default` is how you define basic cookbook attributes.
 - `['gitlab']` contains the cookbook name.
-- `['best-service']` is the name of your service, at this level we use hyphens to separate words.
-- `enable`, `dir`, and `log_directory` are our configuration settings, and we use underscores to separate words at this and deeper levels.
+- `['best_service']` is the name of your service.
+- `enable`, `dir`, and `log_directory` are our configuration settings.
 - `/var/opt/gitlab` is where the working directory and configuration files for the services are placed.
 - `/var/log/gitlab` is where logs are written to for the GitLab package.
 
 Define all your settings that you want configurable in the package here. Default
 them to `nil` if you need to calculate their defaults based on other settings for
 now.
+
+#### Naming convention
+
+A service is referred to mainly in three scenarios:
+
+1. Accessing the Chef attributes corresponding to the service
+1. Referencing items such as users, groups, and paths corresponding to the
+   service
+1. Passing the service name to methods which look up on service properties
+   similar to the following examples:
+   - "Is the service enabled?"
+   - "Get the log ownership details corresponding to this service"
+   - "Generate runit configuration for this service"
+
+For the first case mentioned above, we use underscores to differentiate words in
+the service name. For the other two cases, we use hyphens to differentiate words
+in the service name. Since the configuration is mainly used as a Ruby object,
+using underscores instead of hyphens is more flexible (for example, underscores
+make it cleaner to use symbols in configuration hashes).
+
+For example, if we take GitLab Pages, the attributes are available as
+`Gitlab['gitlab_pages']` and `node['gitlab_pages']` while the default
+directories and paths might look like `/var/log/gitlab/gitlab-pages` and
+`/var/opt/gitlab/gitlab-pages`. Similarly, method calls will look like
+`service_enabled?("gitlab-pages")`.
 
 ### Create a configuration Mash for your service
 
@@ -63,11 +88,8 @@ In `files/gitlab-cookbooks/package/libraries/config/gitlab.rb` you will find the
 `attribute` methods.
 
 If your service exists within the attributes for the GitLab cookbook, you should
-add it within the `attribute_block('gitlab')` block. Otherwise, if your service
-has its own cookbook, add it above.
-
-Add your service as an attribute, using an underscore to separate words, **even if you
-used a hyphen in the default attributes.**
+add it as an attribute within the `attribute_block('gitlab')` block. Otherwise,
+if your service has its own cookbook, add it above.
 
 ```ruby
 attribute('best_service')
@@ -96,10 +118,10 @@ to this file. `files/gitlab-config-template/gitlab.rb.template`
 # best_service['log_directory'] = '/var/log/gitlab/best-service'
 ```
 
-Use the underscore syntax here for word separation. The values provided are not
-meant to reflect the defaults, but are to make it easier to uncomment to use the
-service. If that isn't possible you can use values clearly meant to be replaced
-like `YOURSECRET` etc. Or use the default when it makes the most sense.
+The values provided are not meant to reflect the defaults, but are to make it
+easier to uncomment to use the service. If that isn't possible you can use
+values clearly meant to be replaced like `YOURSECRET` etc. Or use the default
+when it makes the most sense.
 
 ## Include the service in the services list
 
@@ -115,9 +137,8 @@ service is only for GitLab EE.
 service 'best_service', groups: ['bestest']
 ```
 
-We use the underscore word separation because these services act on the Mash
-objects we created earlier. Specifying groups makes it easier to disable/enable
-multiple related services as once.
+Specifying groups makes it easier to disable/enable multiple related services as
+once.
 
 If none of the existing groups match with what your service does, and you don't
 currently need to enable/disable the service using a group. Don't bother adding
@@ -165,7 +186,10 @@ A service typically needs a `run`, `log-run`, and `log-config`.
 
 ```ruby
 #!/bin/sh
-exec svlogd -tt <%= @options[:log_directory] %>
+exec chpst -P \
+  -U root:<%= @options[:log_group] || 'root' %> \
+  -u root:<%= @options[:log_group] || 'root' %> \
+  svlogd -tt <%= @options[:log_directory] %>
 ```
 
 `sv-best-service-run.erb`:
@@ -186,9 +210,13 @@ Within your recipe, the runit service should be called and started:
 ```ruby
 runit_service "best-service" do
   options({
-    configItem: 'value'
+    configItem: 'value',
+    [...]
+    log_directory: logging_settings[:log_directory],
+    log_user: logging_settings[:runit_owner],
+    log_group: logging_settings[:runit_group],
   }.merge(params))
-  log_options node['gitlab']['logging'].to_hash.merge(node['best-service'].to_hash)
+  log_options logging_settings[:options]
 end
 
 if node['gitlab']['bootstrap']['enable']
@@ -197,6 +225,29 @@ if node['gitlab']['bootstrap']['enable']
   end
 end
 ```
+
+#### Log Directory
+
+The example settings referenced above that include `logging_settings` make use of
+the [`LogfilesHelper`](https://gitlab.com/gitlab-org/omnibus-gitlab/-/tree/master/files/gitlab-cookbooks/gitlab/libraries/logfiles_helper.rb)
+class in order to provide a consistent reference to the configuration settings
+for the service log directory, the log group assigned to the log directory, and
+the group used for svlogd execution.
+
+To make use of these settings, please include the `LogfilesHelper` class in your
+`enable.rb` for your service, for example:
+
+```ruby
+[...]
+logfiles_helper = LogfilesHelper.new(node)
+logging_settings = logfiles_helper.logging_settings('best-service')
+[...]
+```
+
+Please add `best-service` to the list of services in the `default_logdir_ownership`
+class method with the default user/group that should be used for the log directory
+user/group. If you don't have a specific user/group need - default to
+`{ username: gitlab_user, group: gitlab_group }`
 
 ### Disable recipe
 

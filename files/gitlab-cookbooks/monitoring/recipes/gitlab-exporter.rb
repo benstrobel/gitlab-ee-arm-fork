@@ -17,10 +17,11 @@
 #
 account_helper = AccountHelper.new(node)
 redis_helper = RedisHelper.new(node)
+logfiles_helper = LogfilesHelper.new(node)
+logging_settings = logfiles_helper.logging_settings('gitlab-exporter')
 gitlab_user = account_helper.gitlab_user
-gitlab_exporter_dir = node['monitoring']['gitlab-exporter']['home']
-gitlab_exporter_log_dir = node['monitoring']['gitlab-exporter']['log_directory']
-env_directory = node['monitoring']['gitlab-exporter']['env_directory']
+gitlab_exporter_dir = node['monitoring']['gitlab_exporter']['home']
+env_directory = node['monitoring']['gitlab_exporter']['env_directory']
 
 directory gitlab_exporter_dir do
   owner gitlab_user
@@ -28,23 +29,27 @@ directory gitlab_exporter_dir do
   recursive true
 end
 
-directory gitlab_exporter_log_dir do
-  owner gitlab_user
-  mode "0700"
+# Create log_directory
+directory logging_settings[:log_directory] do
+  owner logging_settings[:log_directory_owner]
+  mode logging_settings[:log_directory_mode]
+  if log_group = logging_settings[:log_directory_group]
+    group log_group
+  end
   recursive true
 end
 
 env_dir env_directory do
-  variables node['monitoring']['gitlab-exporter']['env']
+  variables node['monitoring']['gitlab_exporter']['env']
   notifies :restart, "runit_service[gitlab-exporter]"
 end
 
-connection_string = "dbname=#{node['gitlab']['gitlab-rails']['db_database']} user=#{node['gitlab']['gitlab-rails']['db_username']}"
+connection_string = "dbname=#{node['gitlab']['gitlab_rails']['db_database']} user=#{node['gitlab']['gitlab_rails']['db_username']}"
 
 connection_string += if node['postgresql']['enabled']
                        " host=#{node['postgresql']['dir']}"
                      else
-                       " host=#{node['gitlab']['gitlab-rails']['db_host']} port=#{node['gitlab']['gitlab-rails']['db_port']} password=#{node['gitlab']['gitlab-rails']['db_password']}"
+                       " host=#{node['gitlab']['gitlab_rails']['db_host']} port=#{node['gitlab']['gitlab_rails']['db_port']} password=#{node['gitlab']['gitlab_rails']['db_password']}"
                      end
 
 redis_url = redis_helper.redis_url(support_sentinel_groupname: false)
@@ -55,13 +60,13 @@ template "#{gitlab_exporter_dir}/gitlab-exporter.yml" do
   mode "0600"
   notifies :restart, "runit_service[gitlab-exporter]"
   variables(
-    probe_sidekiq: node['monitoring']['gitlab-exporter']['probe_sidekiq'],
-    probe_elasticsearch: node['monitoring']['gitlab-exporter']['probe_elasticsearch'],
-    elasticsearch_url: node['monitoring']['gitlab-exporter']['elasticsearch_url'],
-    elasticsearch_authorization: node['monitoring']['gitlab-exporter']['elasticsearch_authorization'],
+    probe_sidekiq: node['monitoring']['gitlab_exporter']['probe_sidekiq'],
+    probe_elasticsearch: node['monitoring']['gitlab_exporter']['probe_elasticsearch'],
+    elasticsearch_url: node['monitoring']['gitlab_exporter']['elasticsearch_url'],
+    elasticsearch_authorization: node['monitoring']['gitlab_exporter']['elasticsearch_authorization'],
     redis_url: redis_url,
     connection_string: connection_string,
-    redis_enable_client: node['gitlab']['gitlab-rails']['redis_enable_client']
+    redis_enable_client: node['gitlab']['gitlab_rails']['redis_enable_client']
   )
   sensitive true
 end
@@ -74,9 +79,11 @@ end
 
 runit_service "gitlab-exporter" do
   options({
-    log_directory: gitlab_exporter_log_dir
+    log_directory: logging_settings[:log_directory],
+    log_user: logging_settings[:runit_owner],
+    log_group: logging_settings[:runit_group],
   }.merge(params))
-  log_options node['gitlab']['logging'].to_hash.merge(node['monitoring']['gitlab-exporter'].to_hash)
+  log_options logging_settings[:options]
 end
 
 if node['gitlab']['bootstrap']['enable']
@@ -85,11 +92,11 @@ if node['gitlab']['bootstrap']['enable']
   end
 end
 
-consul_service node['monitoring']['gitlab-exporter']['consul_service_name'] do
+consul_service node['monitoring']['gitlab_exporter']['consul_service_name'] do
   id 'gitlab-exporter'
-  meta node['monitoring']['gitlab-exporter']['consul_service_meta']
+  meta node['monitoring']['gitlab_exporter']['consul_service_meta']
   action Prometheus.service_discovery_action
-  ip_address node['monitoring']['gitlab-exporter']['listen_address']
-  port node['monitoring']['gitlab-exporter']['listen_port'].to_i
+  ip_address node['monitoring']['gitlab_exporter']['listen_address']
+  port node['monitoring']['gitlab_exporter']['listen_port'].to_i
   reload_service false unless Services.enabled?('consul')
 end

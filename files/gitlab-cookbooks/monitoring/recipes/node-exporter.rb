@@ -17,17 +17,22 @@
 #
 account_helper = AccountHelper.new(node)
 prometheus_user = account_helper.prometheus_user
-node_exporter_log_dir = node['monitoring']['node-exporter']['log_directory']
-textfile_dir = File.join(node['monitoring']['node-exporter']['home'], 'textfile_collector')
-node_exporter_static_etc_dir = node['monitoring']['node-exporter']['env_directory']
+textfile_dir = File.join(node['monitoring']['node_exporter']['home'], 'textfile_collector')
+node_exporter_static_etc_dir = node['monitoring']['node_exporter']['env_directory']
+logfiles_helper = LogfilesHelper.new(node)
+logging_settings = logfiles_helper.logging_settings('node-exporter')
 
 # node-exporter runs under the prometheus user account. If prometheus is
 # disabled, it's up to this recipe to create the account
 include_recipe 'monitoring::user'
 
-directory node_exporter_log_dir do
-  owner prometheus_user
-  mode '0700'
+# Create log_directory
+directory logging_settings[:log_directory] do
+  owner logging_settings[:log_directory_owner]
+  mode logging_settings[:log_directory_mode]
+  if log_group = logging_settings[:log_directory_group]
+    group log_group
+  end
   recursive true
 end
 
@@ -38,7 +43,7 @@ directory node_exporter_static_etc_dir do
 end
 
 env_dir node_exporter_static_etc_dir do
-  variables node['monitoring']['node-exporter']['env']
+  variables node['monitoring']['node_exporter']['env']
   notifies :restart, "runit_service[node-exporter]"
 end
 
@@ -48,16 +53,16 @@ directory textfile_dir do
   recursive true
 end
 
-runtime_flags = PrometheusHelper.new(node).kingpin_flags('node-exporter')
+runtime_flags = PrometheusHelper.new(node).kingpin_flags('node_exporter')
 runit_service 'node-exporter' do
   options({
-    log_directory: node_exporter_log_dir,
+    log_directory: logging_settings[:log_directory],
+    log_user: logging_settings[:runit_owner],
+    log_group: logging_settings[:runit_group],
     flags: runtime_flags,
     env_dir: node_exporter_static_etc_dir
   }.merge(params))
-  log_options node['gitlab']['logging'].to_hash.merge(
-    node['monitoring']['node-exporter'].to_hash
-  )
+  log_options logging_settings[:options]
 end
 
 if node['gitlab']['bootstrap']['enable']
@@ -66,10 +71,10 @@ if node['gitlab']['bootstrap']['enable']
   end
 end
 
-consul_service node['monitoring']['node-exporter']['consul_service_name'] do
+consul_service node['monitoring']['node_exporter']['consul_service_name'] do
   id 'node-exporter'
-  meta node['monitoring']['node-exporter']['consul_service_meta']
+  meta node['monitoring']['node_exporter']['consul_service_meta']
   action Prometheus.service_discovery_action
-  socket_address node['monitoring']['node-exporter']['listen_address']
+  socket_address node['monitoring']['node_exporter']['listen_address']
   reload_service false unless Services.enabled?('consul')
 end

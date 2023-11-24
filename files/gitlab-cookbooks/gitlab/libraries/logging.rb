@@ -45,7 +45,6 @@ module Logging
         gitlab-shell
         gitlab-workhorse
         gitlab-exporter
-        grafana
         logrotate
         mailroom
         mattermost
@@ -64,7 +63,7 @@ module Logging
         puma
         storage-check
       ).each do |runit_sv|
-        Gitlab[SettingsDSL::Utils.underscored_form(runit_sv)]['svlogd_prefix'] ||= "#{Gitlab['node']['hostname']} #{runit_sv}: "
+        Gitlab[SettingsDSL::Utils.node_attribute_key(runit_sv)]['svlogd_prefix'] ||= "#{Gitlab['node']['hostname']} #{runit_sv}: "
       end
     end
   end

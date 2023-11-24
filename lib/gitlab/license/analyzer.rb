@@ -32,22 +32,22 @@ module License
       'indexof',            # MIT Licensed - https://github.com/component/indexof/blob/master/LICENSE
       'map-stream',         # MIT Licensed - https://github.com/dominictarr/map-stream/blob/master/LICENCE
       'object-component',   # MIT Licensed - https://github.com/component/object/blob/master/LICENSE
-      'select2',            # MIT Licensed - https://github.com/select2/select2/blob/master/LICENSE.md
       'exiftool',           # License similar to Perl, which is under either GPL v1 or Artistic license - https://www.sno.phy.queensu.ca/~phil/exiftool/#license
       'github.com/cloudflare/tableflip', # BSD-3-Clause Licensed - https://github.com/cloudflare/tableflip/blob/master/LICENSE
       'gitlab.com/gitlab-org/golang-archive-zip', # BSD-3-Clause Licensed - https://gitlab.com/gitlab-org/golang-archive-zip/-/blob/c8e752e2d582090de40338553ef00ef08b89c905/LICENSE
       'spam-classifier', # GitLab project and we can distribute the obfuscated binaries
+      'elkjs',           # EPL 2.0 - https://github.com/kieler/elkjs/blob/master/LICENSE.md
     ]
     # readline is GPL licensed and its use was not mere aggregation. Hence it is
-    # blacklisted.
+    # denylisted.
     # Details: https://gitlab.com/gitlab-org/omnibus-gitlab/issues/1945#note_29286329
     @software_unacceptable = ['readline']
 
     def self.software_check(dependency)
       if @software_unacceptable.include?(dependency)
-        ['unacceptable', 'Blacklisted software']
+        ['unacceptable', 'Denylisted software']
       elsif @software_acceptable.include?(dependency)
-        ['acceptable', 'Whitelisted software']
+        ['acceptable', 'Allowlisted software']
       end
     end
 
@@ -82,7 +82,7 @@ module License
       when 'acceptable'
         if reason == 'Acceptable license'
           string = "\t" * level + "✓ #{dependency} - #{version} uses #{license} - #{reason}\n"
-        elsif reason == 'Whitelisted software'
+        elsif reason == 'Allowlisted software'
           string = "\t" * level + "# #{dependency} - #{version} uses #{license} - #{reason}\n"
         end
       when 'unacceptable'
@@ -140,7 +140,7 @@ module License
         end
       end
 
-      File.open("pkg/#{Build::Info.package}_#{Build::Info.release_version}.license-status.json", "w") do |f|
+      File.open("pkg/#{Build::Info::Package.name}_#{Build::Info::Package.release_version}.license-status.json", "w") do |f|
         f.write(JSON.pretty_generate(output_json))
       end
 

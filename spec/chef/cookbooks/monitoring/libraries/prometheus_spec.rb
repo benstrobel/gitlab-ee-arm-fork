@@ -7,11 +7,10 @@ RSpec.describe Prometheus do
     expect(Prometheus.services).to match_array(%w(
                                                  prometheus
                                                  alertmanager
-                                                 grafana
-                                                 node-exporter
-                                                 redis-exporter
-                                                 postgres-exporter
-                                                 gitlab-exporter
+                                                 node_exporter
+                                                 redis_exporter
+                                                 postgres_exporter
+                                                 gitlab_exporter
                                                ))
   end
 end

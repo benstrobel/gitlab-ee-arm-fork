@@ -2,12 +2,14 @@ unified_mode true
 
 property :socket_group, String
 property :dir, String, default: lazy { node['redis']['dir'] }
-property :log_dir, String, default: lazy { node['redis']['log_directory'] }
-property :account_helper, default: lazy { AccountHelper.new(node) }
-property :omnibus_helper, default: lazy { OmnibusHelper.new(node) }
-property :redis_helper, default: lazy { RedisHelper.new(node) }
+property :account_helper, default: lazy { AccountHelper.new(node) }, sensitive: true
+property :omnibus_helper, default: lazy { OmnibusHelper.new(node) }, sensitive: true
+property :redis_helper, default: lazy { RedisHelper.new(node) }, sensitive: true
+property :runit_sv_timeout, [Integer, nil], default: lazy { node['redis']['runit_sv_timeout'] }
+property :logfiles_helper, default: lazy { LogfilesHelper.new(node) }, sensitive: true
 
 action :create do
+  logging_settings = new_resource.logfiles_helper.logging_settings('redis')
   account 'user and group for redis' do
     username new_resource.account_helper.redis_user
     uid node['redis']['uid']
@@ -16,7 +18,7 @@ action :create do
     gid node['redis']['gid']
     shell node['redis']['shell']
     home node['redis']['home']
-    manage node['gitlab']['manage-accounts']['enable']
+    manage node['gitlab']['manage_accounts']['enable']
   end
 
   group 'Socket group' do
@@ -30,33 +32,51 @@ action :create do
     mode "0750"
   end
 
-  directory new_resource.log_dir do
-    owner new_resource.account_helper.redis_user
-    mode "0700"
+  # Create log_directory
+  directory logging_settings[:log_directory] do
+    owner logging_settings[:log_directory_owner]
+    mode logging_settings[:log_directory_mode]
+    if log_group = logging_settings[:log_directory_group]
+      group log_group
+    end
+    recursive true
   end
 
   redis_config = ::File.join(new_resource.dir, 'redis.conf')
-  is_replica = node['redis']['master_ip'] &&
-    node['redis']['master_port'] &&
-    !node['redis']['master']
+
+  if node['redis'].key?('ha')
+    if node['redis']['ha']
+      node.default['redis']['start_down'] = true
+      node.default['redis']['set_replicaof'] = false
+    else
+      node.default['redis']['start_down'] = false
+      node.default['redis']['set_replicaof'] = true unless node['redis']['master']
+    end
+  end
 
   template redis_config do
     source "redis.conf.erb"
     owner new_resource.account_helper.redis_user
     mode "0644"
-    variables(node['redis'].to_hash.merge({ is_replica: is_replica }))
+    variables(node['redis'].to_hash)
     notifies :restart, 'runit_service[redis]', :immediately if new_resource.omnibus_helper.should_notify?('redis')
     sensitive true
   end
 
+  open_files_ulimit = node['redis']['open_files_ulimit']
+
   runit_service 'redis' do
-    start_down node['redis']['ha']
+    start_down node['redis']['start_down']
     template_name 'redis'
     options({
       service: 'redis',
-      log_directory: new_resource.log_dir
+      log_directory: logging_settings[:log_directory],
+      log_user: logging_settings[:runit_owner],
+      log_group: logging_settings[:runit_group],
+      open_files_ulimit: open_files_ulimit
     }.merge(new_resource))
-    log_options node['gitlab']['logging'].to_hash.merge(node['redis'].to_hash)
+    sv_timeout new_resource.runit_sv_timeout
+    log_options logging_settings[:options]
   end
 
   if node['gitlab']['bootstrap']['enable']
@@ -75,6 +95,6 @@ action :create do
       MESSAGE
       LoggingHelper.warning(message)
     end
-    only_if { new_resource.redis_helper.running_version != new_resource.redis_helper.installed_version }
+    only_if { node['redis']['startup_delay'].zero? && new_resource.redis_helper.running_version != new_resource.redis_helper.installed_version }
   end
 end

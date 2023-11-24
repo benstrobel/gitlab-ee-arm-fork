@@ -248,6 +248,30 @@ postgresql['dynamic_shared_memory_type'] = 'none'
 
 Run `sudo gitlab-ctl reconfigure` for the change to take effect.
 
+## PostgreSQL error `FATAL:  remaining connection slots are reserved for non-replication superuser connections`
+
+PostgreSQL has a setting for the maximum number of the concurrent connections
+to the database server. If you see this error, it means that your GitLab instance is trying to exceed
+this limit on the number of concurrent connections.
+
+To fix this problem, you have two options:
+
+- Either increase the max connections value:
+
+  1. Edit `/etc/gitlab/gitlab.rb`:
+
+     ```ruby
+     postgresql['max_connections'] = 600
+     ```
+
+  1. Reconfigure GitLab:
+
+     ```shell
+     sudo gitlab-ctl reconfigure
+     ```
+
+- Or, you can consider [using PgBouncer](https://docs.gitlab.com/ee/administration/postgresql/pgbouncer.html) which is a connection pooler for PostgreSQL.
+
 ## Reconfigure complains about the GLIBC version
 
 ```shell
@@ -796,6 +820,17 @@ Ran /opt/gitlab/embedded/bin/sv restart /opt/gitlab/service/gitaly returned 1
 
 Refer to [issue 341573](https://gitlab.com/gitlab-org/gitlab/-/issues/341573) for more details.
 
+## Reconfigure is stuck when re-installing GitLab
+
+Because of a [known issue](https://gitlab.com/gitlab-org/omnibus-gitlab/-/issues/7776), you can see the reconfigure process stuck at
+`ruby_block[wait for logrotate service socket] action run` after uninstalling GitLab and trying to install it again. This problem occurs when one of the `systemctl` commands are
+not executed when [uninstalling GitLab](installation/index.md#uninstall-the-linux-package-omnibus).
+
+To resolve this issue:
+
+- Make sure you followed all the steps when uninstalling GitLab and perform them if necessary.
+- Follow the workaround in [issue 7776](https://gitlab.com/gitlab-org/omnibus-gitlab/-/issues/7776).
+
 ## Mirroring the GitLab `yum` repository with Pulp or Red Hat Satellite fails
 
 Direct mirroring of the Omnibus GitLab `yum` repositories located at <https://packages.gitlab.com/gitlab/> with [Pulp](https://pulpproject.org/) or
@@ -947,7 +982,7 @@ local mirror that are no longer present in the corresponding GitLab repository.
 
    ```shell
    pulp rpm repository create --retain-package-versions=1 --name "gitlab-ee"
-   pulp rpm remote create --name gitlab-ee --url http://mirror.example.com/repos/gitlab_gitlab-ee/ --policy immediate
+   pulp rpm remote create --name gitlab-ee --url "http://mirror.example.com/repos/gitlab_gitlab-ee/" --policy immediate
    pulp rpm repository update --name gitlab-ee --remote gitlab-ee
    ```
 
@@ -962,3 +997,22 @@ local mirror that are no longer present in the corresponding GitLab repository.
 
 After the repository is synced, you can create a publication and distribution to
 make it available. See <https://docs.pulpproject.org/pulp_rpm/> for details.
+
+## Error: `E: connection refused to d20rj4el6vkp4c.cloudfront.net 443`
+
+When you install a package hosted on our package repository at `packages.gitlab.com`, your client will receive and follow a redirect to the CloudFront address `d20rj4el6vkp4c.cloudfront.net`. Servers in an air-gapped environment can receive the following errors: 
+
+```shell
+E: connection refused to d20rj4el6vkp4c.cloudfront.net 443
+```
+
+```shell
+Failed to connect to d20rj4el6vkp4c.cloudfront.net port 443: Connection refused
+```
+
+To resolve this issue, you have three options:
+
+- If you can allowlist by domain, add the endpoint `d20rj4el6vkp4c.cloudfront.net` to your firewall settings.
+- If you cannot allowlist by domain, add the [CloudFront IP address ranges](https://d7uri8nf7uskq.cloudfront.net/tools/list-cloudfront-ips) to your firewall settings. You must
+  keep this list synced with your firewall settings because they can change.
+- Manually download the package file and upload it to your server.

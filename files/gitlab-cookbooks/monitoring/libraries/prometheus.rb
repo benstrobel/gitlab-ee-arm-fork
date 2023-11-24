@@ -26,7 +26,7 @@ require 'json'
 module Prometheus
   class << self
     def services
-      Services.find_by_group('monitoring').map { |name| SettingsDSL::Utils.sanitized_key(name) }
+      Services.find_by_group('monitoring').map { |name| SettingsDSL::Utils.node_attribute_key(name) }
     end
 
     def parse_variables
@@ -94,7 +94,7 @@ module Prometheus
     end
 
     def parse_node_exporter_flags
-      default_config = Gitlab['node']['monitoring']['node-exporter'].to_hash
+      default_config = Gitlab['node']['monitoring']['node_exporter'].to_hash
       user_config = Gitlab['node_exporter']
       runit_config = Gitlab['node']['runit'].to_hash
 
@@ -114,13 +114,13 @@ module Prometheus
     end
 
     def parse_redis_exporter_flags
-      default_config = Gitlab['node']['monitoring']['redis-exporter'].to_hash
+      default_config = Gitlab['node']['monitoring']['redis_exporter'].to_hash
       user_config = Gitlab['redis_exporter']
 
       listen_address = user_config['listen_address'] || default_config['listen_address']
       default_config['flags'] = {
         'web.listen-address' => listen_address,
-        'redis.addr' => "unix://#{Gitlab['node']['gitlab']['gitlab-rails']['redis_socket']}"
+        'redis.addr' => "unix://#{Gitlab['node']['gitlab']['gitlab_rails']['redis_socket']}"
       }
 
       default_config['flags'].merge!(user_config['flags']) if user_config.key?('flags')
@@ -129,7 +129,7 @@ module Prometheus
     end
 
     def parse_postgres_exporter_flags
-      default_config = Gitlab['node']['monitoring']['postgres-exporter'].to_hash
+      default_config = Gitlab['node']['monitoring']['postgres_exporter'].to_hash
       user_config = Gitlab['postgres_exporter']
 
       home_directory = user_config['home'] || default_config['home']
@@ -241,8 +241,8 @@ module Prometheus
       # Don't parse if gitaly is explicitly disabled
       return unless Services.enabled?('gitaly') || service_discovery
 
-      default_config = Gitlab['node']['gitaly'].to_hash
-      user_config = Gitlab['gitaly']
+      default_config = Gitlab['node']['gitaly']['configuration'].to_hash
+      user_config = Gitlab['gitaly']['configuration']
 
       # Don't enable a scrape config if the listen address is empty.
       return if user_config['prometheus_listen_addr'] && user_config['prometheus_listen_addr'].empty?
@@ -274,7 +274,7 @@ module Prometheus
       # Prometheus library gets evaluated before GitLab Exporter. So, we need to compute this here.
       Gitlab['gitlab_exporter']['prometheus_scrape_scheme'] ||= 'https' if Gitlab['gitlab_exporter']['tls_enabled']
 
-      default_config = Gitlab['node']['monitoring']['gitlab-exporter'].to_hash
+      default_config = Gitlab['node']['monitoring']['gitlab_exporter'].to_hash
       user_config = Gitlab['gitlab_exporter']
 
       listen_address = user_config['listen_address'] || default_config['listen_address']
@@ -439,7 +439,7 @@ module Prometheus
           'consul_sd_configs' => [{ 'services' => ['workhorse'] }]
         }
       else
-        default_config = Gitlab['node']['gitlab']['gitlab-workhorse'].to_hash
+        default_config = Gitlab['node']['gitlab']['gitlab_workhorse'].to_hash
         user_config = Gitlab['gitlab_workhorse']
 
         # Don't enable a scrape config if the listen address is empty.
@@ -469,7 +469,8 @@ module Prometheus
           'consul_sd_configs' => [{ 'services' => ["#{exporter}-exporter"] }]
         }
       else
-        default_config = Gitlab['node']['monitoring']["#{exporter}-exporter"].to_hash
+        node_attribute_key = SettingsDSL::Utils.node_attribute_key("#{exporter}-exporter")
+        default_config = Gitlab['node']['monitoring'][node_attribute_key].to_hash
         user_config = Gitlab["#{exporter}_exporter"]
 
         listen_address = user_config['listen_address'] || default_config['listen_address']

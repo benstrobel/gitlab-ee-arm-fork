@@ -50,7 +50,7 @@ You can enable SMTP connection pooling with the following setting:
 gitlab_rails['smtp_pool'] = true
 ```
 
-This allows Sidekiq workers to reuse SMTP connections for multiple jobs. The maximum number of connections in the pool follows the [maximum concurrency configuration for Sidekiq](https://docs.gitlab.com/ee/administration/operations/extra_sidekiq_processes.html#manage-concurrency).
+This allows Sidekiq workers to reuse SMTP connections for multiple jobs. The maximum number of connections in the pool follows the [maximum concurrency configuration for Sidekiq](https://docs.gitlab.com/ee/administration/sidekiq/extra_sidekiq_processes.html#concurrency).
 
 ## Using encrypted credentials
 
@@ -311,7 +311,7 @@ gitlab_rails['smtp_port'] = 465
 gitlab_rails['smtp_user_name'] = 'gitlab@domain.com'
 gitlab_rails['smtp_password'] = 'password'
 gitlab_rails['smtp_authentication'] = 'login'
-gitlab_rails['smtp_enable_starttls_auto'] = true
+gitlab_rails['smtp_enable_starttls_auto'] = false
 gitlab_rails['gitlab_email_from'] = "gitlab@domain.com"
 gitlab_rails['smtp_tls'] = true
 ```
@@ -326,7 +326,7 @@ gitlab_rails['smtp_user_name'] = "username@domain.com"
 gitlab_rails['smtp_password'] = "password"
 gitlab_rails['smtp_domain'] = "ssl0.ovh.net"
 gitlab_rails['smtp_authentication'] = "login"
-gitlab_rails['smtp_enable_starttls_auto'] = true
+gitlab_rails['smtp_enable_starttls_auto'] = false
 gitlab_rails['smtp_tls'] = true
 gitlab_rails['smtp_openssl_verify_mode'] = 'none'
 ```
@@ -382,7 +382,7 @@ gitlab_rails['smtp_user_name'] = "username@domain.com"
 gitlab_rails['smtp_password'] = "password"
 gitlab_rails['smtp_domain'] = "online.net"
 gitlab_rails['smtp_authentication'] = "login"
-gitlab_rails['smtp_enable_starttls_auto'] = true
+gitlab_rails['smtp_enable_starttls_auto'] = false
 gitlab_rails['smtp_tls'] = true
 gitlab_rails['smtp_openssl_verify_mode'] = 'none'
 ```
@@ -423,7 +423,7 @@ gitlab_rails['smtp_port'] = 465
 gitlab_rails['smtp_user_name'] = "user@yahoo.com"
 gitlab_rails['smtp_password'] = "password"
 gitlab_rails['smtp_authentication'] = "login"
-gitlab_rails['smtp_enable_starttls_auto'] = true
+gitlab_rails['smtp_enable_starttls_auto'] = false
 gitlab_rails['smtp_tls'] = true
 gitlab_rails['smtp_openssl_verify_mode'] = 'peer'
 ```
@@ -439,7 +439,7 @@ gitlab_rails['smtp_port'] = 465
 gitlab_rails['smtp_user_name'] = "xxxx@xx.com"
 gitlab_rails['smtp_password'] = "password"
 gitlab_rails['smtp_authentication'] = "login"
-gitlab_rails['smtp_enable_starttls_auto'] = true
+gitlab_rails['smtp_enable_starttls_auto'] = false
 gitlab_rails['smtp_tls'] = true
 gitlab_rails['gitlab_email_from'] = 'xxxx@xx.com'
 gitlab_rails['smtp_domain'] = "exmail.qq.com"
@@ -456,7 +456,7 @@ gitlab_rails['smtp_port'] = 465
 gitlab_rails['smtp_user_name'] = "xxxx@xx.com"
 gitlab_rails['smtp_password'] = "password"
 gitlab_rails['smtp_authentication'] = "login"
-gitlab_rails['smtp_enable_starttls_auto'] = true
+gitlab_rails['smtp_enable_starttls_auto'] = false
 gitlab_rails['smtp_tls'] = true
 gitlab_rails['gitlab_email_from'] = 'xxxx@xx.com'
 gitlab_rails['smtp_domain'] = "smtp.ym.163.com"
@@ -500,20 +500,23 @@ gitlab_rails['gitlab_email_reply_to'] = 'email@sender_owner_reply_api'
 Note that `smtp_user_name` must literally be set to `"apikey"`.
 The API Key you created must be entered in `smtp_password`.
 
-### Sendinblue
+### Brevo
 
-This configuration was tested with Sendinblue's [SMTP relay service](https://www.sendinblue.com/free-smtp-server/). To grab the relevant account credentials via the URLs commented into this example, [log in to your Sendinblue account](https://app.sendinblue.com/account/login). For further details, refer to Sendinblue's [help page](https://help.sendinblue.com/hc/en-us/articles/209462765-What-is-Sendinblue-SMTP).
+This configuration was tested with the Brevo [SMTP relay service](hhttps://www.brevo.com/free-smtp-server/). To grab the
+relevant account credentials via the URLs commented into this example, [log in to your Brevo account](https://account-app.brevo.com/account/login).
+
+For further details, refer to the Brevo [help page](https://help.brevo.com/hc/en-us/articles/209462765-What-is-Sendinblue-SMTP).
 
 ```ruby
 gitlab_rails['smtp_enable'] = true
 gitlab_rails['smtp_address'] = "smtp-relay.sendinblue.com"
-gitlab_rails['smtp_port'] = 587
-gitlab_rails['smtp_user_name'] = "<username@example.com>" # https://account.sendinblue.com/advanced/api
-gitlab_rails['smtp_password'] = "<password>"              # https://account.sendinblue.com/advanced/api
-gitlab_rails['smtp_domain'] = "<example.com>"             # https://account.sendinblue.com/senders
+gitlab_rails['smtp_port'] = 465
+gitlab_rails['smtp_user_name'] = "<username@example.com>" # https://app.brevo.com/settings/keys/smtp
+gitlab_rails['smtp_password'] = "<password>"              # https://app.brevo.com/settings/keys/smtp
+gitlab_rails['smtp_domain'] = "<example.com>"
 gitlab_rails['smtp_authentication'] = "login"
-gitlab_rails['smtp_enable_starttls_auto'] = true
-gitlab_rails['smtp_tls'] = false
+gitlab_rails['smtp_enable_starttls_auto'] = false
+gitlab_rails['smtp_tls'] = true
 gitlab_rails['gitlab_email_from'] = '<gitlab@example.com>'
 gitlab_rails['gitlab_email_reply_to'] = '<noreply@example.com>'
 ```
@@ -530,7 +533,7 @@ gitlab_rails['smtp_user_name'] = "<username>"    # https://app.smtp2go.com/setti
 gitlab_rails['smtp_password'] = "<password>"     # https://app.smtp2go.com/settings/users
 gitlab_rails['smtp_domain'] = "<example.com>"    # https://app.smtp2go.com/settings/sender_domains
 gitlab_rails['smtp_authentication'] = "login"
-gitlab_rails['smtp_enable_starttls_auto'] = true
+gitlab_rails['smtp_enable_starttls_auto'] = false
 gitlab_rails['smtp_tls'] = true
 ```
 
@@ -546,7 +549,7 @@ gitlab_rails['smtp_domain'] = "yourdomain_or_yandex.ru"
 gitlab_rails['gitlab_email_from'] = 'login_or_login@yandex.ru'
 gitlab_rails['smtp_authentication'] = "login"
 gitlab_rails['smtp_tls'] = true
-gitlab_rails['smtp_enable_starttls_auto'] = true
+gitlab_rails['smtp_enable_starttls_auto'] = false
 gitlab_rails['smtp_openssl_verify_mode'] = 'peer'
 ```
 
@@ -596,7 +599,7 @@ gitlab_rails['smtp_user_name'] = "username@stratodomain.de"
 gitlab_rails['smtp_password'] = "strato_email_password"
 gitlab_rails['smtp_domain'] = "stratodomain.de"
 gitlab_rails['smtp_authentication'] = "login"
-gitlab_rails['smtp_enable_starttls_auto'] = true
+gitlab_rails['smtp_enable_starttls_auto'] = false
 gitlab_rails['smtp_tls'] = true
 gitlab_rails['smtp_openssl_verify_mode'] = 'none'
 ```
@@ -611,7 +614,7 @@ gitlab_rails['smtp_user_name'] = "username@domain.com"
 gitlab_rails['smtp_password'] = "password"
 gitlab_rails['smtp_domain'] = "domain.com"
 gitlab_rails['smtp_authentication'] = "login"
-gitlab_rails['smtp_enable_starttls_auto'] = true
+gitlab_rails['smtp_enable_starttls_auto'] = false
 gitlab_rails['smtp_tls'] = true
 gitlab_rails['smtp_openssl_verify_mode'] = 'peer'
 
@@ -629,7 +632,7 @@ gitlab_rails['smtp_user_name'] = "username@domain.com"
 gitlab_rails['smtp_password'] = "password"
 gitlab_rails['smtp_domain'] = "domain.com"
 gitlab_rails['smtp_authentication'] = "login"
-gitlab_rails['smtp_enable_starttls_auto'] = true
+gitlab_rails['smtp_enable_starttls_auto'] = false
 gitlab_rails['smtp_tls'] = true
 gitlab_rails['smtp_openssl_verify_mode'] = 'none'
 ```
@@ -665,7 +668,7 @@ gitlab_rails['smtp_user_name'] = "username@domain.com"
 gitlab_rails['smtp_password'] = "password"
 gitlab_rails['smtp_domain'] = "domain.com"
 gitlab_rails['smtp_authentication'] = "login"
-gitlab_rails['smtp_enable_starttls_auto'] = true
+gitlab_rails['smtp_enable_starttls_auto'] = false
 gitlab_rails['smtp_tls'] = true
 ```
 
@@ -792,7 +795,7 @@ gitlab_rails['smtp_address'] = "smtp.fastmail.com"
 gitlab_rails['smtp_port'] = 465
 gitlab_rails['smtp_user_name'] = "account@fastmail.com"
 gitlab_rails['smtp_password'] = "app-specific-password"
-gitlab_rails['smtp_enable_starttls_auto'] = true
+gitlab_rails['smtp_enable_starttls_auto'] = false
 gitlab_rails['smtp_tls'] = true
 gitlab_rails['smtp_openssl_verify_mode'] = 'peer'
 ```
@@ -823,7 +826,7 @@ gitlab_rails['smtp_user_name'] = "my-gitlab@gmx.com"
 gitlab_rails['smtp_password'] = "Pa5svv()rD"
 gitlab_rails['smtp_domain'] = "mail.gmx.com"
 gitlab_rails['smtp_authentication'] = "login"
-gitlab_rails['smtp_enable_starttls_auto'] = true
+gitlab_rails['smtp_enable_starttls_auto'] = false
 gitlab_rails['smtp_tls'] = true
 gitlab_rails['smtp_openssl_verify_mode'] = 'peer'
 
@@ -948,7 +951,7 @@ gitlab_rails['smtp_user_name'] = "username@company.com"
 gitlab_rails['smtp_password'] = "password"
 gitlab_rails['smtp_domain'] = "mxhichina.com"
 gitlab_rails['smtp_authentication'] = "login"
-gitlab_rails['smtp_enable_starttls_auto'] = true
+gitlab_rails['smtp_enable_starttls_auto'] = false
 gitlab_rails['smtp_tls'] = true
 ```
 
@@ -1011,7 +1014,7 @@ gitlab_rails['smtp_user_name'] = "username@example.com"
 gitlab_rails['smtp_password'] = "password_you_set"
 gitlab_rails['smtp_domain'] = "mbox.freehostia.com"
 gitlab_rails['smtp_authentication'] = "login"
-gitlab_rails['smtp_enable_starttls_auto'] = true
+gitlab_rails['smtp_enable_starttls_auto'] = false
 gitlab_rails['smtp_tls'] = true
 gitlab_rails['smtp_openssl_verify_mode'] = 'none'
 ```
@@ -1026,7 +1029,7 @@ gitlab_rails['smtp_user_name'] = "username@example.com"
 gitlab_rails['smtp_password'] = "password_you_set"
 gitlab_rails['smtp_domain'] = "smtp.mailbox.org"
 gitlab_rails['smtp_authentication'] = "login"
-gitlab_rails['smtp_enable_starttls_auto'] = true
+gitlab_rails['smtp_enable_starttls_auto'] = false
 gitlab_rails['smtp_tls'] = true
 gitlab_rails['smtp_openssl_verify_mode'] = 'none'
 ```
@@ -1074,7 +1077,7 @@ gitlab_rails['smtp_user_name'] = "example-com-0001"
 gitlab_rails['smtp_password'] = "smtppassword"
 gitlab_rails['smtp_domain'] = "example.com"
 gitlab_rails['smtp_authentication'] = "login"
-gitlab_rails['smtp_enable_starttls_auto'] = true
+gitlab_rails['smtp_enable_starttls_auto'] = false
 gitlab_rails['smtp_tls'] = true
 gitlab_rails['smtp_openssl_verify_mode'] = 'peer'
 
@@ -1245,7 +1248,7 @@ gitlab_rails['gitlab_email_from'] = "username@yourdomain.com"
 gitlab_rails['smtp_domain'] = "yourdomain.com"
 gitlab_rails['smtp_password'] = "authentication code"
 gitlab_rails['smtp_authentication'] = "login"
-gitlab_rails['smtp_enable_starttls_auto'] = true
+gitlab_rails['smtp_enable_starttls_auto'] = false
 gitlab_rails['smtp_tls'] = true
 ```
 
@@ -1280,6 +1283,37 @@ gitlab_rails['smtp_tls'] = false
 gitlab_rails['smtp_openssl_verify_mode'] = 'none'
 ```
 
+### Scaleway Transactional Email
+
+Read more about [Scaleway's Transactional Email](https://www.scaleway.com/en/docs/managed-services/transactional-email/how-to/generate-api-keys-for-tem-with-iam/).
+
+```ruby
+gitlab_rails['smtp_enable'] = true
+gitlab_rails['smtp_address'] = "smtp.tem.scw.cloud"
+gitlab_rails['smtp_port'] = 587
+gitlab_rails['smtp_user_name'] = "transactional_email_user_name"
+gitlab_rails['smtp_password'] = "secret_key_of_api_key"
+gitlab_rails['smtp_authentication'] = "plain"
+gitlab_rails['smtp_enable_starttls_auto'] = true
+```
+
+### Proton Mail
+
+Proton documentation: [How to set up SMTP to use business applications or devices with Proton Mail](https://proton.me/support/smtp-submission)
+
+```ruby
+gitlab_rails['smtp_enable'] = true
+gitlab_rails['smtp_address'] = "smtp.protonmail.ch"
+gitlab_rails['smtp_port'] = 587
+gitlab_rails['smtp_authentication'] = "plain"
+gitlab_rails['smtp_enable_starttls_auto'] = true
+gitlab_rails['smtp_user_name'] = "<the Proton email address for which you generated the SMTP token>"
+gitlab_rails['smtp_password'] = "<the generated SMTP token>"
+gitlab_rails['smtp_domain'] = "<your domain>"
+gitlab_rails['gitlab_email_from'] = "<the Proton email address for which you generated the SMTP token>"
+gitlab_rails['gitlab_email_reply_to'] = "<the Proton email address for which you generated the SMTP token>"
+```
+
 ### More examples are welcome
 
 If you have figured out an example configuration yourself please send a Merge
@@ -1305,7 +1339,7 @@ SMTP server, it is possible that your cloud provider is blocking outgoing connec
 This prevents GitLab from sending any outgoing mail. You can follow the instructions below to work
 around this depending on your cloud provider:
 
-- AWS: [How do I remove the restriction on port 25 from my Amazon EC2 instance or AWS Lambda function?](https://aws.amazon.com/premiumsupport/knowledge-center/ec2-port-25-throttle/)
+- AWS: [How do I remove the restriction on port 25 from my Amazon EC2 instance or AWS Lambda function?](https://repost.aws/knowledge-center/ec2-port-25-throttle)
 - Azure: [Troubleshoot outbound SMTP connectivity problems in Azure](https://learn.microsoft.com/en-us/azure/virtual-network/troubleshoot-outbound-smtp-connectivity)
 - GCP: [Sending email from an instance](https://cloud.google.com/compute/docs/tutorials/sending-mail)
 
@@ -1341,10 +1375,16 @@ For more details, read [about the confusion over SMTP ports, TLS, and STARTTLS](
 
 ### Emails not sending when using external Sidekiq
 
-If your instance has [an external Sidekiq](https://docs.gitlab.com/ee/administration/sidekiq.html)
+If your instance has [an external Sidekiq](https://docs.gitlab.com/ee/administration/sidekiq/index.html)
 configured, the SMTP configuration must be present in `/etc/gitlab/gitlab.rb` on the external Sidekiq server. If
 the SMTP configuration is missing, you may notice that emails do not get sent through SMTP as many
 GitLab emails are sent via Sidekiq.
+
+### Emails not sending when using Sidekiq routing rules
+
+If you are using Sidekiq [routing rules](https://docs.gitlab.com/ee/administration/sidekiq/processing_specific_job_classes.html#routing-rules), your configuration might be missing the `mailers` queue which is required for outgoing mail.
+
+For more details, review the [example configuration](https://docs.gitlab.com/ee/administration/sidekiq/processing_specific_job_classes.html#detailed-example).
 
 ### Email not sent
 
@@ -1381,6 +1421,16 @@ If you have correctly configured an email server, but email is not sent:
    ```
 
    If you do not receive an email or see an error message, check your mail server settings.
+
+### Email not sent when using STARTTLS and SMTP TLS
+
+You may encounter the following error if both STARTTLS and SMTP TLS are enabled:
+
+```plaintext
+:enable_starttls and :tls are mutually exclusive. Set :tls if you're on an SMTPS connection. Set :enable_starttls if you're on an SMTP connection and using STARTTLS for secure TLS upgrade.
+```
+
+This error occurs when both `gitlab_rails['smtp_enable_starttls_auto']` and `gitlab_rails['smtp_tls']` are set to `true`. If using SMTPS, set `gitlab_rails['smtp_enable_starttls_auto']` to `false`. If using SMTP with STARTTLS, set `gitlab_rails['smtp_tls']` to `false`. Run `sudo gitlab-ctl reconfigure` for the change to take effect.
 
 ## Disable all outgoing email
 

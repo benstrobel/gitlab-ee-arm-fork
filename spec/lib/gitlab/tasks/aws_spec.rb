@@ -40,6 +40,8 @@ RSpec.describe 'aws:ami:create', type: :rake do
   before do
     Rake::Task['aws:ami:create'].reenable
     allow_any_instance_of(Kernel).to receive(:system).and_return(true)
+    allow(ENV).to receive(:[]).and_call_original
+    stub_env_var('CI_JOB_TOKEN', 'CI-NO-JOB-TOKEN')
   end
 
   describe 'on a regular tag' do
@@ -47,32 +49,32 @@ RSpec.describe 'aws:ami:create', type: :rake do
       allow(Build::Check).to receive(:on_tag?).and_return(true)
       allow(Build::Check).to receive(:is_auto_deploy?).and_return(false)
       allow(Build::Check).to receive(:is_rc_tag?).and_return(false)
-      allow(Build::Info).to receive(:deb_package_download_url).and_return('http://example.com')
+      allow(Build::Info::CI).to receive(:package_download_url).and_return('http://example.com')
     end
 
     it 'should identify ce category correctly, if specified' do
-      allow(Build::Info).to receive(:edition).and_return('ce')
+      allow(Build::Info::Package).to receive(:edition).and_return('ce')
       allow(Omnibus::BuildVersion).to receive(:semver).and_return('9.3.0')
 
-      expect_any_instance_of(Kernel).to receive(:system).with(*["support/packer/packer_ami.sh", "9.3.0", "ce", "http://example.com", ""])
+      expect_any_instance_of(Kernel).to receive(:system).with(*["support/packer/packer_ami.sh", "9.3.0", "ce", "http://example.com", "CI-NO-JOB-TOKEN", ""])
 
       Rake::Task['aws:ami:create'].invoke
     end
 
     it 'should identify ce category correctly if nothing is specified' do
-      allow(Build::Info).to receive(:edition).and_return(nil)
+      allow(Build::Info::Package).to receive(:edition).and_return(nil)
       allow(Omnibus::BuildVersion).to receive(:semver).and_return('9.3.0')
 
-      expect_any_instance_of(Kernel).to receive(:system).with(*["support/packer/packer_ami.sh", "9.3.0", "ce", "http://example.com", ""])
+      expect_any_instance_of(Kernel).to receive(:system).with(*["support/packer/packer_ami.sh", "9.3.0", "ce", "http://example.com", "CI-NO-JOB-TOKEN", ""])
 
       Rake::Task['aws:ami:create'].invoke
     end
 
     it 'should identify ee category correctly' do
-      allow(Build::Info).to receive(:edition).and_return('ee')
+      allow(Build::Info::Package).to receive(:edition).and_return('ee')
       allow(Omnibus::BuildVersion).to receive(:semver).and_return('9.3.0')
 
-      expect_any_instance_of(Kernel).to receive(:system).with(*["support/packer/packer_ami.sh", "9.3.0", "ee", "http://example.com", ""])
+      expect_any_instance_of(Kernel).to receive(:system).with(*["support/packer/packer_ami.sh", "9.3.0", "ee", "http://example.com", "CI-NO-JOB-TOKEN", ""])
 
       Rake::Task['aws:ami:create'].invoke
     end
@@ -80,10 +82,10 @@ RSpec.describe 'aws:ami:create', type: :rake do
     it 'should identify ce arm64 correctly' do
       allow(Gitlab::Util).to receive(:get_env).and_call_original
       allow(Gitlab::Util).to receive(:get_env).with('AWS_ARCHITECTURE').and_return('arm64')
-      allow(Build::Info).to receive(:edition).and_return(nil)
+      allow(Build::Info::Package).to receive(:edition).and_return(nil)
       allow(Omnibus::BuildVersion).to receive(:semver).and_return('9.3.0')
 
-      expect_any_instance_of(Kernel).to receive(:system).with(*["support/packer/packer_ami.sh", "9.3.0", "ce-arm64", "http://example.com", ""])
+      expect_any_instance_of(Kernel).to receive(:system).with(*["support/packer/packer_ami.sh", "9.3.0", "ce-arm64", "http://example.com", "CI-NO-JOB-TOKEN", ""])
 
       Rake::Task['aws:ami:create'].invoke
     end
@@ -91,32 +93,32 @@ RSpec.describe 'aws:ami:create', type: :rake do
     it 'should identify ee arm64 correctly' do
       allow(Gitlab::Util).to receive(:get_env).and_call_original
       allow(Gitlab::Util).to receive(:get_env).with('AWS_ARCHITECTURE').and_return('arm64')
-      allow(Build::Info).to receive(:edition).and_return('ee')
+      allow(Build::Info::Package).to receive(:edition).and_return('ee')
       allow(Omnibus::BuildVersion).to receive(:semver).and_return('9.3.0')
 
-      expect_any_instance_of(Kernel).to receive(:system).with(*["support/packer/packer_ami.sh", "9.3.0", "ee-arm64", "http://example.com", ""])
+      expect_any_instance_of(Kernel).to receive(:system).with(*["support/packer/packer_ami.sh", "9.3.0", "ee-arm64", "http://example.com", "CI-NO-JOB-TOKEN", ""])
 
       Rake::Task['aws:ami:create'].invoke
     end
 
     it 'should identify ee ultimate category correctly' do
-      allow(Build::Info).to receive(:edition).and_return('ee')
+      allow(Build::Info::Package).to receive(:edition).and_return('ee')
       allow(Gitlab::Util).to receive(:get_env).and_call_original
       allow(Gitlab::Util).to receive(:get_env).with("AWS_RELEASE_TYPE").and_return('ultimate')
       allow(Omnibus::BuildVersion).to receive(:semver).and_return('9.3.0')
 
-      expect_any_instance_of(Kernel).to receive(:system).with(*["support/packer/packer_ami.sh", "9.3.0", "ee-ultimate", "http://example.com", "AWS_ULTIMATE_LICENSE_FILE"])
+      expect_any_instance_of(Kernel).to receive(:system).with(*["support/packer/packer_ami.sh", "9.3.0", "ee-ultimate", "http://example.com", "CI-NO-JOB-TOKEN", "AWS_ULTIMATE_LICENSE_FILE"])
 
       Rake::Task['aws:ami:create'].invoke
     end
 
     it 'should identify ee premium category correctly' do
-      allow(Build::Info).to receive(:edition).and_return('ee')
+      allow(Build::Info::Package).to receive(:edition).and_return('ee')
       allow(Gitlab::Util).to receive(:get_env).and_call_original
       allow(Gitlab::Util).to receive(:get_env).with("AWS_RELEASE_TYPE").and_return('premium')
       allow(Omnibus::BuildVersion).to receive(:semver).and_return('9.3.0')
 
-      expect_any_instance_of(Kernel).to receive(:system).with(*["support/packer/packer_ami.sh", "9.3.0", "ee-premium", "http://example.com", "AWS_PREMIUM_LICENSE_FILE"])
+      expect_any_instance_of(Kernel).to receive(:system).with(*["support/packer/packer_ami.sh", "9.3.0", "ee-premium", "http://example.com", "CI-NO-JOB-TOKEN", "AWS_PREMIUM_LICENSE_FILE"])
 
       Rake::Task['aws:ami:create'].invoke
     end
@@ -127,7 +129,7 @@ RSpec.describe 'aws:ami:create', type: :rake do
       allow(Build::Check).to receive(:on_tag?).and_return(true)
       allow(Build::Check).to receive(:is_auto_deploy?).and_return(false)
       allow(Build::Check).to receive(:is_rc_tag?).and_return(true)
-      allow(Build::Info).to receive(:deb_package_download_url).and_return('http://example.com')
+      allow(Build::Info::CI).to receive(:package_download_url).and_return('http://example.com')
     end
 
     it 'does not do anything' do
@@ -142,7 +144,7 @@ RSpec.describe 'aws:ami:create', type: :rake do
       allow(Build::Check).to receive(:on_tag?).and_return(true)
       allow(Build::Check).to receive(:is_auto_deploy?).and_return(true)
       allow(Build::Check).to receive(:is_rc_tag?).and_return(false)
-      allow(Build::Info).to receive(:deb_package_download_url).and_return('http://example.com')
+      allow(Build::Info::CI).to receive(:package_download_url).and_return('http://example.com')
     end
 
     it 'does not do anything' do
