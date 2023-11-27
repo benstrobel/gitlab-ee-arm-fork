@@ -139,6 +139,8 @@ if node['gitlab']['gitlab_rails']['enable'] && !(node.key?('pgbouncer') && node[
   OmnibusHelper.new(node).print_root_account_details if node['gitlab']['gitlab_rails']['auto_migrate']
 end
 
+include_recipe "gitlab::click_house_migrations" unless node['gitlab']['gitlab_rails']['clickhouse_databases'].empty?
+
 OmnibusHelper.cleanup_root_password_file
 
 # crond is used by database reindexing and LetsEncrypt auto-renew.  If

@@ -17,7 +17,6 @@ RSpec.describe 'gitlab::database-migrations' do
       stub_default_not_listening?(false)
     end
 
-    let(:bash_block) { chef_run.bash('migrate gitlab-rails database') }
     let(:migration_block) { chef_run.rails_migration('gitlab-rails') }
 
     it 'runs the migrations with expected attributes' do

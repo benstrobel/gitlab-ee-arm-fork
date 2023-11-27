@@ -27,7 +27,7 @@ require "#{Omnibus::Config.project_root}/files/gitlab-cookbooks/package/librarie
 gitlab_package_name = Build::Info::Package.name
 gitlab_package_file = File.join(Omnibus::Config.project_dir, 'gitlab', "#{gitlab_package_name}.rb")
 
-# Include package specific details like package name and descrption (for gitlab-ee/gitlab-ce/etc)
+# Include package specific details like package name and description (for gitlab-ee/gitlab-ce/etc)
 instance_eval(IO.read(gitlab_package_file), gitlab_package_file, 1)
 
 # Include all other known gitlab packages in our replace/conflict list to allow transitioning between packages
