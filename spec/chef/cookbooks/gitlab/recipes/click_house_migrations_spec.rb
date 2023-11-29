@@ -7,52 +7,46 @@ require 'chef_helper'
 
 RSpec.describe 'gitlab::clickhouse-migrations' do
   let(:chef_run) { ChefSpec::SoloRunner.converge('gitlab::default') }
+  let(:clickhouse_databases) { {} }
+  let(:auto_migrate) { true }
 
   before do
     allow(Gitlab).to receive(:[]).and_call_original
+
+    stub_gitlab_rb(
+      gitlab_rails: {
+        clickhouse_databases: clickhouse_databases,
+        auto_migrate: auto_migrate
+      }
+    )
   end
 
   it "doesn't run migrations if ClickHouse databases are not configured" do
-    expect(chef_run).not_to run_rails_migration('clickhouse')
+    expect(chef_run).not_to run_click_house_migrations('click_house_migrate')
   end
 
-  context 'when migration should run' do
-    before do
-      stub_gitlab_rb(
-        gitlab_rails: {
-          clickhouse_databases: {
-            main: {
-              database: 'production',
-              url: 'https://example.com/path',
-              username: 'gitlab',
-              password: 'password'
-            }
-          }
+  context 'when ClickHouse databases are configured' do
+    let(:clickhouse_databases) do
+      {
+        main: {
+          database: 'production',
+          url: 'https://example.com/path',
+          username: 'gitlab',
+          password: 'password'
         }
-      )
+      }
     end
-
-    let(:migration_block) { chef_run.rails_migration('clickhouse') }
 
     it 'runs the migrations with expected attributes' do
-      expect(chef_run).to run_rails_migration('clickhouse') do |resource|
-        expect(resource.rake_task).to eq('gitlab:clickhouse:migrate')
-        expect(resource.logfile_prefix).to eq('gitlab-rails-clickhouse-migrate')
-        expect(resource.helper).to be_a(ClickHouseMigrationHelper)
+      expect(chef_run).to run_click_house_migrations('click_house_migrate')
+    end
+
+    context 'with auto_migrate off' do
+      let(:auto_migrate) { false }
+
+      it 'skips running the migrations' do
+        expect(chef_run).not_to run_click_house_migrations('click_house_migrate')
       end
-    end
-
-    it 'should notify rails cache clear resource' do
-      expect(migration_block).to notify(
-        'execute[clear the gitlab-rails cache]')
-    end
-  end
-
-  context 'with auto_migrate off' do
-    before { stub_gitlab_rb(gitlab_rails: { auto_migrate: false }) }
-
-    it 'skips running the migrations' do
-      expect(chef_run).not_to run_rails_migration('clickhouse')
     end
   end
 end

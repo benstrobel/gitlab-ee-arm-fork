@@ -11,7 +11,6 @@ RSpec.describe 'rails_migration' do
   context 'run' do
     let(:chef_run) { runner.converge('test_gitlab::rails_migration_run') }
     let(:bash_block) { chef_run.bash_hide_env('migrate gitlab-test database') }
-    let(:migration_block) { chef_run.rails_migration('gitlab-test') }
 
     context 'when database has not been migrated' do
       before do
