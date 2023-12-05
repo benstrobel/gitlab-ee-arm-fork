@@ -7,10 +7,12 @@ SHELL ["/bin/sh", "-c"]
 ENV LANG=C.UTF-8
 
 # Install required packages
-RUN apt-get update -q \
+RUN echo 'locales locales/locales_to_be_generated multiselect  C.UTF-8 UTF-8 en_US.UTF-8 UTF-8' | debconf-set-selections \
+    && apt-get update -q \
     && DEBIAN_FRONTEND=noninteractive apt-get install -yq --no-install-recommends \
       busybox \
       ca-certificates \
+      locales \
       openssh-server \
       tzdata \
       wget \
