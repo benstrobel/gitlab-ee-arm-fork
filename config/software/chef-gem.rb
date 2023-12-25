@@ -19,7 +19,7 @@ require 'mixlib/shellout'
 name 'chef-gem'
 # The version here should be in agreement with /Gemfile.lock so that our rspec
 # testing stays consistent with the package contents.
-default_version '17.10.103'
+default_version '17.10.105'
 
 license 'Apache-2.0'
 license_file 'LICENSE'
