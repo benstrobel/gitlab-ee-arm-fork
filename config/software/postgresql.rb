@@ -16,7 +16,7 @@
 #
 
 name 'postgresql'
-default_version '13.12'
+default_version '14.9'
 
 license 'PostgreSQL'
 license_file 'COPYRIGHT'
@@ -30,11 +30,11 @@ dependency 'ncurses'
 dependency 'libossp-uuid'
 dependency 'config_guess'
 
-version '13.12' do
-  source sha256: '0da1edcee3514b7bc7ba6dbaf0c00499e8ac1590668e8789c50253a6249f218b'
+version '14.9' do
+  source sha256: 'b1fe3ba9b1a7f3a9637dd1656dfdad2889016073fd4d35f13b50143cbbb6a8ef'
 end
 
-major_version = '13'
+major_version = '14'
 
 source url: "https://ftp.postgresql.org/pub/source/v#{version}/postgresql-#{version}.tar.bz2"
 

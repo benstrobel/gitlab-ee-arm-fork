@@ -16,7 +16,7 @@
 #
 
 name 'postgresql_new'
-default_version '14.9'
+default_version '15.5'
 
 license 'PostgreSQL'
 license_file 'COPYRIGHT'
@@ -30,11 +30,11 @@ dependency 'ncurses'
 dependency 'libossp-uuid'
 dependency 'config_guess'
 
-version '14.9' do
-  source sha256: 'b1fe3ba9b1a7f3a9637dd1656dfdad2889016073fd4d35f13b50143cbbb6a8ef'
+version '15.5' do
+  source sha256: '8f53aa95d78eb8e82536ea46b68187793b42bba3b4f65aa342f540b23c9b10a6'
 end
 
-major_version = '14'
+major_version = '15'
 libpq = 'libpq.so.5'
 
 source url: "https://ftp.postgresql.org/pub/source/v#{version}/postgresql-#{version}.tar.bz2"

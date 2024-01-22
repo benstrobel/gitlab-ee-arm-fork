@@ -46,7 +46,7 @@ of that setting in the running PostgreSQL instance.
 #### Automatic restart when the PostgreSQL version changes
 
 By default, Linux package installations automatically restart PostgreSQL when the underlying
-version changes, as suggested by the [upstream documentation](https://www.postgresql.org/docs/14/upgrading.html).
+version changes, as suggested by the [upstream documentation](https://www.postgresql.org/docs/15/upgrading.html).
 This behavior can be controlled using the `auto_restart_on_version_change` setting
 available for `postgresql` and `geo-postgresql`.
 
@@ -77,7 +77,7 @@ to avoid errors like the [one related to loading necessary libraries](#could-not
 Linux package installations automatically enable SSL on the PostgreSQL server, but it will accept
 both encrypted and unencrypted connections by default. Enforcing SSL requires
 using the `hostssl` configuration in `pg_hba.conf`. For more details, see the
-[`pg_hba.conf` documentation](https://www.postgresql.org/docs/14/auth-pg-hba-conf.html).
+[`pg_hba.conf` documentation](https://www.postgresql.org/docs/15/auth-pg-hba-conf.html).
 
 SSL support depends on the following files:
 
@@ -490,10 +490,10 @@ sudo gitlab-ctl pg-upgrade
 ```
 
 To upgrade to a specific PostgreSQL version, use the `-V` flag to append the
-version. For example, to upgrade to PostgreSQL 14:
+version. For example, to upgrade to PostgreSQL 15:
 
 ```shell
-sudo gitlab-ctl pg-upgrade -V 14
+sudo gitlab-ctl pg-upgrade -V 15
 ```
 
 NOTE:
@@ -604,7 +604,7 @@ update this setting in `/etc/gitlab/gitlab.rb`:
 gitlab_rails['databases']['ci']['enable'] = false
 ```
 
-In a multi-node environment, this setting should be updated on all Rails and Sidekiq nodes. 
+In a multi-node environment, this setting should be updated on all Rails and Sidekiq nodes.
 
 ## Using a non-packaged PostgreSQL database management server
 
@@ -865,7 +865,7 @@ when your installation is using PgBouncer.
 
 1. After upgrading PostgreSQL to a new major release, recreate the table statistics to ensure efficient query plans are picked and
    to reduce database server CPU load.
-   
+
    If the upgrade was "in-place" using `pg_upgrade`, run the following query on the PostgreSQL database console:
 
    ```SQL
