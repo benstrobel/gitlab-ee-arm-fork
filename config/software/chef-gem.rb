@@ -32,7 +32,7 @@ dependency 'ruby'
 dependency 'rubygems'
 dependency 'libffi'
 dependency 'rb-readline'
-dependency 'ruby-shadow'
+dependency 'omnibus-gitlab-gems'
 
 build do
   patch source: "license/add-license-file.patch"
