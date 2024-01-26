@@ -39,14 +39,6 @@ build do
   patch source: "license/add-notice-file.patch"
   env = with_standard_compiler_flags(with_embedded_path)
 
-  gem 'install chef' \
-      " --clear-sources" \
-      " -s https://packagecloud.io/cinc-project/stable" \
-      " -s https://rubygems.org" \
-      " --version '#{version}'" \
-      " --bindir '#{install_dir}/embedded/bin'" \
-      ' --no-document', env: env
-
   block 'patch Chef files' do
     prefix_path = "#{install_dir}/embedded"
     gem_path = shellout!("#{embedded_bin('ruby')} -e \"puts Gem.path.find { |path| path.start_with?(\'#{prefix_path}\') }\"", env: env).stdout.chomp

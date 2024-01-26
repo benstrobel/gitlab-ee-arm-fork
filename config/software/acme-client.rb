@@ -27,7 +27,4 @@ dependency 'rubygems'
 
 build do
   patch source: 'add-license-file.patch'
-
-  env = with_standard_compiler_flags(with_embedded_path)
-  gem "install acme-client --no-document --version #{version}", env: env
 end

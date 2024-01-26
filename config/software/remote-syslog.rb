@@ -29,6 +29,4 @@ dependency 'rubygems'
 
 build do
   patch source: "license/#{version}/add-license-file.patch"
-  env = with_standard_compiler_flags(with_embedded_path)
-  gem "install remote_syslog -n #{install_dir}/embedded/bin --no-document -v #{version}", env: env
 end

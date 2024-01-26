@@ -29,8 +29,4 @@ dependency 'ruby'
 
 build do
   patch source: "license/add-license-file.patch"
-  env = with_standard_compiler_flags(with_embedded_path)
-
-  gem 'install tomlib' \
-      " --version '#{version}'", env: env
 end
