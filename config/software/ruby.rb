@@ -22,11 +22,7 @@ license_file 'LEGAL'
 
 skip_transitive_dependency_licensing true
 
-# Follow the Ruby upgrade guide when changing the ruby version
-# link: https://docs.gitlab.com/ee/development/ruby_upgrade.html
-current_ruby_version = '3.2.2'
-
-default_ruby_version '3.2.2'
+default_version '3.2.2'
 
 fips_enabled = Build::Check.use_system_ssl?
 
