@@ -22,7 +22,7 @@
     - pkg/
 
 .package-artifacts-release:
-  extends: .package-artifacts .
+  extends: .package-artifacts
   expire_in: 7 days
 
 .cache-paths:
