@@ -1,12 +1,16 @@
 ---
 stage: Systems
 group: Distribution
-info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://about.gitlab.com/handbook/product/ux/technical-writing/#assignments
+info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 ---
 
-# Backup **(FREE SELF)**
+# Backup
 
-## Backup and restore Omnibus GitLab configuration
+DETAILS:
+**Tier:** Free, Premium, Ultimate
+**Offering:** Self-managed
+
+## Backup and restore configuration on a Linux package installation
 
 It is recommended to keep a copy of `/etc/gitlab`, or at least of
 `/etc/gitlab/gitlab-secrets.json`, in a safe place. If you ever
@@ -18,7 +22,7 @@ and 'secure variables' stored in GitLab CI will be lost.
 It is not recommended to store your configuration backup in the
 same place as your application data backup, see below.
 
-All configuration for Omnibus GitLab is stored in `/etc/gitlab`. To backup your
+All configuration for Linux package installations is stored in `/etc/gitlab`. To backup your
 configuration, just run `sudo gitlab-ctl backup-etc` (introduced in GitLab 12.3). It creates a tar
 archive in `/etc/gitlab/config_backup/`. Directory and backup files will be
 readable only to root.
@@ -64,10 +68,10 @@ Your machines SSH host keys are stored in a separate location at `/etc/ssh/`. Be
 
 ### Limit backup lifetime for configuration backups (prune old backups)
 
-> [Introduced](https://gitlab.com/gitlab-org/omnibus-gitlab/-/merge_requests/5102) in GitLab 13.12.
+> - [Introduced](https://gitlab.com/gitlab-org/omnibus-gitlab/-/merge_requests/5102) in GitLab 13.12.
 
 GitLab configuration backups can be pruned using the same `backup_keep_time` setting that is
-[used for the GitLab application backups](https://docs.gitlab.com/ee/raketasks/backup_restore.html#limit-backup-lifetime-for-local-files-prune-old-backups)
+[used for the GitLab application backups](https://docs.gitlab.com/ee/administration/backup_restore/backup_gitlab.html#limit-backup-lifetime-for-local-files-prune-old-backups)
 
 To make use of this setting, edit `/etc/gitlab/gitlab.rb`:
 
@@ -105,7 +109,7 @@ lost/leaked/stolen together with the keys needed to decrypt it.
 ## Creating an application backup
 
 To create a backup of your repositories and GitLab metadata, follow the
-[backup create documentation](https://docs.gitlab.com/ee/raketasks/backup_restore.html).
+[backup create documentation](https://docs.gitlab.com/ee/administration/backup_restore/backup_gitlab.html).
 
 Backup create will store a tar file in `/var/opt/gitlab/backups`.
 
@@ -120,7 +124,7 @@ gitlab_rails['backup_path'] = '/mnt/backups'
 ## Creating backups for GitLab instances in Docker containers
 
 WARNING:
-The backup command requires [additional parameters](https://docs.gitlab.com/ee/raketasks/backup_restore.html#backup-and-restore-for-installations-using-pgbouncer)
+The backup command requires [additional parameters](https://docs.gitlab.com/ee/administration/backup_restore/backup_gitlab.html#back-up-and-restore-for-installations-using-pgbouncer)
 when your installation is using PgBouncer, for either performance reasons or when using it with a Patroni cluster.
 
 Backups can be scheduled on the host by prepending `docker exec -t <your container name>` to the commands.
@@ -152,7 +156,7 @@ To persist these backups outside the container, mount volumes in the following d
 
 ## Restoring an application backup
 
-See [backup restore documentation](https://docs.gitlab.com/ee/raketasks/backup_restore.html#restore-for-omnibus-installations).
+See [restore documentation](https://docs.gitlab.com/ee/administration/backup_restore/restore_gitlab.html).
 
 ## Backup and restore using non-packaged database
 
@@ -160,11 +164,11 @@ If you are using non-packaged database see [documentation on using non-packaged 
 
 ## Upload backups to remote (cloud) storage
 
-For details check [backup restore document](https://docs.gitlab.com/ee/raketasks/backup_restore.html#uploading-backups-to-a-remote-cloud-storage).
+For details check [backup documentation](https://docs.gitlab.com/ee/administration/backup_restore/backup_gitlab.html#upload-backups-to-a-remote-cloud-storage).
 
 ## Manually manage backup directory
 
-Omnibus GitLab creates the backup directory set with `gitlab_rails['backup_path']`. The directory is owned by the user that is running GitLab and it has strict permissions set to be accessible to only that user.
+Linux package installations create the backup directory set with `gitlab_rails['backup_path']`. The directory is owned by the user that is running GitLab and it has strict permissions set to be accessible to only that user.
 That directory will hold backup archives and they contain sensitive information.
 In some organizations permissions need to be different because of, for example, shipping the backup archives offsite.
 

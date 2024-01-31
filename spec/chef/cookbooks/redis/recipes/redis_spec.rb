@@ -14,6 +14,12 @@ RSpec.describe 'redis' do
 redis_dir='/var/opt/gitlab/redis'
 redis_host='127.0.0.1'
 redis_port='0'
+redis_tls_port=''
+redis_tls_auth_clients='optional'
+redis_tls_cacert_file='/opt/gitlab/embedded/ssl/certs/cacert.pem'
+redis_tls_cacert_dir='/opt/gitlab/embedded/ssl/certs/'
+redis_tls_cert_file=''
+redis_tls_key_file=''
 redis_socket='/var/opt/gitlab/redis/redis.socket'
       EOF
     end
@@ -52,6 +58,13 @@ redis_socket='/var/opt/gitlab/redis/redis.socket'
     end
 
     it_behaves_like 'enabled runit service', 'redis', 'root', 'root'
+
+    it 'uses a 0 second startup delay' do
+      expect(chef_run).to render_file('/opt/gitlab/sv/redis/run')
+    .with_content { |content|
+      expect(content).to match(/^sleep 0$/)
+    }
+    end
 
     it 'creates gitlab-redis-cli-rc' do
       expect(chef_run).to render_file('/opt/gitlab/etc/gitlab-redis-cli-rc')
@@ -101,7 +114,9 @@ redis_socket='/var/opt/gitlab/redis/redis.socket'
           rename_commands: {
             "FAKE_COMMAND" => "RENAMED_FAKE_COMMAND",
             "DISABLED_FAKE_COMMAND" => ""
-          }
+          },
+          'startup_delay': 10,
+          open_files_ulimit: 60000
         }
       )
     end
@@ -141,6 +156,20 @@ redis_socket='/var/opt/gitlab/redis/redis.socket'
     end
 
     it_behaves_like 'enabled runit service', 'redis', 'root', 'root'
+
+    it 'uses a 10 second startup delay' do
+      expect(chef_run).to render_file('/opt/gitlab/sv/redis/run')
+    .with_content { |content|
+      expect(content).to match(/^sleep 10$/)
+    }
+    end
+
+    it 'sets a filehandle limit' do
+      expect(chef_run).to render_file('/opt/gitlab/sv/redis/run')
+    .with_content { |content|
+      expect(content).to match(/^ulimit -n 60000$/)
+    }
+    end
   end
 
   context 'with snapshotting disabled' do
@@ -183,6 +212,12 @@ redis_socket='/var/opt/gitlab/redis/redis.socket'
 redis_dir='/var/opt/gitlab/redis'
 redis_host='1.2.3.4'
 redis_port='6370'
+redis_tls_port=''
+redis_tls_auth_clients='optional'
+redis_tls_cacert_file='/opt/gitlab/embedded/ssl/certs/cacert.pem'
+redis_tls_cacert_dir='/opt/gitlab/embedded/ssl/certs/'
+redis_tls_cert_file=''
+redis_tls_key_file=''
 redis_socket=''
       EOF
     end
@@ -222,6 +257,12 @@ redis_socket=''
 redis_dir='/var/opt/gitlab/redis'
 redis_host='1.2.3.4'
 redis_port='6370'
+redis_tls_port=''
+redis_tls_auth_clients='optional'
+redis_tls_cacert_file='/opt/gitlab/embedded/ssl/certs/cacert.pem'
+redis_tls_cacert_dir='/opt/gitlab/embedded/ssl/certs/'
+redis_tls_cert_file=''
+redis_tls_key_file=''
 redis_socket=''
       EOF
     end
@@ -244,6 +285,8 @@ redis_socket=''
       expect(chef_run).not_to render_file('/var/opt/gitlab/redis/redis.conf')
         .with_content(/^replicaof/)
     end
+
+    it_behaves_like 'started down runit service', 'redis'
 
     it 'creates gitlab-redis-cli-rc' do
       expect(chef_run).to render_file('/opt/gitlab/etc/gitlab-redis-cli-rc')
@@ -323,6 +366,21 @@ redis_socket=''
   end
 
   context 'with tls settings specified' do
+    let(:gitlab_redis_cli_rc) do
+      <<-EOF
+redis_dir='/var/opt/gitlab/redis'
+redis_host='127.0.0.1'
+redis_port='0'
+redis_tls_port='6380'
+redis_tls_auth_clients='no'
+redis_tls_cacert_file='/etc/gitlab/ssl/redis-ca.crt'
+redis_tls_cacert_dir='/opt/gitlab/embedded/ssl/certs'
+redis_tls_cert_file='/etc/gitlab/ssl/redis.crt'
+redis_tls_key_file='/etc/gitlab/ssl/redis.key'
+redis_socket=''
+      EOF
+    end
+
     before do
       stub_gitlab_rb(
         redis: {
@@ -366,6 +424,28 @@ redis_socket=''
           expect(content).to match(%r{^tls-session-cache-size 10000$})
           expect(content).to match(%r{^tls-session-cache-timeout 120$})
         }
+    end
+
+    it 'creates gitlab-redis-cli-rc' do
+      expect(chef_run).to render_file('/opt/gitlab/etc/gitlab-redis-cli-rc')
+        .with_content(gitlab_redis_cli_rc)
+    end
+  end
+
+  context 'log directory and runit group' do
+    context 'default values' do
+      it_behaves_like 'enabled logged service', 'redis', true, { log_directory_owner: 'gitlab-redis' }
+    end
+
+    context 'custom values' do
+      before do
+        stub_gitlab_rb(
+          redis: {
+            log_group: 'fugee'
+          }
+        )
+      end
+      it_behaves_like 'enabled logged service', 'redis', true, { log_directory_owner: 'gitlab-redis', log_group: 'fugee' }
     end
   end
 

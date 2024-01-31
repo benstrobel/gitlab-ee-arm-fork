@@ -57,7 +57,7 @@ module Gitlab
   attribute('spamcheck')
   attribute('patroni').use { Patroni }
   attribute('gitaly').use { Gitaly }
-  attribute('praefect').use { Praefect }
+  attribute('praefect')
   attribute('mattermost',   priority: 30).use { GitlabMattermost } # Mattermost checks if GitLab is enabled on the same box
   attribute('letsencrypt',  priority: 17).use { LetsEncrypt } # After GitlabRails, but before Registry and Mattermost
   attribute('crond')
@@ -72,13 +72,13 @@ module Gitlab
     # Prometheus needs to be loaded after puma for proper parsing of listen
     # address for rails metrics
     attribute('prometheus',         priority: 21).use { Prometheus }
-    attribute('grafana',            priority: 30).use { Grafana }
     attribute('alertmanager',       priority: 30)
     attribute('node_exporter',      priority: 30)
     attribute('redis_exporter',     priority: 30)
     attribute('postgres_exporter',  priority: 30)
     attribute('pgbouncer_exporter', priority: 30)
     attribute('gitlab_exporter',    priority: 30).use { GitlabExporter }
+    attribute('grafana')
   end
 
   ## Attributes under node['gitlab']
@@ -105,6 +105,7 @@ module Gitlab
     attribute('registry_external_url',   default: nil)
     attribute('mattermost_external_url', default: nil)
     attribute('pages_external_url',      default: nil)
+    attribute('gitlab_kas_external_url', default: nil)
     attribute('runtime_dir',             default: nil)
     attribute('git_data_dir',            default: nil)
     attribute('actioncable')
@@ -118,6 +119,7 @@ module Gitlab
     attribute('mattermost_nginx')
     attribute('pages_nginx')
     attribute('registry_nginx')
+    attribute('gitlab_kas_nginx')
     attribute('remote_syslog')
     attribute('high_availability')
     attribute('web_server')

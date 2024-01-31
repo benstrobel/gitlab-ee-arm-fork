@@ -20,24 +20,25 @@ omnibus_helper = OmnibusHelper.new(node)
 consul_helper = ConsulHelper.new(node)
 mailroom_helper = MailroomHelper.new(node)
 redis_helper = RedisHelper.new(node)
+logfiles_helper = LogfilesHelper.new(node)
+logging_settings = logfiles_helper.logging_settings('gitlab-rails')
 
 gitlab_rails_source_dir = "/opt/gitlab/embedded/service/gitlab-rails"
-gitlab_rails_dir = node['gitlab']['gitlab-rails']['dir']
+gitlab_rails_dir = node['gitlab']['gitlab_rails']['dir']
 gitlab_rails_etc_dir = File.join(gitlab_rails_dir, "etc")
 gitlab_rails_static_etc_dir = "/opt/gitlab/etc/gitlab-rails"
 gitlab_rails_working_dir = File.join(gitlab_rails_dir, "working")
 gitlab_rails_tmp_dir = File.join(gitlab_rails_dir, "tmp")
-gitlab_rails_public_uploads_dir = node['gitlab']['gitlab-rails']['uploads_directory']
-gitlab_rails_log_dir = node['gitlab']['gitlab-rails']['log_directory']
-gitlab_rails_uploads_storage_path = node['gitlab']['gitlab-rails']['uploads_storage_path']
-gitlab_ci_dir = node['gitlab']['gitlab-ci']['dir']
-gitlab_ci_builds_dir = node['gitlab']['gitlab-ci']['builds_directory']
-gitlab_rails_shared_tmp_dir = File.join(node['gitlab']['gitlab-rails']['shared_path'], 'tmp')
-gitlab_rails_shared_cache_dir = File.join(node['gitlab']['gitlab-rails']['shared_path'], 'cache')
+gitlab_rails_public_uploads_dir = node['gitlab']['gitlab_rails']['uploads_directory']
+gitlab_rails_uploads_storage_path = node['gitlab']['gitlab_rails']['uploads_storage_path']
+gitlab_ci_dir = node['gitlab']['gitlab_ci']['dir']
+gitlab_ci_builds_dir = node['gitlab']['gitlab_ci']['builds_directory']
+gitlab_rails_shared_tmp_dir = File.join(node['gitlab']['gitlab_rails']['shared_path'], 'tmp')
+gitlab_rails_shared_cache_dir = File.join(node['gitlab']['gitlab_rails']['shared_path'], 'cache')
 upgrade_status_dir = File.join(gitlab_rails_dir, "upgrade-status")
 
 # Set path to the private key used for communication between registry and Gitlab.
-node.normal['gitlab']['gitlab-rails']['registry_key_path'] = File.join(gitlab_rails_etc_dir, "gitlab-registry.key") if node['gitlab']['gitlab-rails']['registry_key_path'].nil?
+node.normal['gitlab']['gitlab_rails']['registry_key_path'] = File.join(gitlab_rails_etc_dir, "gitlab-registry.key") if node['gitlab']['gitlab_rails']['registry_key_path'].nil?
 
 gitlab_user = account_helper.gitlab_user
 gitlab_group = account_helper.gitlab_group
@@ -54,7 +55,7 @@ end
 
 # Holds git repositories, by default at /var/opt/gitlab/git-data/repositories
 # Should not be changed by user. Different permissions to git_data_dir set.
-repositories_storages = node['gitlab']['gitlab-rails']['repositories_storages']
+repositories_storages = node['gitlab']['gitlab_rails']['repositories_storages']
 repositories_storages.each do |_name, repositories_storage|
   storage_directory repositories_storage['path'] do
     owner gitlab_user
@@ -66,14 +67,14 @@ end
 include_recipe 'gitlab::rails_pages_shared_path'
 
 [
-  node['gitlab']['gitlab-rails']['artifacts_path'],
-  node['gitlab']['gitlab-rails']['external_diffs_storage_path'],
-  node['gitlab']['gitlab-rails']['lfs_storage_path'],
-  node['gitlab']['gitlab-rails']['packages_storage_path'],
-  node['gitlab']['gitlab-rails']['dependency_proxy_storage_path'],
-  node['gitlab']['gitlab-rails']['terraform_state_storage_path'],
-  node['gitlab']['gitlab-rails']['ci_secure_files_storage_path'],
-  node['gitlab']['gitlab-rails']['encrypted_settings_path'],
+  node['gitlab']['gitlab_rails']['artifacts_path'],
+  node['gitlab']['gitlab_rails']['external_diffs_storage_path'],
+  node['gitlab']['gitlab_rails']['lfs_storage_path'],
+  node['gitlab']['gitlab_rails']['packages_storage_path'],
+  node['gitlab']['gitlab_rails']['dependency_proxy_storage_path'],
+  node['gitlab']['gitlab_rails']['terraform_state_storage_path'],
+  node['gitlab']['gitlab_rails']['ci_secure_files_storage_path'],
+  node['gitlab']['gitlab_rails']['encrypted_settings_path'],
   gitlab_rails_public_uploads_dir,
   gitlab_ci_builds_dir,
   gitlab_rails_shared_cache_dir,
@@ -98,9 +99,8 @@ end
   gitlab_rails_static_etc_dir,
   gitlab_rails_working_dir,
   gitlab_rails_tmp_dir,
-  node['gitlab']['gitlab-rails']['gitlab_repository_downloads_path'],
-  upgrade_status_dir,
-  gitlab_rails_log_dir
+  node['gitlab']['gitlab_rails']['gitlab_repository_downloads_path'],
+  upgrade_status_dir
 ].compact.each do |dir_name|
   directory "create #{dir_name}" do
     path dir_name
@@ -110,10 +110,20 @@ end
   end
 end
 
-storage_directory node['gitlab']['gitlab-rails']['backup_path'] do
+# Create log_directory
+directory logging_settings[:log_directory] do
+  owner logging_settings[:log_directory_owner]
+  mode logging_settings[:log_directory_mode]
+  if log_group = logging_settings[:log_directory_group]
+    group log_group
+  end
+  recursive true
+end
+
+storage_directory node['gitlab']['gitlab_rails']['backup_path'] do
   owner gitlab_user
   mode '0700'
-  only_if { node['gitlab']['gitlab-rails']['manage_backup_path'] }
+  only_if { node['gitlab']['gitlab_rails']['manage_backup_path'] }
 end
 
 directory gitlab_rails_dir do
@@ -128,12 +138,12 @@ directory gitlab_ci_dir do
   recursive true
 end
 
-key_file_path = node['gitlab']['gitlab-rails']['registry_key_path']
+key_file_path = node['gitlab']['gitlab_rails']['registry_key_path']
 file key_file_path do
   content node['registry']['internal_key']
   owner gitlab_user
   group gitlab_group
-  only_if { node['gitlab']['gitlab-rails']['registry_enabled'] && node['registry']['internal_key'] }
+  only_if { node['gitlab']['gitlab_rails']['registry_enabled'] && node['registry']['internal_key'] }
   sensitive true
 end
 
@@ -146,7 +156,7 @@ end
 dependent_services = []
 dependent_services << "runit_service[mailroom]" if node['gitlab']['mailroom']['enable']
 
-node['gitlab']['gitlab-rails']['dependent_services'].each do |name|
+node['gitlab']['gitlab_rails']['dependent_services'].each do |name|
   dependent_services << "runit_service[#{name}]" if omnibus_helper.should_notify?(name)
 end
 
@@ -154,7 +164,7 @@ dependent_services << "sidekiq_service[sidekiq]" if omnibus_helper.should_notify
 
 secret_file = File.join(gitlab_rails_etc_dir, "secret")
 secret_symlink = File.join(gitlab_rails_source_dir, ".secret")
-otp_key_base = node['gitlab']['gitlab-rails']['otp_key_base']
+otp_key_base = node['gitlab']['gitlab_rails']['otp_key_base']
 
 if File.exist?(secret_file) && File.read(secret_file).chomp != otp_key_base
   message = [
@@ -181,14 +191,34 @@ templatesymlink "Create a database.yml and create a symlink to Rails root" do
   owner "root"
   group gitlab_group
   mode "0640"
-  variables node['gitlab']['gitlab-rails'].to_hash
+  variables node['gitlab']['gitlab_rails'].to_hash
+  dependent_services.each { |svc| notifies :restart, svc }
+  sensitive true
+end
+
+templatesymlink "Create a clickhouse.yml and create a symlink to Rails root" do
+  link_from File.join(gitlab_rails_source_dir, "config/click_house.yml")
+  link_to File.join(gitlab_rails_etc_dir, "click_house.yml")
+  source "click_house.yml.erb"
+  owner "root"
+  group gitlab_group
+  mode "0640"
+  variables node['gitlab']['gitlab_rails'].to_hash
   dependent_services.each { |svc| notifies :restart, svc }
   sensitive true
 end
 
 redis_url = redis_helper.redis_url
-redis_sentinels = node['gitlab']['gitlab-rails']['redis_sentinels']
-redis_enable_client = node['gitlab']['gitlab-rails']['redis_enable_client']
+redis_sentinels = node['gitlab']['gitlab_rails']['redis_sentinels']
+redis_sentinels_password = node['gitlab']['gitlab_rails']['redis_sentinels_password']
+redis_enable_client = node['gitlab']['gitlab_rails']['redis_enable_client']
+redis_ssl = node['gitlab']['gitlab_rails']['redis_ssl']
+redis_tls_ca_cert_dir = node['gitlab']['gitlab_rails']['redis_tls_ca_cert_dir']
+redis_tls_ca_cert_file = node['gitlab']['gitlab_rails']['redis_tls_ca_cert_file']
+redis_tls_client_cert_file = node['gitlab']['gitlab_rails']['redis_tls_client_cert_file']
+redis_tls_client_key_file = node['gitlab']['gitlab_rails']['redis_tls_client_key_file']
+redis_encrypted_settings_file = node['gitlab']['gitlab_rails']['redis_encrypted_settings_file']
+redis_extra_config_command = node['gitlab']['gitlab_rails']['redis_extra_config_command']
 
 templatesymlink "Create a secrets.yml and create a symlink to Rails root" do
   link_from File.join(gitlab_rails_source_dir, "config/secrets.yml")
@@ -199,12 +229,12 @@ templatesymlink "Create a secrets.yml and create a symlink to Rails root" do
   mode "0644"
   sensitive true
   variables('secrets' => { 'production' => {
-              'db_key_base' => node['gitlab']['gitlab-rails']['db_key_base'],
-              'secret_key_base' => node['gitlab']['gitlab-rails']['secret_key_base'],
-              'otp_key_base' => node['gitlab']['gitlab-rails']['otp_key_base'],
-              'encrypted_settings_key_base' => node['gitlab']['gitlab-rails']['encrypted_settings_key_base'],
-              'openid_connect_signing_key' => node['gitlab']['gitlab-rails']['openid_connect_signing_key'],
-              'ci_jwt_signing_key' => node['gitlab']['gitlab-rails']['ci_jwt_signing_key']
+              'db_key_base' => node['gitlab']['gitlab_rails']['db_key_base'],
+              'secret_key_base' => node['gitlab']['gitlab_rails']['secret_key_base'],
+              'otp_key_base' => node['gitlab']['gitlab_rails']['otp_key_base'],
+              'encrypted_settings_key_base' => node['gitlab']['gitlab_rails']['encrypted_settings_key_base'],
+              'openid_connect_signing_key' => node['gitlab']['gitlab_rails']['openid_connect_signing_key'],
+              'ci_jwt_signing_key' => node['gitlab']['gitlab_rails']['ci_jwt_signing_key']
             } })
   dependent_services.each { |svc| notifies :restart, svc }
 end
@@ -216,7 +246,19 @@ templatesymlink "Create a resque.yml and create a symlink to Rails root" do
   owner "root"
   group "root"
   mode "0644"
-  variables(redis_url: redis_url, redis_sentinels: redis_sentinels, redis_enable_client: redis_enable_client)
+  variables(
+    redis_url: redis_url,
+    redis_sentinels: redis_sentinels,
+    redis_sentinels_password: redis_sentinels_password,
+    redis_enable_client: redis_enable_client,
+    redis_ssl: redis_ssl,
+    redis_tls_ca_cert_dir: redis_tls_ca_cert_dir,
+    redis_tls_ca_cert_file: redis_tls_ca_cert_file,
+    redis_tls_client_cert_file: redis_tls_client_cert_file,
+    redis_tls_client_key_file: redis_tls_client_key_file,
+    redis_encrypted_settings_file: redis_encrypted_settings_file,
+    redis_extra_config_command: redis_extra_config_command
+  )
   dependent_services.each { |svc| notifies :restart, svc }
   sensitive true
 end
@@ -228,14 +270,15 @@ templatesymlink "Create an override redis.yml and create a symlink to Rails root
   owner "root"
   group "root"
   mode "0644"
-  variables(redis_yml: node['gitlab']['gitlab-rails']['redis_yml_override'])
+  variables(redis_yml: node['gitlab']['gitlab_rails']['redis_yml_override'])
   dependent_services.each { |svc| notifies :restart, svc }
   sensitive true
 end
 
 templatesymlink "Create a cable.yml and create a symlink to Rails root" do
-  url = node['gitlab']['gitlab-rails']['redis_actioncable_instance']
-  sentinels = node['gitlab']['gitlab-rails']['redis_actioncable_sentinels']
+  url = node['gitlab']['gitlab_rails']['redis_actioncable_instance']
+  sentinels = node['gitlab']['gitlab_rails']['redis_actioncable_sentinels']
+  sentinels_password = node['gitlab']['gitlab_rails']['redis_actioncable_sentinels_password']
 
   if url.nil?
     url = redis_url
@@ -248,18 +291,26 @@ templatesymlink "Create a cable.yml and create a symlink to Rails root" do
   owner "root"
   group "root"
   mode "0644"
-  variables(redis_url: url, redis_sentinels: sentinels, redis_enable_client: redis_enable_client)
+  variables(redis_url: url, redis_sentinels: sentinels, redis_sentinels_password: sentinels_password, redis_enable_client: redis_enable_client)
   dependent_services.each { |svc| notifies :restart, svc }
   sensitive true
 end
 
-%w(cache queues shared_state trace_chunks rate_limiting sessions repository_cache cluster_rate_limiting).each do |instance|
+RedisHelper::REDIS_INSTANCES.each do |instance|
   filename = "redis.#{instance}.yml"
-  url = node['gitlab']['gitlab-rails']["redis_#{instance}_instance"]
-  sentinels = node['gitlab']['gitlab-rails']["redis_#{instance}_sentinels"]
-  clusters = node['gitlab']['gitlab-rails']["redis_#{instance}_cluster_nodes"]
-  username = node['gitlab']['gitlab-rails']["redis_#{instance}_username"]
-  password = node['gitlab']['gitlab-rails']["redis_#{instance}_password"]
+  url = node['gitlab']['gitlab_rails']["redis_#{instance}_instance"]
+  sentinels = node['gitlab']['gitlab_rails']["redis_#{instance}_sentinels"]
+  sentinels_password = node['gitlab']['gitlab_rails']["redis_#{instance}_sentinels_password"]
+  clusters = node['gitlab']['gitlab_rails']["redis_#{instance}_cluster_nodes"]
+  username = node['gitlab']['gitlab_rails']["redis_#{instance}_username"]
+  password = node['gitlab']['gitlab_rails']["redis_#{instance}_password"]
+  redis_ssl = node['gitlab']['gitlab_rails']["redis_#{instance}_ssl"]
+  ca_cert_dir = node['gitlab']['gitlab_rails']["redis_#{instance}_tls_ca_cert_dir"]
+  ca_cert_file = node['gitlab']['gitlab_rails']["redis_#{instance}_tls_ca_cert_file"]
+  certificate_file = node['gitlab']['gitlab_rails']["redis_#{instance}_tls_client_cert_file"]
+  key_file = node['gitlab']['gitlab_rails']["redis_#{instance}_tls_client_key_file"]
+  instance_encrypted_settings_file = node['gitlab']['gitlab_rails']["redis_#{instance}_encrypted_settings_file"]
+  instance_extra_config_command = node['gitlab']['gitlab_rails']["redis_#{instance}_extra_config_command"]
   from_filename = File.join(gitlab_rails_source_dir, "config/#{filename}")
   to_filename = File.join(gitlab_rails_etc_dir, filename)
 
@@ -275,10 +326,18 @@ end
     variables(
       redis_url: url,
       redis_sentinels: sentinels,
+      redis_sentinels_password: sentinels_password,
       redis_enable_client: redis_enable_client,
       cluster_nodes: clusters,
       cluster_username: username,
-      cluster_password: password
+      cluster_password: password,
+      redis_ssl: redis_ssl,
+      redis_tls_ca_cert_dir: ca_cert_dir,
+      redis_tls_ca_cert_file: ca_cert_file,
+      redis_tls_client_cert_file: certificate_file,
+      redis_tls_client_key_file: key_file,
+      redis_encrypted_settings_file: instance_encrypted_settings_file,
+      redis_extra_config_command: instance_extra_config_command
     )
     dependent_services.each { |svc| notifies :restart, svc }
     action :delete if url.nil? && clusters.empty?
@@ -292,10 +351,10 @@ templatesymlink "Create a smtp_settings.rb and create a symlink to Rails root" d
   owner "root"
   group "root"
   mode "0644"
-  variables(node['gitlab']['gitlab-rails'].to_hash)
+  variables(node['gitlab']['gitlab_rails'].to_hash)
   dependent_services.each { |svc| notifies :restart, svc }
 
-  action :delete unless node['gitlab']['gitlab-rails']['smtp_enable']
+  action :delete unless node['gitlab']['gitlab_rails']['smtp_enable']
 end
 
 templatesymlink "Create a gitlab.yml and create a symlink to Rails root" do
@@ -306,30 +365,33 @@ templatesymlink "Create a gitlab.yml and create a symlink to Rails root" do
   group gitlab_group
   mode "0640"
 
-  mattermost_host = Gitlab['mattermost_external_url'] || node['gitlab']['gitlab-rails']['mattermost_host']
+  mattermost_host = Gitlab['mattermost_external_url'] || node['gitlab']['gitlab_rails']['mattermost_host']
+  has_jh_cookbook = File.exist?('/opt/gitlab/embedded/cookbooks/gitlab-jh')
 
   variables(
-    node['gitlab']['gitlab-rails'].to_hash.merge(
-      gitlab_ci_all_broken_builds: node['gitlab']['gitlab-ci']['gitlab_ci_all_broken_builds'],
-      gitlab_ci_add_pusher: node['gitlab']['gitlab-ci']['gitlab_ci_add_pusher'],
+    node['gitlab']['gitlab_rails'].to_hash.merge(
+      gitlab_ci_all_broken_builds: node['gitlab']['gitlab_ci']['gitlab_ci_all_broken_builds'],
+      gitlab_ci_add_pusher: node['gitlab']['gitlab_ci']['gitlab_ci_add_pusher'],
       builds_directory: gitlab_ci_builds_dir,
       pages_external_http: node['gitlab_pages']['external_http'],
       pages_external_https: node['gitlab_pages']['external_https'],
       pages_external_https_proxyv2: node['gitlab_pages']['external_https_proxyv2'],
       pages_artifacts_server: node['gitlab_pages']['artifacts_server'],
       pages_access_control: node['gitlab_pages']['access_control'],
-      pages_object_store_enabled: node['gitlab']['gitlab-rails']['pages_object_store_enabled'],
-      pages_object_store_remote_directory: node['gitlab']['gitlab-rails']['pages_object_store_remote_directory'],
-      pages_object_store_connection: node['gitlab']['gitlab-rails']['pages_object_store_connection'],
+      pages_object_store_enabled: node['gitlab']['gitlab_rails']['pages_object_store_enabled'],
+      pages_object_store_remote_directory: node['gitlab']['gitlab_rails']['pages_object_store_remote_directory'],
+      pages_object_store_connection: node['gitlab']['gitlab_rails']['pages_object_store_connection'],
+      pages_namespace_in_path: node['gitlab_pages']['namespace_in_path'],
       mattermost_host: mattermost_host,
       mattermost_enabled: node['mattermost']['enable'] || !mattermost_host.nil?,
       sidekiq: node['gitlab']['sidekiq'],
       puma: node['gitlab']['puma'],
-      gitlab_shell_authorized_keys_file: node['gitlab']['gitlab-shell']['auth_file'],
-      prometheus_available: node['monitoring']['prometheus']['enable'] || !node['gitlab']['gitlab-rails']['prometheus_address'].nil?,
-      prometheus_server_address: node['gitlab']['gitlab-rails']['prometheus_address'] || node['monitoring']['prometheus']['listen_address'],
+      gitlab_shell_authorized_keys_file: node['gitlab']['gitlab_shell']['auth_file'],
+      prometheus_available: node['monitoring']['prometheus']['enable'] || !node['gitlab']['gitlab_rails']['prometheus_address'].nil?,
+      prometheus_server_address: node['gitlab']['gitlab_rails']['prometheus_address'] || node['monitoring']['prometheus']['listen_address'],
       consul_api_url: node['consul']['enable'] ? consul_helper.api_url : nil,
-      mailroom_internal_api_url: mailroom_helper.internal_api_url
+      mailroom_internal_api_url: mailroom_helper.internal_api_url,
+      has_jh_cookbook: has_jh_cookbook
     )
   )
   dependent_services.each { |svc| notifies :restart, svc }
@@ -348,9 +410,13 @@ templatesymlink "Create a gitlab_workhorse_secret and create a symlink to Rails 
   group "root"
   mode "0644"
   sensitive true
-  variables(secret_token: node['gitlab']['gitlab-workhorse']['secret_token'])
+  variables(secret_token: node['gitlab']['gitlab_workhorse']['secret_token'])
   gitlab_workhorse_services.each { |svc| notifies :restart, svc }
 end
+
+gitlab_shell_secret_services = dependent_services
+gitlab_shell_secret_services += ['runit_service[gitaly]'] if omnibus_helper.should_notify?('gitaly')
+gitlab_shell_secret_services += ['runit_service[gitlab-sshd]'] if Services.enabled?('gitlab_sshd')
 
 templatesymlink "Create a gitlab_shell_secret and create a symlink to Rails root" do
   link_from File.join(gitlab_rails_source_dir, ".gitlab_shell_secret")
@@ -360,8 +426,8 @@ templatesymlink "Create a gitlab_shell_secret and create a symlink to Rails root
   group "root"
   mode "0644"
   sensitive true
-  variables(secret_token: node['gitlab']['gitlab-shell']['secret_token'])
-  dependent_services.each { |svc| notifies :restart, svc }
+  variables(secret_token: node['gitlab']['gitlab_shell']['secret_token'])
+  gitlab_shell_secret_services.each { |svc| notifies :restart, svc }
   notifies :run, 'bash[Set proper security context on ssh files for selinux]', :delayed if SELinuxHelper.enabled?
 end
 
@@ -418,14 +484,14 @@ templatesymlink 'Create a gitlab_kas_secret and create a symlink to Rails root' 
   group 'root'
   mode '0644'
   sensitive true
-  variables(secret_token: node['gitlab-kas']['api_secret_key'])
+  variables(secret_token: node['gitlab_kas']['api_secret_key'])
   gitlab_kas_services.each { |svc| notifies :restart, svc }
-  only_if { node['gitlab-kas']['api_secret_key'] }
+  only_if { node['gitlab_kas']['api_secret_key'] }
 end
 
 rails_env = {
   'HOME' => node['gitlab']['user']['home'],
-  'RAILS_ENV' => node['gitlab']['gitlab-rails']['environment'],
+  'RAILS_ENV' => node['gitlab']['gitlab_rails']['environment'],
 }
 
 # Explicitly deleting relative_urls.rb file and link that was used prior to
@@ -438,7 +504,7 @@ file File.join(gitlab_rails_etc_dir, "relative_url.rb") do
   action :delete
 end
 
-gitlab_relative_url = node['gitlab']['gitlab-rails']['gitlab_relative_url']
+gitlab_relative_url = node['gitlab']['gitlab_rails']['gitlab_relative_url']
 rails_env['RAILS_RELATIVE_URL_ROOT'] = gitlab_relative_url if gitlab_relative_url
 
 rails_env['BUNDLE_GEMFILE'] = GitlabRailsEnvHelper.bundle_gemfile(gitlab_rails_source_dir)
@@ -447,7 +513,7 @@ rails_env['PUMA_WORKER_MAX_MEMORY'] = node['gitlab']['puma']['per_worker_max_mem
 
 env_dir File.join(gitlab_rails_static_etc_dir, 'env') do
   variables(
-    rails_env.merge(node['gitlab']['gitlab-rails']['env'])
+    rails_env.merge(node['gitlab']['gitlab_rails']['env'])
   )
   dependent_services.each { |svc| notifies :restart, svc }
 end
@@ -456,14 +522,14 @@ end
 {
   "/opt/gitlab/embedded/service/gitlab-rails/tmp" => gitlab_rails_tmp_dir,
   "/opt/gitlab/embedded/service/gitlab-rails/public/uploads" => gitlab_rails_public_uploads_dir,
-  "/opt/gitlab/embedded/service/gitlab-rails/log" => gitlab_rails_log_dir
+  "/opt/gitlab/embedded/service/gitlab-rails/log" => logging_settings[:log_directory]
 }.each do |link_dir, target_dir|
   link link_dir do
     to target_dir
   end
 end
 
-legacy_sidekiq_log_file = File.join(gitlab_rails_log_dir, 'sidekiq.log')
+legacy_sidekiq_log_file = File.join(logging_settings[:log_directory], 'sidekiq.log')
 link legacy_sidekiq_log_file do
   action :delete
   only_if { File.symlink?(legacy_sidekiq_log_file) }
@@ -496,7 +562,7 @@ end
 execute "clear the gitlab-rails cache" do
   command "/opt/gitlab/bin/gitlab-rake cache:clear"
   action :nothing
-  not_if { omnibus_helper.not_listening?('redis') || !node['gitlab']['gitlab-rails']['rake_cache_clear'] }
+  not_if { omnibus_helper.not_listening?('redis') || !node['gitlab']['gitlab_rails']['rake_cache_clear'] }
 end
 
 #

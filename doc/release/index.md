@@ -1,7 +1,7 @@
 ---
 stage: Systems
 group: Distribution
-info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://about.gitlab.com/handbook/product/ux/technical-writing/#assignments
+info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 ---
 
 # Omnibus GitLab release process
@@ -54,7 +54,7 @@ of important things for Omnibus GitLab will be done:
 
 1. All remotes of the project will be synced.
 1. The versions of components will be read from GitLab CE/EE repository
-  (eg. VERSION, GITLAB_SHELL_VERSION) and written to the Omnibus GitLab repository.
+  (eg. `VERSION`, `GITLAB_SHELL_VERSION`) and written to the Omnibus GitLab repository.
 1. A specific Git tag will be created and synced to Omnibus GitLab repositories.
 
 When the Omnibus GitLab repository on <https://dev.gitlab.org/> gets updated, GitLab CI
@@ -143,7 +143,7 @@ successful builds.
 
 ### Updating cloud images
 
-The cloud image release process is documented here: <https://about.gitlab.com/handbook/alliances/cloud-images/>.
+The cloud image release process is documented here: <https://handbook.gitlab.com/handbook/alliances/cloud-images/>.
 
 New image are released when:
 

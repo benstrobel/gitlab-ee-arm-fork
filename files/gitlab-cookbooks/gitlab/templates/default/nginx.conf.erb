@@ -2,7 +2,7 @@
 # erased! To change the contents below, edit /etc/gitlab/gitlab.rb
 # and run `sudo gitlab-ctl reconfigure`.
 
-user <%= node['gitlab']['web-server']['username'] %> <%= node['gitlab']['web-server']['group']%>;
+user <%= node['gitlab']['web_server']['username'] %> <%= node['gitlab']['web_server']['group']%>;
 worker_processes <%= @worker_processes %>;
 error_log stderr;
 pid nginx.pid;
@@ -82,7 +82,7 @@ http {
   <% end -%>
 
   upstream gitlab-workhorse {
-    server <%= "unix:" if node['gitlab']['gitlab-workhorse']['listen_network'] == "unix" %><%= node['gitlab']['gitlab-workhorse']['listen_addr'] %>;
+    server <%= "unix:" if node['gitlab']['gitlab_workhorse']['listen_network'] == "unix" %><%= node['gitlab']['gitlab_workhorse']['listen_addr'] %>;
   }
 
   <% if @gitlab_http_config %>
@@ -103,6 +103,10 @@ http {
 
   <% if @gitlab_registry_http_config %>
   include <%= @gitlab_registry_http_config %>;
+  <% end %>
+
+  <% if @gitlab_kas_http_config %>
+  include <%= @gitlab_kas_http_config %>;
   <% end %>
 
   <% if @nginx_status_config %>

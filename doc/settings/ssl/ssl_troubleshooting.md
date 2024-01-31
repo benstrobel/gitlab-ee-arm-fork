@@ -1,17 +1,20 @@
 ---
 stage: Systems
 group: Distribution
-info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://about.gitlab.com/handbook/product/ux/technical-writing/#assignments
-type: reference
+info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 ---
 
-# Troubleshooting SSL **(FREE SELF)**
+# Troubleshooting SSL
+
+DETAILS:
+**Tier:** Free, Premium, Ultimate
+**Offering:** Self-managed
 
 This page contains a list of common SSL-related errors and scenarios that you
 may encounter while working with GitLab. It should serve as an addition to the
 main SSL documentation:
 
-- [Omnibus SSL Configuration](index.md).
+- [Configure SSL for a Linux package installation](index.md).
 - [Self-signed certificates or custom Certification Authorities for GitLab Runner](https://docs.gitlab.com/runner/configuration/tls-self-signed.html).
 - [Configure HTTPS manually](index.md#configure-https-manually).
 
@@ -87,27 +90,6 @@ this OpenSSL version.
 
    This error indicates that [SANs](http://wiki.cacert.org/FAQ/subjectAltName) (subjectAltName) must be configured in the certificate. For more information, see [this issue](https://gitlab.com/gitlab-org/gitlab-runner/-/issues/28841).
 
-## Git-LFS and other embedded services written in ***golang*** report custom certificate signed by unknown authority
-
-NOTE:
-In GitLab 11.5, the following workaround is no longer necessary, embedded golang apps now [use the standard GitLab certificate directory automatically](https://gitlab.com/gitlab-org/omnibus-gitlab/-/issues/3701).
-
-The `gitlab-workhorse` and other services written in ***golang*** use the **crypto/tls** library from ***golang***
-instead of **OpenSSL**.
-
-Add the following entry in `/etc/gitlab/gitlab.rb` to work around the
-[issue as reported](https://gitlab.com/gitlab-org/gitlab-workhorse/-/issues/177#note_90203818):
-
-```ruby
-gitlab_workhorse['env'] = {
-  'SSL_CERT_DIR' => '/opt/gitlab/embedded/ssl/certs/'
-}
-```
-
-NOTE:
-If you have installed GitLab to a path other than `/opt/gitlab/` then modify the entry above
-with the correct path in your operating environment.
-
 ## Reconfigure Fails Due to Certificates
 
 ```shell
@@ -146,12 +128,26 @@ Test the certificate's validity using the commands below:
 /opt/gitlab/embedded/bin/openssl x509 -inform DER -in /etc/gitlab/trusted-certs/example.der -text -noout
 ```
 
-Invalid certificate files produce the following output:
+Invalid certificate files produce the following outputs:
+
+- ```shell
+  unable to load certificate
+  140663131141784:error:0906D06C:PEM routines:PEM_read_bio:no start line:pem_lib.c:701:Expecting: TRUSTED CERTIFICATE
+  ```
+
+- ```shell
+  cannot load certificate
+  PEM_read_bio_X509_AUX() failed (SSL: error:0909006C:PEM routines:get_name:no start line:Expecting: TRUSTED CERTIFICATE)
+  ```
+
+In either of those cases, and if your certificates begin and end with anything other than the following:
 
 ```shell
-unable to load certificate
-140663131141784:error:0906D06C:PEM routines:PEM_read_bio:no start line:pem_lib.c:701:Expecting: TRUSTED CERTIFICATE
+-----BEGIN CERTIFICATE-----
+-----END CERTIFICATE-----
 ```
+
+Then they are not compatible with GitLab. You should separate them into the certificate components (server, intermediate, root), and convert them to the compatible PEM format.
 
 To test if `c_rehash` is not symlinking the certificate due to a missing perl interpreter:
 
@@ -181,7 +177,7 @@ If after running `gitlab-ctl reconfigure`:
 1. you have placed custom certificates in `/etc/gitlab/trusted-certs/`; and
 1. you do not see any skipped or symlinked custom certificate messages
 
-You may be encountering an issue where Omnibus GitLab thinks that the custom
+You may be encountering an issue where a Linux package installation thinks that the custom
 certificates have already been added.
 
 To resolve, delete the trusted certificates directory hash:
@@ -208,25 +204,40 @@ Where HOSTNAME is the hostname of the certificate.
 
 ## Let's Encrypt fails on reconfigure
 
+NOTE:
+You can test your domain using the [Let's Debug](https://letsdebug.net/)
+diagnostic tool. It can help you figure out why you can't issue a Let's Encrypt
+certificate.
+
 When you reconfigure, there are common scenarios under which Let's Encrypt may fail:
 
-1. Let's Encrypt may fail if your server isn't able to reach the Let's Encrypt verification servers or vice versa:
+- Let's Encrypt may fail if your server isn't able to reach the Let's Encrypt verification servers or vice versa:
 
-   ```shell
-   letsencrypt_certificate[gitlab.domain.com] (letsencrypt::http_authorization line 3) had an error: RuntimeError: acme_certificate[staging]  (/opt/gitlab/embedded/cookbooks/cache/cookbooks/letsencrypt/resources/certificate.rb line 20) had an error: RuntimeError: [gitlab.domain.com] Validation failed for domain gitlab.domain.com
-   ```
+  ```shell
+  letsencrypt_certificate[gitlab.domain.com] (letsencrypt::http_authorization line 3) had an error: RuntimeError: acme_certificate[staging]  (/opt/gitlab/embedded/cookbooks/cache/cookbooks/letsencrypt/resources/certificate.rb line 20) had an error: RuntimeError: [gitlab.domain.com] Validation failed for domain gitlab.domain.com
+  ```
 
-    If you run into issues reconfiguring GitLab due to Let's Encrypt [make sure you have ports 80 and 443 open and accessible](index.md#enable-the-lets-encrypt-integration).
+  If you run into issues reconfiguring GitLab due to Let's Encrypt [make sure you have ports 80 and 443 open and accessible](index.md#enable-the-lets-encrypt-integration).
 
-1. Your domain's Certification Authority Authorization (CAA) record does not allow Let's Encrypt to issue a certificate for your domain. Look for the following error in the reconfigure output:
+- Your domain's Certification Authority Authorization (CAA) record does not allow Let's Encrypt to issue a certificate for your domain. Look for the following error in the reconfigure output:
 
-   ```shell
-   letsencrypt_certificate[gitlab.domain.net] (letsencrypt::http_authorization line 5) had an error: RuntimeError: acme_certificate[staging]   (/opt/gitlab/embedded/cookbooks/cache/cookbooks/letsencrypt/resources/certificate.rb line 25) had an error: RuntimeError: ruby_block[create certificate for gitlab.domain.net] (/opt/gitlab/embedded/cookbooks/cache/cookbooks/acme/resources/certificate.rb line 108) had an error: RuntimeError: [gitlab.domain.com] Validation failed, unable to request certificate
-   ```
+  ```shell
+  letsencrypt_certificate[gitlab.domain.net] (letsencrypt::http_authorization line 5) had an error: RuntimeError: acme_certificate[staging]   (/opt/gitlab/embedded/cookbooks/cache/cookbooks/letsencrypt/resources/certificate.rb line 25) had an error: RuntimeError: ruby_block[create certificate for gitlab.domain.net] (/opt/gitlab/embedded/cookbooks/cache/cookbooks/acme/resources/certificate.rb line 108) had an error: RuntimeError: [gitlab.domain.com] Validation failed, unable to request certificate
+  ```
 
-1. If you're using a test domain such as `gitlab.example.com`, without a certificate, you'll see the `unable to request certificate` error shown above. In that case, disable Let's Encrypt by setting `letsencrypt['enable'] = false` in `/etc/gitlab/gitlab.rb`.
+- If you're using a test domain such as `gitlab.example.com`, without a certificate, you'll see the `unable to request certificate` error shown above. In that case, disable Let's Encrypt by setting `letsencrypt['enable'] = false` in `/etc/gitlab/gitlab.rb`.
 
-You can test your domain using the [Let's Debug](https://letsdebug.net/) diagnostic tool. It can help you figure out why you can't issue a Let's Encrypt certificate.
+- [Let's Encrypt enforces rate limits](https://letsencrypt.org/docs/rate-limits/),
+  which is at the top-level domain. In case you're using your cloud provider's
+  hostname as the `external_url`, for example `*.cloudapp.azure.com`, Let's
+  Encrypt would enforce limits to `azure.com`, which could make the certificate
+  creation incomplete.
+
+  In that case, you can try renewing the Let's Encrypt certificates manually:
+
+  ```shell
+  sudo gitlab-ctl renew-le-certs
+  ```
 
 ## Using an internal CA certificate with GitLab
 

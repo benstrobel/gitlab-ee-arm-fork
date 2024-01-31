@@ -15,7 +15,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-require 'yaml'
 require "#{Omnibus::Config.project_root}/lib/gitlab/version"
 require "#{Omnibus::Config.project_root}/lib/gitlab/ohai_helper.rb"
 
@@ -42,7 +41,7 @@ license_file combined_licenses_file
 
 dependency 'pkg-config-lite'
 dependency 'ruby'
-dependency 'bundler'
+dependency 'rubygems'
 dependency 'libxml2'
 dependency 'libxslt'
 dependency 'curl'
@@ -54,7 +53,6 @@ dependency 'python-docutils'
 dependency 'krb5'
 dependency 'registry'
 dependency 'unzip'
-dependency 'libre2'
 dependency 'gpgme'
 dependency 'graphicsmagick'
 dependency 'exiftool'
@@ -69,6 +67,12 @@ whitelist_file /grpc_c\.so/ if OhaiHelper.arm?
 
 build do
   env = with_standard_compiler_flags(with_embedded_path)
+
+  # Remove ee code when building in CE mode from canonical source
+  if !EE && File.directory?('ee')
+    delete 'ee'
+    delete 'CHANGELOG-EE.md'
+  end
 
   # Exclude rails directory from cache
   cache_dir = File.join('/var/cache/omnibus/cache/git_cache', install_dir, 'info/exclude')
@@ -92,52 +96,57 @@ build do
     env['PKG_CONFIG_PATH'] = "#{OpenSSLHelper.pkg_config_dirs}:/opt/gitlab/embedded/lib/pkgconfig"
   end
 
-  bundle "config set --local gemfile #{gitlab_bundle_gemfile}" if gitlab_bundle_gemfile != 'Gemfile'
-  bundle 'config force_ruby_platform true', env: env if OhaiHelper.ruby_native_gems_unsupported?
-  bundle 'config build.gpgme --use-system-libraries', env: env
-  bundle "config build.nokogiri --use-system-libraries --with-xml2-include=#{install_dir}/embedded/include/libxml2 --with-xslt-include=#{install_dir}/embedded/include/libxslt", env: env
-  bundle 'config build.grpc --with-ldflags=-Wl,--no-as-needed --with-dldflags=-latomic', env: env if OhaiHelper.os_platform == 'raspbian'
-  bundle "config set --local frozen 'true'"
-  bundle "install --without #{bundle_without.join(' ')} --jobs #{workers} --retry 5", env: env
+  env['CFLAGS'] = '-std=gnu99' if OhaiHelper.centos7? || OhaiHelper.os_platform == 'sles'
 
-  block 'correct omniauth-jwt permissions' do
-    # omniauth-jwt has some of its files 0600, make them 0644
-    show = shellout!("#{embedded_bin('bundle')} show omniauth-jwt", env: env, returns: [0, 7])
-    if show.exitstatus.zero?
-      path = show.stdout.strip
-      command "chmod -R g=u-w,o=u-w #{path}"
-    end
+  # Special configuration for Rust extensions, which require clang 3.9+.
+  if OhaiHelper.centos7?
+    env['PATH'] = "/opt/rh/llvm-toolset-7/root/bin:#{env['PATH']}"
+    env['LIBCLANG_PATH'] = '/opt/rh/llvm-toolset-7/root/usr/lib64'
+  elsif OhaiHelper.sles12?
+    env['BINDGEN_EXTRA_CLANG_ARGS'] = "-I/usr/lib64/clang/7.0.1/include"
+  elsif OhaiHelper.raspberry_pi?
+    # This is needed to workaround a bug in QEMU: https://gitlab.com/gitlab-org/gitlab-omnibus-builder/-/issues/60
+    # This has to be a tmpfs or some other filesystem other than ext4.
+    env['CARGO_HOME'] = '/run'
   end
 
-  # One of our gems, google-protobuf is known to have issues with older gcc versions
-  # when using the pre-built extensions. We will remove it and rebuild it here.
-  block 'reinstall google-protobuf gem' do
-    require 'fileutils'
+  bundle "config set --local gemfile #{gitlab_bundle_gemfile}" if gitlab_bundle_gemfile != 'Gemfile'
+  bundle 'config force_ruby_platform true', env: env if OhaiHelper.ruby_native_gems_unsupported?
 
-    unless OhaiHelper.ruby_native_gems_unsupported?
-      current_gem = shellout!("#{embedded_bin('bundle')} show | grep google-protobuf", env: env).stdout
-      protobuf_version = current_gem[/google-protobuf \((.*)\)/, 1]
-      shellout!("#{embedded_bin('gem')} uninstall --force google-protobuf", env: env)
-      shellout!("#{embedded_bin('gem')} install google-protobuf --version #{protobuf_version} --platform=ruby", env: env)
-    end
+  bundle 'config build.gpgme --use-system-libraries', env: env
+  bundle "config build.nokogiri --use-system-libraries --with-xml2-include=#{install_dir}/embedded/include/libxml2 --with-xslt-include=#{install_dir}/embedded/include/libxslt", env: env
+  bundle 'config build.grpc --with-ldflags=-Wl,--no-as-needed --with-dldflags=-latomic', env: env if OhaiHelper.raspberry_pi?
+  # Disable zstd decompression support to avoid linking against libzstd,
+  # which may not be a safe system dependency to use.
+  bundle 'config build.ruby-magic --with-magic-flags=--disable-zstdlib', env: env
+  bundle "config set --local frozen 'true'", env: env
+  bundle "config set --local without #{bundle_without.join(' ')}", env: env
+  bundle "install --jobs #{workers} --retry 5", env: env
 
-    # Delete unused shared objects included in grpc gem
-    grpc_path = shellout!("#{embedded_bin('bundle')} show grpc", env: env).stdout.strip
+  block 'delete unneeded precompiled shared libraries' do
+    next if OhaiHelper.ruby_native_gems_unsupported?
+
     ruby_ver = shellout!("#{embedded_bin('ruby')} -e 'puts RUBY_VERSION.match(/\\d+\\.\\d+/)[0]'", env: env).stdout.chomp
-    command "find #{File.join(grpc_path, 'src/ruby/lib/grpc')} ! -path '*/#{ruby_ver}/*' -name 'grpc_c.so' -type f -print -delete"
+    gem_paths = {
+      'google-protobuf' => 'lib/google',
+      'grpc' => 'src/ruby/lib/grpc',
+      'prometheus-client-mmap' => 'lib',
+      'nokogiri' => 'lib',
+      're2' => 'lib'
+    }
+
+    # Delete unused shared libraries included in the gems
+    gem_paths.each do |name, base_path|
+      gem_path = shellout!("#{embedded_bin('bundle')} show #{name}", env: env).stdout.strip
+      command "find #{File.join(gem_path, base_path)} ! -path '*/#{ruby_ver}/*' -name '*.so' -type f -print -delete"
+    end
   end
 
   # In order to compile the assets, we need to get to a state where rake can
   # load the Rails environment.
   copy 'config/gitlab.yml.example', 'config/gitlab.yml'
+  copy 'config/database.yml.postgresql', 'config/database.yml'
   copy 'config/secrets.yml.example', 'config/secrets.yml'
-
-  block 'render database.yml' do
-    database_yml = YAML.safe_load(File.read("#{Omnibus::Config.source_dir}/gitlab-rails/config/database.yml.postgresql"))
-    database_yml.each { |_, databases| databases.delete('geo') unless EE }
-
-    File.write("#{Omnibus::Config.source_dir}/gitlab-rails/config/database.yml", YAML.dump(database_yml))
-  end
 
   # Copy asset cache and node modules from cache location to source directory
   move "#{Omnibus::Config.project_root}/assets_cache", "#{Omnibus::Config.source_dir}/gitlab-rails/tmp/cache"
@@ -147,10 +156,11 @@ build do
     'NODE_ENV' => 'production',
     'RAILS_ENV' => 'production',
     'PATH' => "#{install_dir}/embedded/bin:#{Gitlab::Util.get_env('PATH')}",
-    'USE_DB' => 'false',
     'SKIP_STORAGE_VALIDATION' => 'true',
-    'NODE_OPTIONS' => '--max_old_space_size=3584'
+    'SKIP_DATABASE_CONFIG_VALIDATION' => 'true',
   }
+  assets_compile_env['NODE_OPTIONS'] = '--max_old_space_size=3584' if OhaiHelper.is_32_bit?
+
   assets_compile_env['NO_SOURCEMAPS'] = 'true' if Gitlab::Util.get_env('NO_SOURCEMAPS')
   command 'yarn install --pure-lockfile --production'
 

@@ -24,6 +24,8 @@ RSpec.describe 'gitlab-kas' do
     end
 
     it 'creates a default VERSION file and restarts service' do
+      allow_any_instance_of(OmnibusHelper).to receive(:should_notify?).and_call_original
+      allow_any_instance_of(OmnibusHelper).to receive(:should_notify?).with('gitlab-kas').and_return(true)
       expect(chef_run).to create_version_file('Create version file for Gitlab KAS').with(
         version_file_path: '/var/opt/gitlab/gitlab-kas/VERSION',
         version_check_cmd: '/opt/gitlab/embedded/bin/gitlab-kas --version'
@@ -32,12 +34,19 @@ RSpec.describe 'gitlab-kas' do
       expect(chef_run.version_file('Create version file for Gitlab KAS')).to notify('runit_service[gitlab-kas]').to(:restart)
     end
 
-    it 'correctly renders the KAS service run file' do
-      expect(chef_run).to render_file("/opt/gitlab/sv/gitlab-kas/run").with_content(%r{--configuration-file /var/opt/gitlab/gitlab-kas/gitlab-kas-config.yml})
+    it 'creates a default VERSION file and does not restart the service if stopped' do
+      allow_any_instance_of(OmnibusHelper).to receive(:should_notify?).and_call_original
+      allow_any_instance_of(OmnibusHelper).to receive(:should_notify?).with('gitlab-kas').and_return(false)
+      expect(chef_run).to create_version_file('Create version file for Gitlab KAS').with(
+        version_file_path: '/var/opt/gitlab/gitlab-kas/VERSION',
+        version_check_cmd: '/opt/gitlab/embedded/bin/gitlab-kas --version'
+      )
+
+      expect(chef_run.version_file('Create version file for Gitlab KAS')).to_not notify('runit_service[gitlab-kas]').to(:restart)
     end
 
-    it 'correctly renders the KAS log run file' do
-      expect(chef_run).to render_file("/opt/gitlab/sv/gitlab-kas/log/run").with_content(%r{exec svlogd -tt /var/log/gitlab/gitlab-kas})
+    it 'correctly renders the KAS service run file' do
+      expect(chef_run).to render_file("/opt/gitlab/sv/gitlab-kas/run").with_content(%r{--configuration-file /var/opt/gitlab/gitlab-kas/gitlab-kas-config.yml})
     end
 
     it 'correctly renders the KAS config file' do
@@ -72,7 +81,10 @@ RSpec.describe 'gitlab-kas' do
               authentication_secret_file: "/var/opt/gitlab/gitlab-kas/private_api_authentication_secret_file",
               network: "tcp"
             },
-          }
+          },
+          gitlab: hash_including(
+            external_url: 'https://gitlab.example.com'
+          )
         )
       )
     end
@@ -111,10 +123,6 @@ RSpec.describe 'gitlab-kas' do
 
     it 'correctly renders the KAS service run file' do
       expect(chef_run).to render_file("/opt/gitlab/sv/gitlab-kas/run").with_content(%r{--configuration-file /var/opt/gitlab/gitlab-kas/gitlab-kas-config.yml})
-    end
-
-    it 'correctly renders the KAS log run file' do
-      expect(chef_run).to render_file("/opt/gitlab/sv/gitlab-kas/log/run").with_content(%r{exec svlogd -tt /var/log/gitlab/gitlab-kas})
     end
 
     it 'correctly renders the KAS config file' do
@@ -243,195 +251,333 @@ RSpec.describe 'gitlab-kas' do
           external_k8s_proxy_url: 'https://example.com/gitlab/-/kubernetes-agent/k8s-proxy/'
         )
       end
-    end
-  end
 
-  describe 'logrotate settings' do
-    context 'default values' do
-      it_behaves_like 'configured logrotate service', 'gitlab-kas', 'git', 'git'
+      it 'renders KAS config gitlab external URL correctly' do
+        expect(gitlab_kas_config_yml).to(
+          include(
+            gitlab: hash_including(
+              external_url: 'https://example.com'
+            )
+          )
+        )
+      end
     end
 
-    context 'specified username and group' do
-      before do
+    context 'with kas url using own sub-domain' do
+      it "allows ws/wss scheme if gitlab_kas['listen_websocket']=true" do
         stub_gitlab_rb(
           external_url: 'https://gitlab.example.com',
-          user: {
-            username: 'foo',
-            group: 'bar'
-          }
+          gitlab_kas_external_url: 'wss://kas.gitlab.example.com/',
+          gitlab_kas: { listen_websocket: true }
+        )
+
+        expect(gitlab_yml[:production][:gitlab_kas]).to include(
+          enabled: true,
+          external_url: 'wss://kas.gitlab.example.com/',
+          external_k8s_proxy_url: 'https://kas.gitlab.example.com/k8s-proxy/'
         )
       end
 
-      it_behaves_like 'configured logrotate service', 'gitlab-kas', 'foo', 'bar'
+      it "raises an error if gitlab_kas['listen_websocket']=false" do
+        stub_gitlab_rb(
+          external_url: 'https://gitlab.example.com',
+          gitlab_kas_external_url: 'wss://kas.gitlab.example.com',
+          gitlab_kas: { listen_websocket: false }
+        )
+
+        expect { gitlab_yml }.to raise_error(
+          RuntimeError,
+          "gitlab_kas['listen_websocket'] must be set to `true`"
+        )
+      end
+
+      it "does not allow grpc/grpcs" do
+        stub_gitlab_rb(
+          external_url: 'https://gitlab.example.com',
+          gitlab_kas_external_url: 'grpcs://kas.gitlab.example.com/',
+          gitlab_kas: { listen_websocket: false }
+        )
+
+        expect { gitlab_yml }.to raise_error(
+          RuntimeError,
+          "gitlab_kas_external_url scheme must be 'ws' or 'wss'"
+        )
+      end
+
+      it "does not allow http/https" do
+        stub_gitlab_rb(
+          external_url: 'https://gitlab.example.com',
+          gitlab_kas_external_url: 'https://kas.gitlab.example.com/',
+          gitlab_kas: { listen_websocket: false }
+        )
+
+        expect { gitlab_yml }.to raise_error(
+          RuntimeError,
+          "gitlab_kas_external_url scheme must be 'ws' or 'wss'"
+        )
+      end
+
+      it 'renders KAS config gitlab external URL correctly' do
+        stub_gitlab_rb(
+          external_url: 'https://gitlab.example.com',
+          gitlab_kas_external_url: 'wss://kas.gitlab.example.com/',
+          gitlab_kas: { listen_websocket: true }
+        )
+
+        expect(gitlab_kas_config_yml).to(
+          include(
+            gitlab: hash_including(
+              external_url: 'https://gitlab.example.com'
+            )
+          )
+        )
+      end
     end
   end
 
   describe 'redis config' do
-    context 'when there is a password' do
-      before do
-        stub_gitlab_rb(
-          external_url: 'https://gitlab.example.com',
-          gitlab_kas: { enable: true },
-          gitlab_rails: { redis_password: 'the-password' }
-        )
-      end
-
-      it 'writes password_file into the kas config' do
-        expect(chef_run).to render_file('/var/opt/gitlab/gitlab-kas/gitlab-kas-config.yml').with_content { |content|
-          kas_redis_cfg = YAML.safe_load(content)['redis']
-          expect(kas_redis_cfg).to(
-            include(
-              'password_file' => '/var/opt/gitlab/gitlab-kas/redis_password_file'
-            )
+    context 'when same as gitlab_rails' do
+      context 'when there is a password' do
+        before do
+          stub_gitlab_rb(
+            external_url: 'https://gitlab.example.com',
+            gitlab_kas: { enable: true },
+            gitlab_rails: { redis_password: 'the-password' }
           )
-        }
+        end
+
+        it 'writes password_file into the kas config' do
+          expect(chef_run).to render_file('/var/opt/gitlab/gitlab-kas/gitlab-kas-config.yml').with_content { |content|
+            kas_redis_cfg = YAML.safe_load(content)['redis']
+            expect(kas_redis_cfg).to(
+              include(
+                'password_file' => '/var/opt/gitlab/gitlab-kas/redis_password_file'
+              )
+            )
+          }
+        end
+        it 'renders the password file' do
+          expect(chef_run).to render_file('/var/opt/gitlab/gitlab-kas/redis_password_file').with_content('the-password')
+        end
       end
-      it 'renders the password file' do
-        expect(chef_run).to render_file('/var/opt/gitlab/gitlab-kas/redis_password_file').with_content('the-password')
+
+      context 'when there is no password' do
+        before do
+          stub_gitlab_rb(
+            external_url: 'https://gitlab.example.com',
+            gitlab_kas: { enable: true }
+          )
+        end
+
+        it 'does not write password_file into the config' do
+          expect(chef_run).to render_file('/var/opt/gitlab/gitlab-kas/gitlab-kas-config.yml').with_content { |content|
+            kas_cfg = YAML.safe_load(content)
+            expect(kas_cfg['redis']).not_to include('password_file')
+          }
+        end
+
+        it 'renders no password file' do
+          expect(chef_run).not_to render_file("/var/opt/gitlab/gitlab-kas/redis_password_file")
+        end
+      end
+
+      context 'without sentinel host only' do
+        before do
+          stub_gitlab_rb(
+            external_url: 'https://gitlab.example.com',
+            gitlab_kas: {
+              enable: true
+            },
+            gitlab_rails: {
+              redis_host: 'the-host'
+            }
+          )
+        end
+
+        it 'renders a single server configuration in to the kas config' do
+          expect(chef_run).to render_file('/var/opt/gitlab/gitlab-kas/gitlab-kas-config.yml').with_content { |content|
+            kas_redis_cfg = YAML.safe_load(content)['redis']
+            expect(kas_redis_cfg).to(
+              include(
+                'network' => 'tcp',
+                'server' => {
+                  'address' => 'the-host:6379'
+                }
+              )
+            )
+            expect(kas_redis_cfg).not_to(include('sentinel'))
+          }
+        end
+      end
+
+      context 'without sentinel host and port' do
+        before do
+          stub_gitlab_rb(
+            external_url: 'https://gitlab.example.com',
+            gitlab_rails: {
+              redis_host: 'the-host',
+              redis_port: 12345,
+            }
+          )
+        end
+
+        it 'renders a single server configuration in to the kas config' do
+          expect(chef_run).to render_file('/var/opt/gitlab/gitlab-kas/gitlab-kas-config.yml').with_content { |content|
+            kas_redis_cfg = YAML.safe_load(content)['redis']
+            expect(kas_redis_cfg).to(
+              include(
+                'network' => 'tcp',
+                'server' => {
+                  'address' => 'the-host:12345'
+                }
+              )
+            )
+            expect(kas_redis_cfg).not_to(include('sentinel'))
+          }
+        end
+      end
+
+      context 'without sentinel but with tls enabled' do
+        before do
+          stub_gitlab_rb(
+            external_url: 'https://gitlab.example.com',
+            gitlab_rails: {
+              redis_host: 'the-host',
+              redis_port: 12345,
+              redis_ssl: true,
+              redis_tls_client_cert_file: '/etc/gitlab/self_signed.crt',
+              redis_tls_client_key_file: '/etc/gitlab/self_signed.key'
+            }
+          )
+        end
+
+        it 'renders a configuration with tls enabled in to the kas config' do
+          expect(chef_run).to render_file('/var/opt/gitlab/gitlab-kas/gitlab-kas-config.yml').with_content { |content|
+            kas_redis_cfg = YAML.safe_load(content)['redis']
+            expect(kas_redis_cfg).to(
+              include(
+                'network' => 'tcp',
+                'tls' => {
+                  'enabled' => true,
+                  'ca_certificate_file' => '/opt/gitlab/embedded/ssl/certs/cacert.pem',
+                  'certificate_file' => '/etc/gitlab/self_signed.crt',
+                  'key_file' => '/etc/gitlab/self_signed.key',
+                },
+                'server' => {
+                  'address' => 'the-host:12345'
+                }
+              )
+            )
+          }
+        end
+      end
+
+      context 'with sentinel' do
+        let(:sentinel_params) do
+          {
+            external_url: 'https://gitlab.example.com',
+            gitlab_rails: {
+              redis_sentinels: [
+                { host: 'a', port: 1 },
+                { host: 'b', port: 2 },
+                { host: 'c' }
+              ]
+            },
+            redis: {
+              master_name: 'example-redis'
+            }
+          }
+        end
+
+        before do
+          stub_gitlab_rb(sentinel_params)
+        end
+
+        it 'renders a single server configuration in to the kas config' do
+          expect(chef_run).to render_file('/var/opt/gitlab/gitlab-kas/gitlab-kas-config.yml').with_content { |content|
+            kas_redis_cfg = YAML.safe_load(content)['redis']
+            expect(kas_redis_cfg).to(
+              include(
+                'network' => 'tcp',
+                'sentinel' => {
+                  'master_name' => 'example-redis',
+                  'addresses' => [
+                    'a:1',
+                    'b:2',
+                    'c:6379'
+                  ]
+                }
+              )
+            )
+            expect(kas_redis_cfg).not_to(include('server'))
+          }
+        end
+
+        context 'when there is a Sentinel password' do
+          before do
+            sentinel_params[:gitlab_rails]['redis_sentinels_password'] = 'some pass'
+
+            stub_gitlab_rb(sentinel_params)
+          end
+
+          it 'writes sentinel_password_file in to the kas config' do
+            expect(chef_run).to render_file('/var/opt/gitlab/gitlab-kas/gitlab-kas-config.yml').with_content { |content|
+              kas_redis_cfg = YAML.safe_load(content)['redis']
+
+              expect(kas_redis_cfg).to(
+                include(
+                  'sentinel' => {
+                    'master_name' => 'example-redis',
+                    'addresses' => [
+                      'a:1',
+                      'b:2',
+                      'c:6379'
+                    ],
+                    'sentinel_password_file' => '/var/opt/gitlab/gitlab-kas/redis_sentinels_password_file'
+                  }
+                )
+              )
+            }
+          end
+
+          it 'renders the password file' do
+            expect(chef_run).to render_file('/var/opt/gitlab/gitlab-kas/redis_sentinels_password_file').with_content('some pass')
+          end
+        end
       end
     end
 
-    context 'when there is no password' do
+    context 'when different from gitlab_rails' do
       before do
         stub_gitlab_rb(
-          external_url: 'https://gitlab.example.com',
-          gitlab_kas: { enable: true }
-        )
-      end
-
-      it 'does not write password_file into the config' do
-        expect(chef_run).to render_file('/var/opt/gitlab/gitlab-kas/gitlab-kas-config.yml').with_content { |content|
-          kas_cfg = YAML.safe_load(content)
-          expect(kas_cfg['redis']).not_to include('password_file')
-        }
-      end
-
-      it 'renders no password file' do
-        expect(chef_run).not_to render_file("/var/opt/gitlab/gitlab-kas/redis_password_file")
-      end
-    end
-
-    context 'without sentinel host only' do
-      before do
-        stub_gitlab_rb(
-          external_url: 'https://gitlab.example.com',
+          gitlab_rails: {
+            redis_host: '1.2.3.4',
+            redis_port: '6379',
+            redis_password: 'rails_redis_password'
+          },
           gitlab_kas: {
-            enable: true
+            redis_host: '4.5.6.7',
+            redis_port: '6389',
+            redis_password: 'kas_redis_password'
+          }
+        )
+      end
+
+      it 'renders KAS config files with KAS specific Redis values' do
+        expect(gitlab_kas_config_yml[:redis]).to eq(
+          network: "tcp",
+          password_file: "/var/opt/gitlab/gitlab-kas/redis_password_file",
+          server: {
+            address: "4.5.6.7:6389"
           },
-          gitlab_rails: {
-            redis_host: 'the-host'
+          tls: {
+            enabled: false
           }
         )
       end
 
-      it 'renders a single server configuration in to the kas config' do
-        expect(chef_run).to render_file('/var/opt/gitlab/gitlab-kas/gitlab-kas-config.yml').with_content { |content|
-          kas_redis_cfg = YAML.safe_load(content)['redis']
-          expect(kas_redis_cfg).to(
-            include(
-              'network' => 'tcp',
-              'server' => {
-                'address' => 'the-host:6379'
-              }
-            )
-          )
-          expect(kas_redis_cfg).not_to(include('sentinel'))
-        }
-      end
-    end
-
-    context 'without sentinel host and port' do
-      before do
-        stub_gitlab_rb(
-          external_url: 'https://gitlab.example.com',
-          gitlab_rails: {
-            redis_host: 'the-host',
-            redis_port: 12345,
-          }
-        )
-      end
-
-      it 'renders a single server configuration in to the kas config' do
-        expect(chef_run).to render_file('/var/opt/gitlab/gitlab-kas/gitlab-kas-config.yml').with_content { |content|
-          kas_redis_cfg = YAML.safe_load(content)['redis']
-          expect(kas_redis_cfg).to(
-            include(
-              'network' => 'tcp',
-              'server' => {
-                'address' => 'the-host:12345'
-              }
-            )
-          )
-          expect(kas_redis_cfg).not_to(include('sentinel'))
-        }
-      end
-    end
-
-    context 'without sentinel but with tls enabled' do
-      before do
-        stub_gitlab_rb(
-          external_url: 'https://gitlab.example.com',
-          gitlab_rails: {
-            redis_host: 'the-host',
-            redis_port: 12345,
-            redis_ssl: true,
-          }
-        )
-      end
-
-      it 'renders a configuration with tls enabled in to the kas config' do
-        expect(chef_run).to render_file('/var/opt/gitlab/gitlab-kas/gitlab-kas-config.yml').with_content { |content|
-          kas_redis_cfg = YAML.safe_load(content)['redis']
-          expect(kas_redis_cfg).to(
-            include(
-              'network' => 'tcp',
-              'tls' => {
-                'enabled' => true
-              },
-              'server' => {
-                'address' => 'the-host:12345'
-              }
-            )
-          )
-        }
-      end
-    end
-
-    context 'with sentinel' do
-      before do
-        stub_gitlab_rb(
-          external_url: 'https://gitlab.example.com',
-          gitlab_rails: {
-            redis_sentinels: [
-              { host: 'a', port: 1 },
-              { host: 'b', port: 2 },
-              { host: 'c' }
-            ]
-          },
-          redis: {
-            master_name: 'example-redis'
-          }
-        )
-      end
-
-      it 'renders a single server configuration in to the kas config' do
-        expect(chef_run).to render_file('/var/opt/gitlab/gitlab-kas/gitlab-kas-config.yml').with_content { |content|
-          kas_redis_cfg = YAML.safe_load(content)['redis']
-          expect(kas_redis_cfg).to(
-            include(
-              'network' => 'tcp',
-              'sentinel' => {
-                'master_name' => 'example-redis',
-                'addresses' => [
-                  'a:1',
-                  'b:2',
-                  'c:6379'
-                ]
-              }
-            )
-          )
-          expect(kas_redis_cfg).not_to(include('server'))
-        }
+      it 'renders the password file with KAS specific value' do
+        expect(chef_run).to render_file('/var/opt/gitlab/gitlab-kas/redis_password_file').with_content('kas_redis_password')
       end
     end
   end
@@ -507,21 +653,82 @@ RSpec.describe 'gitlab-kas' do
       end
     end
 
-    context 'when the certificate/key bundle is defined and websocket tunneling is enabled' do
+    context 'log directory and runit group' do
+      context 'default values' do
+        it_behaves_like 'enabled logged service', 'gitlab-kas', true, { log_directory_owner: 'git' }
+      end
+
+      context 'custom values' do
+        before do
+          stub_gitlab_rb(
+            gitlab_kas: {
+              log_group: 'fugee'
+            }
+          )
+        end
+        it_behaves_like 'configured logrotate service', 'gitlab-kas', 'git', 'fugee'
+        it_behaves_like 'enabled logged service', 'gitlab-kas', true, { log_directory_owner: 'git', log_group: 'fugee' }
+      end
+    end
+  end
+
+  describe 'extra config command' do
+    context 'by default' do
+      it 'is not renderered in the config file' do
+        expect(gitlab_kas_config_yml[:config]).to be_nil
+      end
+    end
+
+    context 'when specified' do
       before do
         stub_gitlab_rb(
-          external_url: 'https://gitlab.example.com',
           gitlab_kas: {
-            enable: true,
-            listen_websocket: true,
-            certificate_file: '/path/to/cert.pem',
-            key_file: '/path/to/key.pem',
+            extra_config_command: "/opt/kas-redis-config.sh"
           }
         )
       end
 
-      it 'logs a warning' do
-        expect(chef_run).to run_ruby_block('websocket TLS termination')
+      it 'is rendered in the config file' do
+        expect(gitlab_kas_config_yml[:config]).to eq(command: "/opt/kas-redis-config.sh")
+      end
+    end
+  end
+
+  describe 'chef_run.file calls' do
+    def files
+      @files ||= %w(
+        /var/opt/gitlab/gitlab-kas/authentication_secret_file
+        /var/opt/gitlab/gitlab-kas/private_api_authentication_secret_file
+        /var/opt/gitlab/gitlab-kas/redis_password_file
+        /var/opt/gitlab/gitlab-kas/redis_sentinels_password_file
+      )
+    end
+
+    before do
+      allow_any_instance_of(OmnibusHelper).to receive(:should_notify?).and_call_original
+    end
+
+    context "when omnibus_helper.should_notify?('gitlab-kas') returns true" do
+      before do
+        allow_any_instance_of(OmnibusHelper).to receive(:should_notify?).with('gitlab-kas').and_return(true)
+      end
+
+      it 'chef_run.file calls notify gitlab-kas to restart' do
+        files.each do |file|
+          expect(chef_run.file(file)).to notify('runit_service[gitlab-kas]').to(:restart)
+        end
+      end
+    end
+
+    context "when omnibus_helper.should_notify?('gitlab-kas') returns false" do
+      before do
+        allow_any_instance_of(OmnibusHelper).to receive(:should_notify?).with('gitlab-kas').and_return(false)
+      end
+
+      it 'chef_run.file calls do not notify gitlab-kas to restart' do
+        files.each do |file|
+          expect(chef_run.file(file)).to_not notify('runit_service[gitlab-kas]').to(:restart)
+        end
       end
     end
   end
@@ -529,6 +736,6 @@ RSpec.describe 'gitlab-kas' do
   def chef_run_load_yaml_template(chef_run, path)
     template = chef_run.template(path)
     file_content = ChefSpec::Renderer.new(chef_run, template).content
-    YAML.safe_load(file_content, [], [], true, symbolize_names: true)
+    YAML.safe_load(file_content, aliases: true, symbolize_names: true)
   end
 end

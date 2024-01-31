@@ -57,7 +57,7 @@ add_command_under_category 'revert-pg-upgrade', 'database',
       options[:tmp_dir],
       options[:timeout]
     )
-    geo_db_worker.data_dir = File.join(@attributes['gitlab']['geo-postgresql']['dir'], 'data')
+    geo_db_worker.data_dir = File.join(@attributes['gitlab']['geo_postgresql']['dir'], 'data')
     geo_db_worker.tmp_data_dir = "#{geo_db_worker.tmp_dir}/geo-data" unless geo_db_worker.tmp_dir.nil?
     geo_db_worker.psql_command = 'gitlab-geo-psql'
   end
@@ -162,7 +162,7 @@ add_command_under_category 'pg-upgrade', 'database',
     @attributes['postgresql']['version'].nil?
   end
     log "postgresql['version'] is set in /etc/gitlab/gitlab.rb. Not checking for a PostgreSQL upgrade"
-    deprecation_message if @attributes['postgresql']['version'].to_f < 12
+    deprecation_message if @attributes['postgresql']['version'].to_f < 13
     Kernel.exit 0
   end
 
@@ -181,7 +181,7 @@ add_command_under_category 'pg-upgrade', 'database',
     Kernel.exit 0
   end
 
-  deprecation_message if @db_worker.target_version.major.to_f < 12
+  deprecation_message if @db_worker.target_version.major.to_f < 13
 
   target_data_dir = "#{@db_worker.tmp_data_dir}.#{@db_worker.target_version.major}"
   if @db_worker.upgrade_artifact_exists?(target_data_dir)
@@ -189,18 +189,25 @@ add_command_under_category 'pg-upgrade', 'database',
     Kernel.exit 0
   end
 
+  total_space_needed = 0 # in MiB
   unless options[:skip_disk_check]
-    check_dirs = [@db_worker.tmp_dir]
-    check_dirs << @db_worker.data_dir if pg_enabled || patroni_enabled
-    check_dirs << File.join(@attributes['gitlab']['geo-postgresql']['dir'], 'data') if geo_enabled
+    check_dirs = {}
+    check_dirs[@db_worker.data_dir] = 0 if pg_enabled || patroni_enabled
+    check_dirs[File.join(@attributes['gitlab']['geo_postgresql']['dir'], 'data')] = 0 if geo_enabled
+    check_dirs.each_key do |dir|
+      check_dirs[dir] = @db_worker.space_needed(dir)
+      total_space_needed += check_dirs[dir]
+    end
+    # We need space for all databases if using --tmp-dir.
+    check_dirs = { @db_worker.tmp_dir => total_space_needed } if @db_worker.tmp_dir
 
-    check_dirs.compact.uniq.each do |dir|
+    check_dirs.each do |dir, space_needed|
       unless GitlabCtl::Util.progress_message(
         "Checking if disk for directory #{dir} has enough free space for PostgreSQL upgrade"
       ) do
-        @db_worker.enough_free_space?(dir)
+        @db_worker.enough_free_space?(dir, space_needed)
       end
-        log "Upgrade requires #{@db_worker.space_needed(dir)}MB, but only #{@db_worker.space_free(dir)}MB is free."
+        log "Upgrade requires #{space_needed}MB, but only #{@db_worker.space_free(dir)}MB is free."
         Kernel.exit 1
       end
       next
@@ -276,11 +283,11 @@ add_command_under_category 'pg-upgrade', 'database',
     elsif @instance_type == :patroni_standby_leader
       patroni_standby_leader_upgrade
     end
-  elsif @roles.include?('geo-primary')
+  elsif @roles.include?('geo_primary')
     log 'Detected a GEO primary node'
     @instance_type = :geo_primary
     general_upgrade
-  elsif @roles.include?('geo-secondary')
+  elsif @roles.include?('geo_secondary')
     log 'Detected a Geo secondary node'
     @instance_type = :geo_secondary
     geo_secondary_upgrade(options[:tmp_dir], options[:timeout])
@@ -359,7 +366,8 @@ end
 def patroni_replica_upgrade
   stop_database
   create_links(@db_worker.target_version)
-  common_post_upgrade(false)
+  common_post_upgrade(!@geo_pg_enabled)
+  cleanup_data_dir
   geo_pg_upgrade
 end
 
@@ -367,7 +375,7 @@ def patroni_standby_leader_upgrade
   stop_database
   create_links(@db_worker.target_version)
   remove_patroni_cluster_state
-  common_post_upgrade(false)
+  common_post_upgrade(!@geo_pg_enabled)
   geo_pg_upgrade
 end
 
@@ -447,8 +455,10 @@ def geo_secondary_upgrade(tmp_dir, timeout)
     log('Upgrading the postgresql database')
     begin
       promote_database
-    rescue GitlabCtl::Errors::ExecutionError
-      die "There was an error promoting the database. Please check the logs"
+    rescue GitlabCtl::Errors::ExecutionError => e
+      log "STDOUT: #{e.stdout}"
+      log "STDERR: #{e.stderr}"
+      die "There was an error promoting the database from standby, please check the logs and output."
     end
 
     # Restart the database after promotion, and wait for it to be ready
@@ -456,9 +466,7 @@ def geo_secondary_upgrade(tmp_dir, timeout)
     GitlabCtl::PostgreSQL.wait_for_postgresql(600)
 
     common_pre_upgrade
-
-    # Only disable maintenance_mode if geo-pg is not enabled
-    common_post_upgrade(!@geo_pg_enabled)
+    cleanup_data_dir
   end
 
   geo_pg_upgrade
@@ -473,7 +481,7 @@ def geo_pg_upgrade
   log('Upgrading the geo-postgresql database')
   # Secondary nodes have a replica db under /var/opt/gitlab/postgresql that needs
   # the bin files updated and the geo tracking db under /var/opt/gitlab/geo-postgresl that needs data updated
-  data_dir = File.join(@attributes['gitlab']['geo-postgresql']['dir'], 'data')
+  data_dir = File.join(@attributes['gitlab']['geo_postgresql']['dir'], 'data')
 
   @db_service_name = 'geo-postgresql'
   @db_worker.data_dir = data_dir
@@ -640,6 +648,7 @@ def guess_patroni_node_role
       node = Patroni::Client.new
       scope = @attributes.dig(:patroni, :scope)
       node_name = @attributes.dig(:patroni, :name)
+      consul_binary = @attributes.dig(:consul, :binary_path)
 
       if node.up?
         @instance_type = :patroni_leader if node.leader?
@@ -648,7 +657,7 @@ def guess_patroni_node_role
         failure_cause = :patroni_running_on_replica if @instance_type == :patroni_replica
         @instance_type == :patroni_leader || @instance_type == :patroni_standby_leader
       else
-        leader_name = GitlabCtl::Util.get_command_output("#{base_path}/embedded/bin/consul kv get /service/#{scope}/leader").strip
+        leader_name = GitlabCtl::Util.get_command_output("#{consul_binary} kv get /service/#{scope}/leader").strip
         @instance_type = node_name == leader_name ? :patroni_leader : :patroni_replica unless leader_name.nil? || leader_name.empty?
         failure_cause = :patroni_stopped_on_leader if @instance_type == :patroni_leader
         @instance_type == :patroni_replica
@@ -701,8 +710,9 @@ end
 
 def remove_patroni_cluster_state
   scope = @attributes.dig(:patroni, :scope) || ''
+  consul_binary = @attributes.dig(:consul, :binary_path)
   unless !scope.empty? && GitlabCtl::Util.progress_message('Wiping Patroni cluster state') do
-    run_command("#{base_path}/embedded/bin/consul kv delete -recurse /service/#{scope}/")
+    run_command("#{consul_binary} kv delete -recurse /service/#{scope}/")
   end
     die 'Unable to wipe the cluster state'
   end
@@ -869,9 +879,9 @@ end
 
 def deprecation_message
   log '=== WARNING ==='
-  log "Note that PostgreSQL #{default_version.major} will become the minimum required PostgreSQL version in GitLab 14.0 (May 2021)."
-  log 'See docs for more information: https://docs.gitlab.com/omnibus/settings/database.html#gitlab-137-and-later'
-  log "PostgreSQL #{old_version.major} will be removed in GitLab 14.0."
+  log "Note that PostgreSQL #{default_version.major} is the minimum required PostgreSQL version in GitLab 16.0"
+  log 'See docs for more information: https://about.gitlab.com/handbook/engineering/development/enablement/data_stores/database/postgresql-upgrade-cadence.html'
+  log "PostgreSQL #{old_version.major} has been removed in GitLab 16.0."
   log 'Please consider upgrading your PostgreSQL version soon.'
   log 'To upgrade, please see: https://docs.gitlab.com/omnibus/settings/database.html#upgrade-packaged-postgresql-server'
   log '=== WARNING ==='

@@ -1,7 +1,7 @@
 ---
 stage: Systems
 group: Distribution
-info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://about.gitlab.com/handbook/product/ux/technical-writing/#assignments
+info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 ---
 
 # Adding a new Service to Omnibus GitLab
@@ -56,19 +56,28 @@ now.
 
 #### Naming convention
 
-A service is referred to mainly in two scenarios - when accessing the Chef
-attributes corresponding to the service, and when referring to items such as
-the users, groups, and paths corresponding to the service. In the attribute names, we use
-underscores to differentiate words in the service name, while in other cases we
-use hyphens to differentiate them. For example, if we take GitLab Pages, the
-attributes are available as `Gitlab['gitlab_pages']` and `node['gitlab_pages']`
-while the default directories and paths might look like
-`/var/log/gitlab/gitlab-pages` and `/var/opt/gitlab/gitlab-pages`.
+A service is referred to mainly in three scenarios:
 
-NOTE:
-The migration of existing services to use the underscored form while
-accessing Chef attributes is underway. For current status, check the
-corresponding [issue](https://gitlab.com/gitlab-org/omnibus-gitlab/-/issues/6873).
+1. Accessing the Chef attributes corresponding to the service
+1. Referencing items such as users, groups, and paths corresponding to the
+   service
+1. Passing the service name to methods which look up on service properties
+   similar to the following examples:
+   - "Is the service enabled?"
+   - "Get the log ownership details corresponding to this service"
+   - "Generate runit configuration for this service"
+
+For the first case mentioned above, we use underscores to differentiate words in
+the service name. For the other two cases, we use hyphens to differentiate words
+in the service name. Since the configuration is mainly used as a Ruby object,
+using underscores instead of hyphens is more flexible (for example, underscores
+make it cleaner to use symbols in configuration hashes).
+
+For example, if we take GitLab Pages, the attributes are available as
+`Gitlab['gitlab_pages']` and `node['gitlab_pages']` while the default
+directories and paths might look like `/var/log/gitlab/gitlab-pages` and
+`/var/opt/gitlab/gitlab-pages`. Similarly, method calls will look like
+`service_enabled?("gitlab-pages")`.
 
 ### Create a configuration Mash for your service
 
@@ -157,7 +166,7 @@ directory.
 
 Near the end of the recipe you will want to make a call to the runit service definition
 to define your recipe. In order for this work you will need to have created
-a run file in the cookbooks `templates/default` directory. These filenames start
+a run file in the cookbooks `templates/default` directory. These file names start
 with `sv-` followed by the service name, followed by the runit action name.
 
 A service typically needs a `run`, `log-run`, and `log-config`.
@@ -177,7 +186,10 @@ A service typically needs a `run`, `log-run`, and `log-config`.
 
 ```ruby
 #!/bin/sh
-exec svlogd -tt <%= @options[:log_directory] %>
+exec chpst -P \
+  -U root:<%= @options[:log_group] || 'root' %> \
+  -u root:<%= @options[:log_group] || 'root' %> \
+  svlogd -tt <%= @options[:log_directory] %>
 ```
 
 `sv-best-service-run.erb`:
@@ -198,9 +210,13 @@ Within your recipe, the runit service should be called and started:
 ```ruby
 runit_service "best-service" do
   options({
-    configItem: 'value'
+    configItem: 'value',
+    [...]
+    log_directory: logging_settings[:log_directory],
+    log_user: logging_settings[:runit_owner],
+    log_group: logging_settings[:runit_group],
   }.merge(params))
-  log_options node['gitlab']['logging'].to_hash.merge(node['best-service'].to_hash)
+  log_options logging_settings[:options]
 end
 
 if node['gitlab']['bootstrap']['enable']
@@ -209,6 +225,29 @@ if node['gitlab']['bootstrap']['enable']
   end
 end
 ```
+
+#### Log Directory
+
+The example settings referenced above that include `logging_settings` make use of
+the [`LogfilesHelper`](https://gitlab.com/gitlab-org/omnibus-gitlab/-/tree/master/files/gitlab-cookbooks/gitlab/libraries/logfiles_helper.rb)
+class in order to provide a consistent reference to the configuration settings
+for the service log directory, the log group assigned to the log directory, and
+the group used for svlogd execution.
+
+To make use of these settings, please include the `LogfilesHelper` class in your
+`enable.rb` for your service, for example:
+
+```ruby
+[...]
+logfiles_helper = LogfilesHelper.new(node)
+logging_settings = logfiles_helper.logging_settings('best-service')
+[...]
+```
+
+Please add `best-service` to the list of services in the `default_logdir_ownership`
+class method with the default user/group that should be used for the log directory
+user/group. If you don't have a specific user/group need - default to
+`{ username: gitlab_user, group: gitlab_group }`
 
 ### Disable recipe
 

@@ -247,8 +247,8 @@ def pg_upgrade_check
 
   puts '=== INFO ==='
   puts "You are currently running PostgreSQL #{installed_version}."
-  puts "Note that PostgreSQL #{new_version.major} will become the minimum required PostgreSQL version in GitLab 14.0 (May 2021)."
-  puts "PostgreSQL #{installed_version} will be removed in GitLab 14.0. Please consider upgrading your PostgreSQL version soon."
+  puts "Note that PostgreSQL #{new_version.major} will become the minimum required PostgreSQL version in GitLab 17.0 (May 2024)."
+  puts "PostgreSQL #{installed_version} will be removed in GitLab 17.0. Please consider upgrading your PostgreSQL version soon."
   puts "To upgrade, please see: #{pg_upgrade_doc_url}"
   puts '=== INFO ==='
 end

@@ -1,6 +1,5 @@
 require 'spec_helper'
 require 'gitlab/package_repository'
-require 'gitlab/util'
 
 RSpec.describe PackageRepository do
   let(:repo) { PackageRepository.new }
@@ -108,7 +107,7 @@ RSpec.describe PackageRepository do
   describe :validate do
     context 'with artifacts available' do
       before do
-        allow(Build::Info).to receive(:package_list).and_return(['pkg/el-6/gitlab-ce.rpm'])
+        allow(Build::Info::Package).to receive(:file_list).and_return(['pkg/el-6/gitlab-ce.rpm'])
       end
 
       it 'in dry run mode prints the checksum commands' do
@@ -124,7 +123,7 @@ RSpec.describe PackageRepository do
 
     context 'with artifacts unavailable' do
       before do
-        allow(Build::Info).to receive(:package_list).and_return([])
+        allow(Build::Info::Package).to receive(:file_list).and_return([])
       end
 
       it 'prints nothing' do
@@ -148,7 +147,7 @@ RSpec.describe PackageRepository do
 
         context 'with artifacts available' do
           before do
-            allow(Build::Info).to receive(:package_list).and_return(['pkg/el-6/gitlab-ce.rpm'])
+            allow(Build::Info::Package).to receive(:file_list).and_return(['pkg/el-6/gitlab-ce.rpm'])
           end
 
           it 'in dry run mode prints the upload commands' do

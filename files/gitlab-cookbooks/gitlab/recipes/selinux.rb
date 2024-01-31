@@ -17,19 +17,19 @@
 
 if SELinuxDistroHelper.selinux_supported?
   ssh_keygen_module = 'gitlab-7.2.0-ssh-keygen'
-  execute "semodule -i /opt/gitlab/embedded/selinux/rhel/7/#{ssh_keygen_module}.pp" do
+  execute "semodule -i /opt/gitlab/embedded/selinux/#{ssh_keygen_module}.pp" do
     not_if "getenforce | grep Disabled"
     not_if "semodule -l | grep '^#{ssh_keygen_module}\\s'"
   end
 
   authorized_keys_module = 'gitlab-10.5.0-ssh-authorized-keys'
-  execute "semodule -i /opt/gitlab/embedded/selinux/rhel/7/#{authorized_keys_module}.pp" do
+  execute "semodule -i /opt/gitlab/embedded/selinux/#{authorized_keys_module}.pp" do
     not_if "getenforce | grep Disabled"
     not_if "semodule -l | grep '^#{authorized_keys_module}\\s'"
   end
 
   gitlab_shell_module = 'gitlab-13.5.0-gitlab-shell'
-  execute "semodule -i /opt/gitlab/embedded/selinux/rhel/7/#{gitlab_shell_module}.pp" do
+  execute "semodule -i /opt/gitlab/embedded/selinux/#{gitlab_shell_module}.pp" do
     not_if "getenforce | grep Disabled"
     not_if "semodule -l | grep '^#{gitlab_shell_module}\\s'"
   end
@@ -40,6 +40,6 @@ end
 bash "Set proper security context on ssh files for selinux" do
   code lazy { SELinuxHelper.commands(node) }
   only_if "id -Z"
-  not_if { !node['gitlab']['gitlab-rails']['enable'] }
+  not_if { !node['gitlab']['gitlab_rails']['enable'] }
   action :nothing
 end

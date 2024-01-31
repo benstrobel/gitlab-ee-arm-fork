@@ -12,13 +12,13 @@ RSpec.describe 'gitlab::config' do
     it 'disables regular services' do
       expect(node['gitlab']['puma']['enable']).to eq false
       expect(node['gitlab']['sidekiq']['enable']).to eq false
-      expect(node['gitlab']['gitlab-workhorse']['enable']).to eq false
+      expect(node['gitlab']['gitlab_workhorse']['enable']).to eq false
       expect(node['gitaly']['enable']).to eq false
       expect(node['gitlab']['nginx']['enable']).to eq false
       expect(node['postgresql']['enable']).to eq false
       expect(node['gitlab']['mailroom']['enable']).to eq false
-      expect(node['monitoring']['gitlab-exporter']['enable']).to eq false
-      expect(node['monitoring']['postgres-exporter']['enable']).to eq false
+      expect(node['monitoring']['gitlab_exporter']['enable']).to eq false
+      expect(node['monitoring']['postgres_exporter']['enable']).to eq false
       expect(node['monitoring']['prometheus']['enable']).to eq false
     end
   end
@@ -60,8 +60,8 @@ RSpec.describe 'gitlab::config' do
     it 'disables Gitlab components' do
       expect(node['gitlab']['puma']['enable']).to eq false
       expect(node['gitlab']['sidekiq']['enable']).to eq false
-      expect(node['gitlab']['gitlab-workhorse']['enable']).to eq false
-      expect(node['monitoring']['gitlab-exporter']['enable']).to eq false
+      expect(node['gitlab']['gitlab_workhorse']['enable']).to eq false
+      expect(node['monitoring']['gitlab_exporter']['enable']).to eq false
     end
 
     it 'still leaves other default service enabled' do
@@ -73,7 +73,7 @@ RSpec.describe 'gitlab::config' do
       expect(node['monitoring']['node_exporter']['enable']).to eq true
       expect(node['monitoring']['redis_exporter']['enable']).to eq true
       expect(node['logrotate']['enable']).to eq true
-      expect(node['monitoring']['postgres-exporter']['enable']).to eq true
+      expect(node['monitoring']['postgres_exporter']['enable']).to eq true
     end
   end
 

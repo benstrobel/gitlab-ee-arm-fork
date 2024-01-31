@@ -1,10 +1,14 @@
 ---
 stage: Systems
 group: Distribution
-info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://about.gitlab.com/handbook/product/ux/technical-writing/#assignments
+info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 ---
 
-# Omnibus GitLab High Availability Roles **(FREE SELF)**
+# Omnibus GitLab High Availability Roles
+
+DETAILS:
+**Tier:** Free, Premium, Ultimate
+**Offering:** Self-managed
 
 Omnibus GitLab includes various software components/services to support running GitLab in
 a high availability configuration. By default, some of these supporting services
@@ -80,16 +84,14 @@ for configuration steps.
 
 - **geo_primary_role** (`gitlab-ee`)
 
-  Prepares the database for streaming replication to the secondary site.
-  Prevents automatic upgrade of PostgreSQL to avoid unintended downtime.
+  This role:
 
-  This role is only needed on the Geo primary site's nodes running PostgreSQL.
-  Undesired services will need to be explicitly disabled in `/etc/gitlab/gitlab.rb`.
+  - Configures a single-node PostgreSQL database as a leader for streaming replication.
+  - Prevents automatic upgrade of PostgreSQL since it requires downtime of streaming replication to Geo secondary sites.
+  - Enables all single-node GitLab services including NGINX, Puma, Redis, and Sidekiq. If you are segregating services, then you must explicitly disable unwanted services in `/etc/gitlab/gitlab.rb`. Therefore, this role is only useful on a single-node PostgreSQL in a Geo primary site.
+  - Cannot be used to set up a PostgreSQL cluster in a Geo primary site. Instead, see [Geo multi-node database replication](https://docs.gitlab.com/ee/administration/geo/setup/database.html#multi-node-database-replication).
 
-  This role should not be used to set up a PostgreSQL cluster in a Geo primary
-  site. Instead, see [Geo multi-node database replication](https://docs.gitlab.com/ee/administration/geo/setup/database.html#multi-node-database-replication).
-
-  *By default, enables all of the GitLab standard single node services. (NGINX, Puma, Redis, Sidekiq, etc)*
+  *By default, enables standard single-node GitLab services including NGINX, Puma, Redis, and Sidekiq.*
 
 - **geo_secondary_role** (`gitlab-ee`)
 
@@ -115,7 +117,7 @@ for configuration steps.
 
 ### Monitoring Roles
 
-> [Introduced](https://gitlab.com/gitlab-org/omnibus-gitlab/-/merge_requests/3404) in GitLab 12.1.
+> - [Introduced](https://gitlab.com/gitlab-org/omnibus-gitlab/-/merge_requests/3404) in GitLab 12.1.
 
 Monitoring roles are used to set up monitoring of installations. For additional information, see the [Monitoring documentation](https://docs.gitlab.com/ee/administration/monitoring/prometheus/index.html).
 
@@ -123,7 +125,7 @@ Monitoring roles are used to set up monitoring of installations. For additional 
 
   Configures a central monitoring server to collect metrics and provide dashboards.
 
-  Enables Prometheus, Alertmanager, and Grafana.
+  Enables Prometheus and Alertmanager.
 
 ### PostgreSQL Roles
 
@@ -155,7 +157,7 @@ Documentation on the usage of the PostgreSQL Roles can be found in [Configuring 
 
 ### GitLab Pages Roles
 
-> [Introduced](https://gitlab.com/gitlab-org/omnibus-gitlab/-/merge_requests/4740) in GitLab 13.6.
+> - [Introduced](https://gitlab.com/gitlab-org/omnibus-gitlab/-/merge_requests/4740) in GitLab 13.6.
 
 GitLab Pages roles are used to setup and configure GitLab Pages. For additional
 information, see the
@@ -169,11 +171,11 @@ information, see the
 
 ### Sidekiq Roles
 
-> [Introduced](https://gitlab.com/gitlab-org/omnibus-gitlab/-/merge_requests/5365) in GitLab 14.1.
+> - [Introduced](https://gitlab.com/gitlab-org/omnibus-gitlab/-/merge_requests/5365) in GitLab 14.1.
 
 Sidekiq roles are used to setup and configure Sidekiq. For additional
 information, see the
-[Sidekiq Administration documentation](https://docs.gitlab.com/ee/administration/sidekiq.html)
+[Sidekiq Administration documentation](https://docs.gitlab.com/ee/administration/sidekiq/index.html)
 
 - **sidekiq_role** (`gitlab-ce`/`gitlab-ee`)
 
@@ -183,11 +185,11 @@ information, see the
 
 ### Spamcheck Roles
 
-> [Introduced](https://gitlab.com/gitlab-org/omnibus-gitlab/-/merge_requests/5893) in GitLab 14.9.
+> - [Introduced](https://gitlab.com/gitlab-org/omnibus-gitlab/-/merge_requests/5893) in GitLab 14.9.
 
 Spamcheck roles are used to setup and configure Spamcheck services. For additional
 information, see the
-[Spamcheck documentation](https://docs.gitlab.com/ee/user/admin_area/reporting/spamcheck.html)
+[Spamcheck documentation](https://docs.gitlab.com/ee/administration/reporting/spamcheck.html)
 
 - **spamcheck_role** (`gitlab-ee`)
 

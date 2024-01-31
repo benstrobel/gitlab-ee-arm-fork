@@ -15,18 +15,13 @@ RSpec.describe 'gitaly' do
   let(:logging_level) { 'warn' }
   let(:logging_format) { 'default' }
   let(:logging_sentry_dsn) { 'https://my_key:my_secret@sentry.io/test_project' }
-  let(:logging_ruby_sentry_dsn) { 'https://my_key:my_secret@sentry.io/test_project-ruby' }
   let(:logging_sentry_environment) { 'production' }
   let(:prometheus_grpc_latency_buckets) do
-    '[0.001, 0.005, 0.025, 0.1, 0.5, 1.0, 10.0, 30.0, 60.0, 300.0, 1500.0]'
+    [0.001, 0.005, 0.025, 0.1, 0.5, 1.0, 10.0, 30.0, 60.0, 300.0, 1500.0]
   end
-  let(:auth_token) { '123secret456' }
+  let(:auth_token) { '123#$secret456' }
   let(:auth_transitioning) { true }
-  let(:ruby_max_rss) { 1000000 }
   let(:graceful_restart_timeout) { '20m' }
-  let(:ruby_graceful_restart_timeout) { '30m' }
-  let(:ruby_restart_delay) { '10m' }
-  let(:ruby_num_workers) { 5 }
   let(:git_catfile_cache_size) { 50 }
   let(:git_bin_path) { '/path/to/usr/bin/git' }
   let(:use_bundled_git) { true }
@@ -61,9 +56,11 @@ RSpec.describe 'gitaly' do
   let(:cgroups_hierarchy_root) { 'gitaly' }
   let(:cgroups_memory_bytes) { 2097152 }
   let(:cgroups_cpu_shares) { 512 }
+  let(:cgroups_cpu_quota_us) { 400000 }
   let(:cgroups_repositories_count) { 10 }
   let(:cgroups_repositories_memory_bytes) { 1048576 }
   let(:cgroups_repositories_cpu_shares) { 128 }
+  let(:cgroups_repositories_cpu_quota_us) { 200000 }
   let(:pack_objects_cache_enabled) { true }
   let(:pack_objects_cache_dir) { '/pack-objects-cache' }
   let(:pack_objects_cache_max_age) { '10m' }
@@ -76,7 +73,6 @@ RSpec.describe 'gitaly' do
 
     it 'creates expected directories with correct permissions' do
       expect(chef_run).to create_directory('/var/opt/gitlab/gitaly').with(user: 'git', mode: '0700')
-      expect(chef_run).to create_directory('/var/log/gitlab/gitaly').with(user: 'git', mode: '0700')
     end
 
     it 'creates a default VERSION file and restarts service' do
@@ -88,15 +84,6 @@ RSpec.describe 'gitaly' do
       expect(chef_run.version_file('Create version file for Gitaly')).to notify('runit_service[gitaly]').to(:hup)
     end
 
-    it 'creates a default RUBY_VERSION file and restarts service' do
-      expect(chef_run).to create_version_file('Create Ruby version file for Gitaly').with(
-        version_file_path: '/var/opt/gitlab/gitaly/RUBY_VERSION',
-        version_check_cmd: '/opt/gitlab/embedded/bin/ruby --version'
-      )
-
-      expect(chef_run.version_file('Create Ruby version file for Gitaly')).to notify('runit_service[gitaly]').to(:hup)
-    end
-
     it 'populates gitaly config.toml with defaults' do
       expect(get_rendered_toml(chef_run, '/var/opt/gitlab/gitaly/config.toml')).to eq(
         {
@@ -105,10 +92,6 @@ RSpec.describe 'gitaly' do
             bin_path: '/opt/gitlab/embedded/bin/git',
             ignore_gitconfig: true,
             use_bundled_binaries: true
-          },
-          cgroups: { repositories: {} },
-          'gitaly-ruby': {
-            dir: '/opt/gitlab/embedded/service/gitaly-ruby'
           },
           gitlab: {
             relative_url_root: '',
@@ -141,7 +124,7 @@ RSpec.describe 'gitaly' do
 
     it 'does not append timestamp in logs if logging format is json' do
       expect(chef_run).to render_file('/opt/gitlab/sv/gitaly/log/run')
-        .with_content(/exec svlogd \/var\/log\/gitlab\/gitaly/)
+        .with_content(/svlogd \/var\/log\/gitlab\/gitaly/)
     end
 
     it 'deletes the old internal sockets directory' do
@@ -149,77 +132,65 @@ RSpec.describe 'gitaly' do
     end
   end
 
-  context 'with pre 15.0 cgroups settings' do
+  context 'log directory and runit group' do
+    context 'default values' do
+      it_behaves_like 'enabled logged service', 'gitaly', true, { log_directory_owner: 'git' }
+    end
+
+    context 'custom values' do
+      before do
+        stub_gitlab_rb(
+          gitaly: {
+            log_group: 'fugee'
+          }
+        )
+      end
+      it_behaves_like 'configured logrotate service', 'gitaly', 'git', 'fugee'
+      it_behaves_like 'enabled logged service', 'gitaly', true, { log_directory_owner: 'git', log_group: 'fugee' }
+    end
+  end
+
+  context 'sets cgroups settings' do
     before do
       stub_gitlab_rb(
         gitaly: {
-          cgroups_mountpoint: cgroups_mountpoint,
-          cgroups_count: 100,
-          cgroups_hierarchy_root: cgroups_hierarchy_root,
-          cgroups_memory_limit: cgroups_memory_bytes,
-          cgroups_memory_enabled: true,
-          cgroups_cpu_shares: cgroups_cpu_shares,
-          cgroups_cpu_enabled: true,
-          pack_objects_cache_enabled: pack_objects_cache_enabled,
-          pack_objects_cache_dir: pack_objects_cache_dir,
-          pack_objects_cache_max_age: pack_objects_cache_max_age,
-          custom_hooks_dir: gitaly_custom_hooks_dir
+          configuration: {
+            cgroups: {
+              mountpoint: cgroups_mountpoint,
+              hierarchy_root: cgroups_hierarchy_root,
+              memory_bytes: cgroups_memory_bytes,
+              cpu_shares: cgroups_cpu_shares,
+              cpu_quota_us: cgroups_cpu_quota_us,
+              repositories: {
+                count: cgroups_repositories_count,
+                memory_bytes: cgroups_repositories_memory_bytes,
+                cpu_shares: cgroups_repositories_cpu_shares,
+                cpu_quota_us: cgroups_repositories_cpu_quota_us,
+              }
+            },
+          },
         }
       )
     end
 
-    it 'populates gitaly cgroups with correct values' do
+    it 'populate gitaly cgroups' do
       cgroups_section = Regexp.new([
         %r{\[cgroups\]},
         %r{mountpoint = "#{cgroups_mountpoint}"},
         %r{hierarchy_root = "#{cgroups_hierarchy_root}"},
-        %r{\[cgroups.repositories\]},
-        %r{count = 100},
         %r{memory_bytes = #{cgroups_memory_bytes}},
         %r{cpu_shares = #{cgroups_cpu_shares}},
+        %r{cpu_quota_us = #{cgroups_cpu_quota_us}},
+        %r{\[cgroups.repositories\]},
+        %r{count = #{cgroups_repositories_count}},
+        %r{memory_bytes = #{cgroups_repositories_memory_bytes}},
+        %r{cpu_shares = #{cgroups_repositories_cpu_shares}},
+        %r{cpu_quota_us = #{cgroups_repositories_cpu_quota_us}},
       ].map(&:to_s).join('\s+'))
 
       expect(chef_run).to render_file(config_path).with_content { |content|
         expect(content).to match(cgroups_section)
       }
-    end
-  end
-
-  context 'with new gitconfig' do
-    it 'raises an error with legacy gitconfig set' do
-      stub_gitlab_rb(
-        {
-          gitaly: {
-            gitconfig: [{ key: 'legacy_key', value: 'legacy_value' }],
-            configuration: {
-              git: {
-                config: [{ key: 'new_key', value: 'new_value' }]
-              }
-            }
-          }
-        }
-      )
-
-      expect { chef_run }.to raise_error "Legacy configuration keys 'gitconfig' and 'omnibus_gitconfig' can't be set when its new key 'configuration.git.config' is set."
-    end
-
-    it 'raises an error if omnibus_gitconfig is set' do
-      stub_gitlab_rb(
-        {
-          omnibus_gitconfig: {
-            system: { nondefault: ['bar = baz'] }
-          },
-          gitaly: {
-            configuration: {
-              git: {
-                config: [{ key: 'new_key', value: 'new_value' }]
-              }
-            }
-          }
-        }
-      )
-
-      expect { chef_run }.to raise_error "Legacy configuration keys 'gitconfig' and 'omnibus_gitconfig' can't be set when its new key 'configuration.git.config' is set."
     end
   end
 
@@ -233,7 +204,11 @@ RSpec.describe 'gitaly' do
           system: omnibus_gitconfig,
         },
         gitaly: {
-          gitconfig: gitaly_gitconfig,
+          configuration: {
+            git: {
+              config: gitaly_gitconfig,
+            }
+          }
         }
       )
     end
@@ -349,7 +324,7 @@ RSpec.describe 'gitaly' do
       end
     end
 
-    context 'with Gitaly gitconfig' do
+    context 'with Gitaly configuration git config' do
       let(:gitaly_gitconfig) do
         [
           { key: "core.fsckObjects", value: "true" },
@@ -402,82 +377,6 @@ RSpec.describe 'gitaly' do
         }
       end
     end
-
-    context 'with sections' do
-      let(:gitaly_gitconfig) do
-        [
-          { section: 'core', key: 'fsckObjects', value: 'true' },
-          { section: 'core', key: 'somethingElse', value: 'true' },
-          { section: 'another', key: 'section', value: 'true' },
-        ]
-      end
-
-      it 'writes the correct keys' do
-        gitconfig_section = Regexp.new([
-          %r{\[\[git.config\]\]},
-          %r{key = "core.fsckObjects"},
-          %r{value = "true"},
-          %r{},
-          %r{\[\[git.config\]\]},
-          %r{key = "core.somethingElse"},
-          %r{value = "true"},
-          %r{},
-          %r{\[\[git.config\]\]},
-          %r{key = "another.section"},
-          %r{value = "true"},
-        ].map(&:to_s).join('\s+'))
-
-        expect(chef_run).to render_file(config_path).with_content { |content|
-          expect(content).to match(gitconfig_section)
-          expect(content).not_to include("overridden")
-        }
-      end
-    end
-
-    context 'with subsections' do
-      let(:gitaly_gitconfig) do
-        [
-          { section: 'http', subsection: 'http://example.com', key: 'insteadOf', value: 'http://rewritten.example.com' },
-          { key: 'http.http://another.example.com.insteadOf', value: 'http://rewritten.example.com' },
-        ]
-      end
-
-      it 'writes the correct keys' do
-        gitconfig_section = Regexp.new([
-          %r{\[\[git.config\]\]},
-          %r{key = "http.http://example.com.insteadOf"},
-          %r{value = "http://rewritten.example.com"},
-          %r{},
-          %r{\[\[git.config\]\]},
-          %r{key = "http.http://another.example.com.insteadOf"},
-          %r{value = "http://rewritten.example.com"},
-        ].map(&:to_s).join('\s+'))
-
-        expect(chef_run).to render_file(config_path).with_content { |content|
-          expect(content).to match(gitconfig_section)
-          expect(content).not_to include("overridden")
-        }
-      end
-    end
-  end
-
-  context 'with array configured as string' do
-    it 'raises an error with prometheus grpc latency buckets' do
-      stub_gitlab_rb(
-        {
-          gitaly: {
-            enable: true,
-            configuration: {
-              prometheus: {
-                grpc_latency_buckets: '[0, 1, 2]'
-              }
-            }
-          }
-        }
-      )
-
-      expect { chef_run }.to raise_error("gitaly['configuration'][:prometheus][:grpc_latency_buckets] must be an array, not a string")
-    end
   end
 
   context 'with some defaults overridden with custom configuration' do
@@ -513,9 +412,6 @@ RSpec.describe 'gitaly' do
     it 'renders config.toml with' do
       expect(get_rendered_toml(chef_run, '/var/opt/gitlab/gitaly/config.toml')).to eq(
         {
-          'gitaly-ruby': {
-            dir: '/opt/gitlab/embedded/service/gitaly-ruby'
-          },
           'gitlab-shell': {
             dir: '/opt/gitlab/embedded/service/gitlab-shell'
           },
@@ -544,48 +440,10 @@ RSpec.describe 'gitaly' do
             }
           ],
           cgroups: {
-            cpu_shares: 100,
+            cpu_shares: 100
           }
         }
       )
-    end
-  end
-
-  context 'with old key and its new key set' do
-    it 'raises an error in generic case' do
-      stub_gitlab_rb(
-        {
-          gitaly: {
-            enable: true,
-            certificate_path: 'legacy_certificate_path_key',
-            configuration: {
-              tls: {
-                certificate_path: 'new_certificate_path_key',
-              }
-            }
-          }
-        }
-      )
-
-      expect { chef_run }.to raise_error "Legacy configuration key 'certificate_path' can't be set when its new key 'configuration.tls.certificate_path' is set."
-    end
-
-    it 'raises an error in generic case' do
-      stub_gitlab_rb(
-        {
-          gitaly: {
-            enable: true,
-            prometheus_grpc_latency_buckets: '[0, 1, 2]',
-            configuration: {
-              prometheus: {
-                grpc_latency_buckets: '[0, 1, 3]',
-              }
-            }
-          }
-        }
-      )
-
-      expect { chef_run }.to raise_error "Legacy configuration key 'prometheus_grpc_latency_buckets' can't be set when its new key 'configuration.prometheus.grpc_latency_buckets' is set."
     end
   end
 
@@ -593,75 +451,88 @@ RSpec.describe 'gitaly' do
     before do
       stub_gitlab_rb(
         gitaly: {
-          concurrency: [
-            {
-              rpc: '/gitaly.SmartHTTPService/PostReceivePack',
-              max_per_repo: 20
-            },
-            {
-              rpc: '/gitaly.SSHService/SSHUploadPack',
-              max_per_repo: 5
-            }
-          ],
-          storage: [
-            { name: 'default', path: '/tmp/path-1' },
-            { name: 'nfs1', path: '/mnt/nfs1' }
-          ],
-          rate_limiting: [
-            {
-              rpc: '/gitaly.SmartHTTPService/PostReceivePack',
-              interval: '1s',
-              burst: 100
-            }, {
-              rpc: '/gitaly.SSHService/SSHUploadPack',
-              interval: '1s',
-              burst: 200,
-            }
-          ],
-          socket_path: socket_path,
-          runtime_dir: runtime_dir,
-          listen_addr: listen_addr,
-          tls_listen_addr: tls_listen_addr,
-          certificate_path: certificate_path,
-          key_path: key_path,
-          gpg_signing_key_path: gpg_signing_key_path,
-          prometheus_listen_addr: prometheus_listen_addr,
-          logging_level: logging_level,
-          logging_format: logging_format,
-          logging_sentry_dsn: logging_sentry_dsn,
-          logging_ruby_sentry_dsn: logging_ruby_sentry_dsn,
-          logging_sentry_environment: logging_sentry_environment,
-          prometheus_grpc_latency_buckets: prometheus_grpc_latency_buckets,
-          auth_token: auth_token,
-          auth_transitioning: auth_transitioning,
-          graceful_restart_timeout: graceful_restart_timeout,
-          ruby_max_rss: ruby_max_rss,
-          ruby_graceful_restart_timeout: ruby_graceful_restart_timeout,
-          ruby_restart_delay: ruby_restart_delay,
-          ruby_num_workers: ruby_num_workers,
-          git_catfile_cache_size: git_catfile_cache_size,
-          git_bin_path: git_bin_path,
-          use_bundled_git: false,
           open_files_ulimit: open_files_ulimit,
-          daily_maintenance_start_hour: daily_maintenance_start_hour,
-          daily_maintenance_start_minute: daily_maintenance_start_minute,
-          daily_maintenance_duration: daily_maintenance_duration,
-          daily_maintenance_storages: %w(storage0 storage1),
-          daily_maintenance_disabled: daily_maintenance_disabled,
-          cgroups_mountpoint: cgroups_mountpoint,
-          cgroups_hierarchy_root: cgroups_hierarchy_root,
-          cgroups_memory_bytes: cgroups_memory_bytes,
-          cgroups_cpu_shares: cgroups_cpu_shares,
-          cgroups_repositories_count: cgroups_repositories_count,
-          cgroups_repositories_memory_bytes: cgroups_repositories_memory_bytes,
-          cgroups_repositories_cpu_shares: cgroups_repositories_cpu_shares,
-          pack_objects_cache_enabled: pack_objects_cache_enabled,
-          pack_objects_cache_dir: pack_objects_cache_dir,
-          pack_objects_cache_max_age: pack_objects_cache_max_age,
-          custom_hooks_dir: gitaly_custom_hooks_dir,
           # Sanity check that configuration values get printed out.
           configuration: {
+            socket_path: socket_path,
+            listen_addr: listen_addr,
+            tls_listen_addr: tls_listen_addr,
             string_value: 'some value',
+            runtime_dir: runtime_dir,
+            git: {
+              signing_key: gpg_signing_key_path,
+              bin_path: git_bin_path,
+              catfile_cache_size: git_catfile_cache_size,
+              use_bundled_binaries: false,
+            },
+            prometheus: {
+              grpc_latency_buckets: prometheus_grpc_latency_buckets
+            },
+            prometheus_listen_addr: prometheus_listen_addr,
+            graceful_restart_timeout: graceful_restart_timeout,
+            auth: {
+              token: auth_token,
+              transitioning: auth_transitioning,
+            },
+            tls: {
+              certificate_path: certificate_path,
+              key_path: key_path,
+            },
+            storage: [
+              { name: 'default', path: '/tmp/path-1' },
+              { name: 'nfs1', path: '/mnt/nfs1' }
+            ],
+            logging: {
+              level: logging_level,
+              format: logging_format,
+              sentry_dsn: logging_sentry_dsn,
+              sentry_environment: logging_sentry_environment,
+            },
+            hooks: { custom_hooks_dir: gitaly_custom_hooks_dir },
+            pack_objects_cache: {
+              enabled: pack_objects_cache_enabled,
+              dir: pack_objects_cache_dir,
+              max_age: pack_objects_cache_max_age,
+            },
+            cgroups: {
+              mountpoint: cgroups_mountpoint,
+              hierarchy_root: cgroups_hierarchy_root,
+              memory_bytes: cgroups_memory_bytes,
+              cpu_shares: cgroups_cpu_shares,
+              repositories: {
+                count: cgroups_repositories_count,
+                memory_bytes: cgroups_repositories_memory_bytes,
+                cpu_shares: cgroups_repositories_cpu_shares,
+              },
+            },
+            daily_maintenance: {
+              disabled: daily_maintenance_disabled,
+              start_hour: daily_maintenance_start_hour,
+              start_minute: daily_maintenance_start_minute,
+              duration: daily_maintenance_duration,
+              storages: %w(storage0 storage1),
+            },
+            concurrency: [
+              {
+                rpc: '/gitaly.SmartHTTPService/PostReceivePack',
+                max_per_repo: 20
+              },
+              {
+                rpc: '/gitaly.SSHService/SSHUploadPack',
+                max_per_repo: 5
+              }
+            ],
+            rate_limiting: [
+              {
+                rpc: '/gitaly.SmartHTTPService/PostReceivePack',
+                interval: '1s',
+                burst: 100
+              }, {
+                rpc: '/gitaly.SSHService/SSHUploadPack',
+                interval: '1s',
+                burst: 200,
+              }
+            ],
             subsection: {
               array_value: [1, 2, 3]
             }
@@ -700,7 +571,7 @@ RSpec.describe 'gitaly' do
       expect(get_rendered_toml(chef_run, '/var/opt/gitlab/gitaly/config.toml')).to eq(
         {
           auth: {
-            token: '123secret456',
+            token: '123#$secret456',
             transitioning: true
           },
           bin_dir: '/opt/gitlab/embedded/bin',
@@ -739,13 +610,6 @@ RSpec.describe 'gitaly' do
             signing_key: '/path/to/signing_key.gpg',
             use_bundled_binaries: false
           },
-          'gitaly-ruby': {
-            dir: '/opt/gitlab/embedded/service/gitaly-ruby',
-            graceful_restart_timeout: '30m',
-            max_rss: 1000000,
-            num_workers: 5,
-            restart_delay: '10m'
-          },
           gitlab: {
             'http-settings': {
               ca_file: '/path/to/ca_file',
@@ -768,7 +632,6 @@ RSpec.describe 'gitaly' do
             dir: '/var/log/gitlab/gitaly',
             format: 'default',
             level: 'warn',
-            ruby_sentry_dsn: 'https://my_key:my_secret@sentry.io/test_project-ruby',
             sentry_dsn: 'https://my_key:my_secret@sentry.io/test_project',
             sentry_environment: 'production'
           },
@@ -832,16 +695,30 @@ RSpec.describe 'gitaly' do
 
     it 'populates sv related log files' do
       expect(chef_run).to render_file('/opt/gitlab/sv/gitaly/log/run')
-        .with_content(/exec svlogd -tt \/var\/log\/gitlab\/gitaly/)
+        .with_content(/svlogd -tt \/var\/log\/gitlab\/gitaly/)
     end
 
-    context 'when maintenance is disabled' do
-      let(:daily_maintenance_disabled) { true }
+    context 'when use_wrapper is defined' do
+      context 'with wrapper enabled' do
+        before do
+          stub_gitlab_rb(gitaly: { use_wrapper: true })
+        end
 
-      it 'renders daily_maintenance with disabled set to true' do
-        expect(chef_run).to render_file(config_path).with_content { |content|
-          expect(content).to include("[daily_maintenance]\ndisabled = true\n")
-        }
+        it 'renders the runit run script with the wrapper' do
+          expect(chef_run).to render_file('/opt/gitlab/sv/gitaly/run')
+            .with_content(/\/opt\/gitlab\/embedded\/bin\/gitaly-wrapper/)
+        end
+      end
+
+      context 'with wrapper disabled' do
+        before do
+          stub_gitlab_rb(gitaly: { use_wrapper: false })
+        end
+
+        it 'renders the runit run script without the wrapper' do
+          expect(chef_run).not_to render_file('/opt/gitlab/sv/gitaly/run')
+            .with_content(/\/opt\/gitlab\/embedded\/bin\/gitaly-wrapper/)
+        end
       end
     end
 
@@ -849,13 +726,15 @@ RSpec.describe 'gitaly' do
       context 'using local gitaly' do
         before do
           stub_gitlab_rb(
-            {
-              gitaly: { storage: nil },
-              git_data_dirs:
-              {
-                'default' => { 'path' => '/tmp/default/git-data' },
-                'nfs1' => { 'path' => '/mnt/nfs1' }
+            gitaly: {
+              configuration: {
+                storage: nil
               }
+            },
+            git_data_dirs:
+            {
+              'default' => { 'path' => '/tmp/default/git-data' },
+              'nfs1' => { 'path' => '/mnt/nfs1' }
             }
           )
         end
@@ -873,12 +752,14 @@ RSpec.describe 'gitaly' do
       context 'using external gitaly' do
         before do
           stub_gitlab_rb(
-            {
-              gitaly: { storage: nil },
-              git_data_dirs:
-              {
-                'default' => { 'gitaly_address' => 'tcp://gitaly.internal:8075' },
+            gitaly: {
+              configuration: {
+                storage: nil
               }
+            },
+            git_data_dirs:
+            {
+              'default' => { 'gitaly_address' => 'tcp://gitaly.internal:8075' },
             }
           )
         end
@@ -888,6 +769,39 @@ RSpec.describe 'gitaly' do
             .with_content(%r{\[\[storage\]\]\s+name = "default"\s+path = "/var/opt/gitlab/git-data/repositories"})
           expect(chef_run).not_to render_file(config_path)
             .with_content('gitaly_address: "tcp://gitaly.internal:8075"')
+        end
+      end
+
+      context "when gitaly storage is explicitly set" do
+        context "using gitaly['configuration']['storage'] key" do
+          before do
+            stub_gitlab_rb(
+              gitaly: {
+                configuration: {
+                  storage: [
+                    {
+                      'name' => 'nfs1',
+                      'path' => '/mnt/nfs1/repositories'
+                    },
+                    {
+                      'name' => 'default',
+                      'path' => '/tmp/default/git-data/repositories'
+                    }
+                  ]
+                }
+              },
+              git_data_dirs: {
+                'default' => { 'path' => '/tmp/gitaly-git-data' },
+              }
+            )
+          end
+
+          it 'populates gitaly config.toml with custom storages from gitaly configuration' do
+            expect(chef_run).to render_file(config_path)
+              .with_content(%r{\[\[storage\]\]\s+name = "default"\s+path = "/tmp/default/git-data/repositories"})
+            expect(chef_run).to render_file(config_path)
+              .with_content(%r{\[\[storage\]\]\s+name = "nfs1"\s+path = "/mnt/nfs1/repositories"})
+          end
         end
       end
     end
@@ -908,63 +822,7 @@ RSpec.describe 'gitaly' do
     end
   end
 
-  shared_examples 'empty concurrency configuration' do
-    it 'does not generate a gitaly concurrency configuration' do
-      expect(chef_run).not_to render_file(config_path)
-        .with_content(%r{\[\[concurrency\]\]})
-    end
-  end
-
-  shared_examples 'empty rate limiting configuration' do
-    it 'does not generate a gitaly concurrency configuration' do
-      expect(chef_run).not_to render_file(config_path)
-        .with_content(%r{\[\[rate_limiting\]\]})
-    end
-  end
-
   context 'when not using concurrency configuration' do
-    context 'when concurrency configuration is not set' do
-      before do
-        stub_gitlab_rb(
-          {
-            gitaly: {
-            }
-          }
-        )
-      end
-
-      it_behaves_like 'empty concurrency configuration'
-      it_behaves_like 'empty rate limiting configuration'
-    end
-
-    context 'when concurrency configuration is empty' do
-      before do
-        stub_gitlab_rb(
-          {
-            gitaly: {
-              concurrency: []
-            }
-          }
-        )
-      end
-
-      it_behaves_like 'empty concurrency configuration'
-    end
-
-    context 'when rate limiting configuration is empty' do
-      before do
-        stub_gitlab_rb(
-          {
-            gitaly: {
-              rate_limiting: []
-            }
-          }
-        )
-      end
-
-      it_behaves_like 'empty rate limiting configuration'
-    end
-
     context 'when max_queue_size and max_queue_wait are empty' do
       before do
         stub_gitlab_rb(
@@ -1023,12 +881,14 @@ RSpec.describe 'gitaly' do
         stub_gitlab_rb(
           {
             gitaly: {
-              concurrency: [
-                {
-                  'rpc' => "/gitaly.SmartHTTPService/PostReceivePack",
-                  'max_queue_wait' => "10s",
-                }
-              ]
+              configuration: {
+                concurrency: [
+                  {
+                    'rpc' => "/gitaly.SmartHTTPService/PostReceivePack",
+                    'max_queue_wait' => "10s",
+                  }
+                ]
+              }
             }
           }
         )
@@ -1157,7 +1017,7 @@ RSpec.describe 'gitaly::git_data_dirs' do
 
   context 'when user has not specified git_data_dir' do
     it 'defaults to correct path' do
-      expect(chef_run.node['gitlab']['gitlab-rails']['repositories_storages'])
+      expect(chef_run.node['gitlab']['gitlab_rails']['repositories_storages'])
         .to eql('default' => { 'path' => '/var/opt/gitlab/git-data/repositories', 'gitaly_address' => 'unix:/var/opt/gitlab/gitaly/gitaly.socket' })
     end
   end
@@ -1169,13 +1029,15 @@ RSpec.describe 'gitaly::git_data_dirs' do
                          'path' => '/tmp/user/git-data'
                        }
                      }, gitaly: {
-                       socket_path: '',
-                       listen_addr: 'localhost:8123'
+                       configuration: {
+                         socket_path: '',
+                         listen_addr: 'localhost:8123'
+                       }
                      })
     end
 
     it 'correctly sets the repository storage directories' do
-      expect(chef_run.node['gitlab']['gitlab-rails']['repositories_storages'])
+      expect(chef_run.node['gitlab']['gitlab_rails']['repositories_storages'])
         .to eql('default' => { 'path' => '/tmp/user/git-data/repositories', 'gitaly_address' => 'tcp://localhost:8123' })
     end
   end
@@ -1187,12 +1049,15 @@ RSpec.describe 'gitaly::git_data_dirs' do
                          'path' => '/tmp/user/git-data'
                        }
                      }, gitaly: {
-                       socket_path: '', tls_listen_addr: 'localhost:8123'
+                       configuration: {
+                         socket_path: '',
+                         tls_listen_addr: 'localhost:8123'
+                       }
                      })
     end
 
     it 'correctly sets the repository storage directories' do
-      expect(chef_run.node['gitlab']['gitlab-rails']['repositories_storages'])
+      expect(chef_run.node['gitlab']['gitlab_rails']['repositories_storages'])
         .to eql('default' => { 'path' => '/tmp/user/git-data/repositories', 'gitaly_address' => 'tls://localhost:8123' })
     end
   end
@@ -1204,12 +1069,15 @@ RSpec.describe 'gitaly::git_data_dirs' do
                          'path' => '/tmp/user/git-data'
                        }
                      }, gitaly: {
-                       socket_path: '/some/socket/path.socket', tls_listen_addr: 'localhost:8123'
+                       configuration: {
+                         socket_path: '/some/socket/path.socket',
+                         tls_listen_addr: 'localhost:8123'
+                       }
                      })
     end
 
     it 'TlS should take precedence' do
-      expect(chef_run.node['gitlab']['gitlab-rails']['repositories_storages'])
+      expect(chef_run.node['gitlab']['gitlab_rails']['repositories_storages'])
         .to eql('default' => { 'path' => '/tmp/user/git-data/repositories', 'gitaly_address' => 'tls://localhost:8123' })
     end
   end
@@ -1225,7 +1093,7 @@ RSpec.describe 'gitaly::git_data_dirs' do
     end
 
     it 'correctly sets the repository storage directories' do
-      expect(chef_run.node['gitlab']['gitlab-rails']['repositories_storages']).to eql({
+      expect(chef_run.node['gitlab']['gitlab_rails']['repositories_storages']).to eql({
                                                                                         'default' => { 'path' => '/tmp/default/git-data/repositories', 'gitaly_address' => 'unix:/var/opt/gitlab/gitaly/gitaly.socket' },
                                                                                         'overflow' => { 'path' => '/tmp/other/git-overflow-data/repositories', 'gitaly_address' => 'unix:/var/opt/gitlab/gitaly/gitaly.socket' }
                                                                                       })
@@ -1237,15 +1105,15 @@ RSpec.describe 'gitaly::git_data_dirs' do
       stub_gitlab_rb({
                        git_data_dirs: {
                          'default' => { 'path' => '/tmp/default/git-data' },
-                         'overflow' => { 'path' => '/tmp/other/git-overflow-data', 'gitaly_address' => 'tcp://localhost:8123', 'gitaly_token' => '123secret456gitaly' }
+                         'overflow' => { 'path' => '/tmp/other/git-overflow-data', 'gitaly_address' => 'tcp://localhost:8123', 'gitaly_token' => '123#$secret456gitaly' }
                        }
                      })
     end
 
     it 'correctly sets the repository storage directories' do
-      expect(chef_run.node['gitlab']['gitlab-rails']['repositories_storages']).to eql({
+      expect(chef_run.node['gitlab']['gitlab_rails']['repositories_storages']).to eql({
                                                                                         'default' => { 'path' => '/tmp/default/git-data/repositories', 'gitaly_address' => 'unix:/var/opt/gitlab/gitaly/gitaly.socket' },
-                                                                                        'overflow' => { 'path' => '/tmp/other/git-overflow-data/repositories', 'gitaly_address' => 'tcp://localhost:8123', 'gitaly_token' => '123secret456gitaly' }
+                                                                                        'overflow' => { 'path' => '/tmp/other/git-overflow-data/repositories', 'gitaly_address' => 'tcp://localhost:8123', 'gitaly_token' => '123#$secret456gitaly' }
                                                                                       })
     end
   end
@@ -1263,7 +1131,7 @@ RSpec.describe 'gitaly::git_data_dirs' do
     end
 
     it 'correctly sets the repository storage directories' do
-      expect(chef_run.node['gitlab']['gitlab-rails']['repositories_storages']).to eql({ 'default' => { 'path' => '/var/opt/gitlab/git-data/repositories', 'gitaly_address' => 'tcp://gitaly.internal:8075' } })
+      expect(chef_run.node['gitlab']['gitlab_rails']['repositories_storages']).to eql({ 'default' => { 'path' => '/var/opt/gitlab/git-data/repositories', 'gitaly_address' => 'tcp://gitaly.internal:8075' } })
     end
   end
 
@@ -1278,7 +1146,7 @@ RSpec.describe 'gitaly::git_data_dirs' do
     end
 
     it 'correctly sets the repository storage directories' do
-      expect(chef_run.node['gitlab']['gitlab-rails']['repositories_storages']).to eql({
+      expect(chef_run.node['gitlab']['gitlab_rails']['repositories_storages']).to eql({
                                                                                         'default' => { 'path' => '/tmp/default/git-data/repositories', 'gitaly_address' => 'unix:/var/opt/gitlab/gitaly/gitaly.socket' },
                                                                                         'overflow' => { 'path' => '/tmp/other/git-overflow-data/repositories', 'gitaly_address' => 'unix:/var/opt/gitlab/gitaly/gitaly.socket' }
                                                                                       })

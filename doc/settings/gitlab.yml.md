@@ -1,20 +1,24 @@
 ---
 stage: Systems
 group: Distribution
-info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://about.gitlab.com/handbook/product/ux/technical-writing/#assignments
+info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 ---
 
-# Changing `gitlab.yml` and `application.yml` settings **(FREE SELF)**
+# Changing `gitlab.yml` and `application.yml` settings
+
+DETAILS:
+**Tier:** Free, Premium, Ultimate
+**Offering:** Self-managed
 
 Some GitLab features can be customized through
 [`gitlab.yml`](https://gitlab.com/gitlab-org/gitlab-foss/blob/master/config/gitlab.yml.example). If you want to change a `gitlab.yml` setting
-with Omnibus GitLab, you need to do so via `/etc/gitlab/gitlab.rb`. The
+for a Linux package installation, you need to do so with `/etc/gitlab/gitlab.rb`. The
 translation works as follows. For a complete list of available options, visit the
 [`gitlab.rb.template`](https://gitlab.com/gitlab-org/omnibus-gitlab/blob/master/files/gitlab-config-template/gitlab.rb.template).
 New installations starting from GitLab 7.6 have
 all the options of the template listed in `/etc/gitlab/gitlab.rb` by default.
 
-In `gitlab.yml`, you will find structure like this:
+In `gitlab.yml`, you find structure like this:
 
 ```yaml
 production: &base
@@ -32,12 +36,12 @@ What happens here is that we forget about `production: &base`, and join
 `gitlab:` with `default_theme:` into `gitlab_default_theme`.
 Note that not all `gitlab.yml` settings can be changed via `gitlab.rb` yet; see
 the [`gitlab.yml.erb` template](https://gitlab.com/gitlab-org/omnibus-gitlab/blob/master/files/gitlab-cookbooks/gitlab/templates/default/gitlab.yml.erb).
-If you think an attribute is missing please create a merge request on the Omnibus GitLab repository.
+If you think an attribute is missing please create a merge request on the `omnibus-gitlab` repository.
 
 Run `sudo gitlab-ctl reconfigure` for changes in `gitlab.rb` to take effect.
 
 Do not edit the generated file in `/var/opt/gitlab/gitlab-rails/etc/gitlab.yml`
-since it will be overwritten on the next `gitlab-ctl reconfigure` run.
+because it is overwritten on the next `gitlab-ctl reconfigure` run.
 
 ## Adding a new setting to `gitlab.yml`
 

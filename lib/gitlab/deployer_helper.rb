@@ -1,6 +1,8 @@
-require "http"
-require "json"
-require_relative "util.rb"
+require 'http'
+require 'json'
+
+require_relative 'build/info/docker'
+require_relative 'util'
 
 PipelineTriggerFailure = Class.new(StandardError)
 class DeployerHelper
@@ -50,7 +52,7 @@ class DeployerHelper
   end
 
   def release
-    @release ||= Build::Info.docker_tag
+    @release ||= Build::Info::Docker.tag
   end
 
   def form_data_for_trigger

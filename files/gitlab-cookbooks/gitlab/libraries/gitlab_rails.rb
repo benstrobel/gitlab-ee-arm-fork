@@ -17,9 +17,10 @@
 require_relative 'nginx.rb'
 require_relative '../../gitaly/libraries/gitaly.rb'
 require_relative '../../package/libraries/settings_dsl.rb'
+require_relative 'redis_helper'
 
 module GitlabRails
-  ALLOWED_DATABASES = %w[main ci geo].freeze
+  ALLOWED_DATABASES = %w[main ci geo embedding].freeze
   MAIN_DATABASES = %w[main geo].freeze
   SHARED_DATABASE_ATTRIBUTES = %w[db_host db_port db_database].freeze
 
@@ -34,6 +35,9 @@ module GitlabRails
       parse_incoming_email_logfile
       parse_service_desk_email_logfile
       parse_maximum_request_duration
+      parse_redis_extra_config_command
+      validate_smtp_settings!
+      validate_ssh_settings!
     end
 
     def parse_directories
@@ -52,10 +56,37 @@ module GitlabRails
       parse_repository_storage
     end
 
-    # rubocop:disable Metrics/AbcSize
-    # rubocop:disable Metrics/CyclomaticComplexity
-    # rubocop:disable Metrics/PerceivedComplexity
+    def transform_secrets
+      # Transform legacy key names to new key names
+      Gitlab['gitlab_rails']['db_key_base'] ||= Gitlab['gitlab_ci']['db_key_base'] # Changed in 8.11
+      Gitlab['gitlab_rails']['secret_key_base'] ||= Gitlab['gitlab_ci']['db_key_base'] # Changed in 8.11
+      Gitlab['gitlab_rails']['otp_key_base'] ||= Gitlab['gitlab_rails']['secret_token']
+      Gitlab['gitlab_rails']['openid_connect_signing_key'] ||= Gitlab['gitlab_rails']['jws_private_key'] # Changed in 10.1
+
+      # Environment variable gets priority over gitlab.rb setting
+      Gitlab['gitlab_rails']['initial_root_password'] = ENV['GITLAB_ROOT_PASSWORD'] || Gitlab['gitlab_rails']['initial_root_password']
+    end
+
     def parse_secrets
+      transform_secrets
+
+      # Note: If you add another secret to generate here make sure it gets written to disk in SecretsHelper.write_to_gitlab_secrets
+      Gitlab['gitlab_rails']['db_key_base'] ||= SecretsHelper.generate_hex(64)
+      Gitlab['gitlab_rails']['secret_key_base'] ||= SecretsHelper.generate_hex(64)
+      Gitlab['gitlab_rails']['otp_key_base'] ||= SecretsHelper.generate_hex(64)
+      Gitlab['gitlab_rails']['encrypted_settings_key_base'] ||= SecretsHelper.generate_hex(64)
+      Gitlab['gitlab_rails']['openid_connect_signing_key'] ||= SecretsHelper.generate_rsa(4096).to_pem
+      Gitlab['gitlab_rails']['ci_jwt_signing_key'] ||= SecretsHelper.generate_rsa(4096).to_pem
+
+      return unless Gitlab['gitlab_rails']['initial_root_password'].nil?
+
+      Gitlab['gitlab_rails']['initial_root_password'] = SecretsHelper.generate_base64(32)
+      Gitlab['gitlab_rails']['store_initial_root_password'] = true if Gitlab['gitlab_rails']['store_initial_root_password'].nil?
+    end
+
+    def validate_secrets
+      transform_secrets
+
       # Blow up when the existing configuration is ambiguous, so we don't accidentally throw away important secrets
       ci_db_key_base = Gitlab['gitlab_ci']['db_key_base']
       rails_db_key_base = Gitlab['gitlab_rails']['db_key_base']
@@ -70,41 +101,17 @@ module GitlabRails
         raise message.join("\n\n")
       end
 
-      # Transform legacy key names to new key names
-      Gitlab['gitlab_rails']['db_key_base'] ||= Gitlab['gitlab_ci']['db_key_base'] # Changed in 8.11
-      Gitlab['gitlab_rails']['secret_key_base'] ||= Gitlab['gitlab_ci']['db_key_base'] # Changed in 8.11
-      Gitlab['gitlab_rails']['otp_key_base'] ||= Gitlab['gitlab_rails']['secret_token']
-      Gitlab['gitlab_rails']['openid_connect_signing_key'] ||= Gitlab['gitlab_rails']['jws_private_key'] # Changed in 10.1
+      raise 'initial_root_password: Length is too short, minimum is 8 characters' if Gitlab['gitlab_rails']['initial_root_password'] && Gitlab['gitlab_rails']['initial_root_password'].length < 8
 
-      # Note: If you add another secret to generate here make sure it gets written to disk in SecretsHelper.write_to_gitlab_secrets
-      Gitlab['gitlab_rails']['db_key_base'] ||= SecretsHelper.generate_hex(64)
-      Gitlab['gitlab_rails']['secret_key_base'] ||= SecretsHelper.generate_hex(64)
-      Gitlab['gitlab_rails']['otp_key_base'] ||= SecretsHelper.generate_hex(64)
-      Gitlab['gitlab_rails']['encrypted_settings_key_base'] ||= SecretsHelper.generate_hex(64)
-      Gitlab['gitlab_rails']['openid_connect_signing_key'] ||= SecretsHelper.generate_rsa(4096).to_pem
+      return unless Gitlab['gitlab_rails']['ci_jwt_signing_key']
 
-      Gitlab['gitlab_rails']['initial_root_password'] = ENV['GITLAB_ROOT_PASSWORD'] || Gitlab['gitlab_rails']['initial_root_password']
-      if Gitlab['gitlab_rails']['initial_root_password'].nil?
-        Gitlab['gitlab_rails']['initial_root_password'] = SecretsHelper.generate_base64(32)
-        Gitlab['gitlab_rails']['store_initial_root_password'] = true if Gitlab['gitlab_rails']['store_initial_root_password'].nil?
-      elsif Gitlab['gitlab_rails']['initial_root_password'].length < 8
-        raise 'initial_root_password: Length is too short, minimum is 8 characters'
-      end
-
-      if Gitlab['gitlab_rails']['ci_jwt_signing_key']
-        begin
-          key = OpenSSL::PKey::RSA.new(Gitlab['gitlab_rails']['ci_jwt_signing_key'])
-          raise 'ci_jwt_signing_key: The provided key is not private RSA key' unless key.private?
-        rescue OpenSSL::PKey::RSAError
-          raise 'ci_jwt_signing_key: The provided key is not valid RSA key'
-        end
-      else
-        Gitlab['gitlab_rails']['ci_jwt_signing_key'] ||= SecretsHelper.generate_rsa(4096).to_pem
+      begin
+        key = OpenSSL::PKey::RSA.new(Gitlab['gitlab_rails']['ci_jwt_signing_key'])
+        raise 'ci_jwt_signing_key: The provided key is not private RSA key' unless key.private?
+      rescue OpenSSL::PKey::RSAError
+        raise 'ci_jwt_signing_key: The provided key is not valid RSA key'
       end
     end
-    # rubocop:enable Metrics/AbcSize
-    # rubocop:enable Metrics/CyclomaticComplexity
-    # rubocop:enable Metrics/PerceivedComplexity
 
     def parse_external_url
       return unless Gitlab['external_url']
@@ -163,7 +170,7 @@ module GitlabRails
         next unless Gitlab[left.first][left.last].nil?
 
         better_value_from_gitlab_rb = Gitlab[right.first][right.last]
-        default_from_attributes = Gitlab['node']['gitlab'][SettingsDSL::Utils.sanitized_key(left.first)][left.last]
+        default_from_attributes = Gitlab['node']['gitlab'][SettingsDSL::Utils.node_attribute_key(left.first)][left.last]
         Gitlab[left.first][left.last] = better_value_from_gitlab_rb || default_from_attributes
       end
 
@@ -185,7 +192,7 @@ module GitlabRails
     end
 
     def database_attributes
-      Gitlab['node']['gitlab']['gitlab-rails'].keys.select { |k| k.start_with?('db_') }
+      Gitlab['node']['gitlab']['gitlab_rails'].keys.select { |k| k.start_with?('db_') }
     end
 
     def generate_main_database
@@ -203,8 +210,14 @@ module GitlabRails
         next unless Gitlab['gitlab_rails']['databases']['main'][attribute].nil?
 
         Gitlab['gitlab_rails']['databases']['main'][attribute] =
-          [Gitlab['gitlab_rails'][attribute], Gitlab['node']['gitlab']['gitlab-rails'][attribute]].compact.first
+          [Gitlab['gitlab_rails'][attribute], Gitlab['node']['gitlab']['gitlab_rails'][attribute]].compact.first
       end
+    end
+
+    def default_ci_connection_to_main
+      # If there's an explicit configuration to disable the ci connection or
+      # have a different config for ci we should respect that.
+      Gitlab['gitlab_rails']['databases']['ci'] ||= { 'enable' => true }
     end
 
     def parse_databases
@@ -212,6 +225,7 @@ module GitlabRails
       # settings
       generate_main_database
 
+      default_ci_connection_to_main
       # Weed out the databases that are either not allowed or not enabled explicitly (except for main and geo)
       Gitlab['gitlab_rails']['databases'].to_h.each do |database, settings|
         if !MAIN_DATABASES.include?(database) && settings['enable'] != true
@@ -268,7 +282,7 @@ module GitlabRails
     end
 
     def parse_shared_dir
-      Gitlab['gitlab_rails']['shared_path'] ||= Gitlab['node']['gitlab']['gitlab-rails']['shared_path']
+      Gitlab['gitlab_rails']['shared_path'] ||= Gitlab['node']['gitlab']['gitlab_rails']['shared_path']
     end
 
     def parse_artifacts_dir
@@ -312,7 +326,22 @@ module GitlabRails
 
     def parse_encrypted_settings_path
       # This requires the parse_shared_dir to be executed before
-      Gitlab['gitlab_rails']['encrypted_settings_path'] ||= File.join(Gitlab['gitlab_rails']['shared_path'], 'encrypted_settings')
+      encrypted_settings_path = Gitlab['gitlab_rails']['encrypted_settings_path'] ||= File.join(Gitlab['gitlab_rails']['shared_path'], 'encrypted_settings')
+
+      RedisHelper::REDIS_INSTANCES.each do |instance|
+        Gitlab['gitlab_rails']["redis_#{instance}_encrypted_settings_file"] ||= Gitlab['gitlab_rails']['redis_encrypted_settings_file'] || File.join(encrypted_settings_path, "redis.#{instance}.yml.enc")
+      end
+
+      # NOTE: The default value of `redis_encrypted_settings_file` should be
+      # set only after the instance-specific ones are handled, or this default
+      # value will get used for the instance-specific settings.
+      Gitlab['gitlab_rails']['redis_encrypted_settings_file'] ||= File.join(encrypted_settings_path, 'redis.yml.enc')
+    end
+
+    def parse_redis_extra_config_command
+      RedisHelper::REDIS_INSTANCES.each do |instance|
+        Gitlab['gitlab_rails']["redis_#{instance}_extra_config_command"] ||= Gitlab['gitlab_rails']['redis_extra_config_command']
+      end
     end
 
     def parse_pages_dir
@@ -359,6 +388,28 @@ module GitlabRails
       return if Gitlab['gitlab_rails']['max_request_duration_seconds'] < worker_timeout
 
       raise "The maximum request duration needs to be smaller than the worker timeout (#{worker_timeout}s)"
+    end
+
+    def validate_smtp_settings!
+      SmtpHelper.validate_smtp_settings!(Gitlab['gitlab_rails'])
+    end
+
+    def validate_ssh_settings!
+      host = Gitlab['gitlab_rails']['gitlab_ssh_host']
+
+      return unless host
+
+      URI::Generic.build(scheme: 'ssh', host: host)
+    rescue URI::InvalidComponentError
+      msg = <<~MSG
+gitlab_rails['gitlab_ssh_host'] is set to #{host}, but it must only contain a valid hostname.
+
+If you wish to use a custom SSH port (such as 2222), in /etc/gitlab/gitlab.rb set the hostname and port separately:
+
+gitlab_rails['gitlab_ssh_host'] = 'gitlab.example.com'
+gitlab_rails['gitlab_shell_ssh_port'] = 2222
+      MSG
+      raise msg
     end
 
     def public_path

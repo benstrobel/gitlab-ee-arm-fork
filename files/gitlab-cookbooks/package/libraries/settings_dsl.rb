@@ -126,7 +126,7 @@ module SettingsDSL
     end
   end
 
-  def hyphenate_config_keys
+  def sanitized_config
     results = { "gitlab" => {}, "roles" => {}, "monitoring" => {} }
 
     # Add the settings to the results
@@ -135,12 +135,12 @@ module SettingsDSL
 
       target = value[:parent] ? results[value[:parent]] : results
 
-      target[Utils.sanitized_key(key)] = Gitlab[key]
+      target[Utils.node_attribute_key(key)] = Gitlab[key]
     end
 
     # Add the roles the the results
     @available_roles.each do |key, value|
-      results['roles'][Utils.sanitized_key(key)] = Gitlab["#{key}_role"]
+      results['roles'][Utils.node_attribute_key(key)] = Gitlab["#{key}_role"]
     end
 
     results
@@ -162,17 +162,41 @@ module SettingsDSL
     end
   end
 
-  def generate_secrets(node_name)
-    # guards against creating secrets on non-bootstrap node
-    SecretsHelper.read_gitlab_secrets
+  def generate_secrets(node_name, path = SecretsHelper::SECRETS_FILE)
+    # Gitlab['node'][SecretsHelper::SKIP_GENERATE_SECRETS_CHEF_ATTR] is set to
+    # true  if we are calling from the 'gitlab-ctrl generate-secrets' command
+    # and we are running the 'config(-ee)' recipe in which case we will generate
+    # secrets in the 'generate_secrets' recipe where it will then be set to
+    # false.
+    return if Gitlab['node'][SecretsHelper::SKIP_GENERATE_SECRETS_CHEF_ATTR] == true
 
+    force_write_secrets = !Gitlab['node'][SecretsHelper::SECRETS_FILE_CHEF_ATTR].nil?
+
+    # guards against creating secrets on non-bootstrap node
+    SecretsHelper.read_gitlab_secrets(path)
+    generate_default_secrets = Gitlab['package']['generate_default_secrets'] != false
+
+    Chef::Log.info("Generating default secrets") if generate_default_secrets
     # Parse secrets using the handlers
     sorted_settings.each do |_key, value|
       handler = value.handler
-      handler.parse_secrets if handler.respond_to?(:parse_secrets)
+      handler.parse_secrets if handler.respond_to?(:parse_secrets) && generate_default_secrets
+      handler.validate_secrets if handler.respond_to?(:validate_secrets)
     end
 
-    SecretsHelper.write_to_gitlab_secrets
+    if Gitlab['package']['generate_secrets_json_file'] == false && !force_write_secrets
+      return unless generate_default_secrets
+
+      warning_message = <<~EOS
+        You've enabled generating default secrets but have disabled writing them to #{path} file.
+        This results in secrets not persisting across `gitlab-ctl reconfigure` runs and can cause issues with functionality.
+      EOS
+
+      LoggingHelper.warning(warning_message)
+    else
+      Chef::Log.info("Generating #{path} file")
+      SecretsHelper.write_to_gitlab_secrets(path)
+    end
   end
 
   def generate_config(node_name)
@@ -183,8 +207,8 @@ module SettingsDSL
       handler = value.handler
       handler.parse_variables if handler.respond_to?(:parse_variables)
     end
-    # The last step is to convert underscores to hyphens in top-level keys
-    strip_nils(hyphenate_config_keys)
+
+    strip_nils(sanitized_config)
   end
 
   def strip_nils(attributes)
@@ -240,27 +264,15 @@ module SettingsDSL
 
   class Utils
     class << self
-      def hyphenated_form(key)
-        key.tr('_', '-')
+      # In service names, words are seperated with a hyphen
+      def service_name(service)
+        service.tr('_', '-')
       end
 
-      def underscored_form(key)
-        key.tr('-', '_')
-      end
-
-      def sanitized_key(key)
-        # Services that have been migrated to use underscored form in Chef code
-        # and no longer needs to be hyphenated.
-        skip_hyphenation = %w[
-          gitlab_pages
-          gitlab_sshd
-          node_exporter
-          redis_exporter
-        ]
-
-        return underscored_form(key) if skip_hyphenation.include?(underscored_form(key))
-
-        hyphenated_form(key)
+      # Node attributes corresponding to a service are formatted by replacing
+      # hyphens in the service names with underscores
+      def node_attribute_key(service)
+        service.tr('-', '_')
       end
     end
   end

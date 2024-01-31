@@ -25,6 +25,7 @@ agent:
   info_cache_error_ttl: <%= @agent_info_cache_error_ttl %>s
 gitlab:
   address: <%= @gitlab_address %>
+  external_url: <%= @gitlab_external_url %>
   authentication_secret_file: <%= @authentication_secret_file %>
 observability:
   listen:
@@ -44,6 +45,17 @@ redis:
   network: <%= @redis_network %>
   tls:
     enabled: <%= @redis_ssl %>
+    <%- if @redis_ssl %>
+    <%- if @redis_tls_ca_cert_file %>
+    ca_certificate_file: "<%= @redis_tls_ca_cert_file %>"
+    <% end %>
+    <%- if @redis_tls_client_cert_file %>
+    certificate_file: "<%= @redis_tls_client_cert_file %>"
+    <% end %>
+    <%- if @redis_tls_client_key_file %>
+    key_file: "<%= @redis_tls_client_key_file %>"
+    <% end %>
+    <% end %>
   <%- if @redis_password_file %>
   password_file: <%= @redis_password_file %>
   <%- end %>
@@ -56,6 +68,9 @@ redis:
     addresses:
     <%- @redis_sentinels.each do |sentinel| %>
       - '<%= sentinel['host'] %>:<%= sentinel['port'] || @redis_default_port %>'
+    <%- end %>
+    <%- if @redis_sentinels_password_file %>
+    sentinel_password_file: <%= @redis_sentinels_password_file %>
     <%- end %>
   <%- end %>
 api:
@@ -76,3 +91,7 @@ private_api:
     certificate_file: <%= @private_api_certificate_file %>
     key_file: <%= @private_api_key_file %>
     <%- end %>
+config:
+  <%- if @extra_config_command %>
+  command: "<%= @extra_config_command %>"
+  <%- end %>

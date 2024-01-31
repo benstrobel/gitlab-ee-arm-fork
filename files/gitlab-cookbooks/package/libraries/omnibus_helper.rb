@@ -26,14 +26,15 @@ class OmnibusHelper
   end
 
   def service_enabled?(service_name)
+    node_attribute_key = SettingsDSL::Utils.node_attribute_key(service_name)
     # As part of https://gitlab.com/gitlab-org/omnibus-gitlab/issues/2078 services are
     # being split to their own dedicated cookbooks, and attributes are being moved from
     # node['gitlab'][service_name] to node[service_name]. Until they've been moved, we
     # need to check both.
-    return node['monitoring'][service_name]['enable'] if node['monitoring'].key?(service_name)
-    return node['gitlab'][service_name]['enable'] if node['gitlab'].key?(service_name)
+    return node['monitoring'][node_attribute_key]['enable'] if node['monitoring'].key?(node_attribute_key)
+    return node['gitlab'][node_attribute_key]['enable'] if node['gitlab'].key?(node_attribute_key)
 
-    node[service_name]['enable']
+    node[node_attribute_key]['enable']
   end
 
   def service_up?(service_name)
@@ -105,7 +106,7 @@ class OmnibusHelper
       #
       #          If the password shown here doesn't work, you must reset the admin password following https://docs.gitlab.com/ee/security/reset_user_password.html#reset-your-root-password.
 
-      Password: #{node['gitlab']['gitlab-rails']['initial_root_password']}
+      Password: #{node['gitlab']['gitlab_rails']['initial_root_password']}
 
       # NOTE: This file will be automatically deleted in the first reconfigure run after 24 hours.
     EOS
@@ -128,9 +129,9 @@ class OmnibusHelper
   def print_root_account_details
     return unless node['gitlab']['bootstrap']['enable']
 
-    initial_password = node['gitlab']['gitlab-rails']['initial_root_password']
-    display_password = node['gitlab']['gitlab-rails']['display_initial_root_password']
-    store_password = node['gitlab']['gitlab-rails']['store_initial_root_password']
+    initial_password = node['gitlab']['gitlab_rails']['initial_root_password']
+    display_password = node['gitlab']['gitlab_rails']['display_initial_root_password']
+    store_password = node['gitlab']['gitlab_rails']['store_initial_root_password']
 
     password_string = if display_password
                         "Password: #{initial_password}"
@@ -170,12 +171,8 @@ class OmnibusHelper
     # This hash follows the format `'ohai-slug' => 'EOL version'
     # example: deprecated_os = { 'raspbian-8' => 'GitLab 11.8' }
     {
-      'ubuntu-16.04' => 'GitLab 14.0',
-      'opensuseleap-15.1' => 'GitLab 14.0',
-      'opensuseleap-15.2' => 'GitLab 14.5',
-      'suse-12.2' => 'GitLab 14.5',
-      'debian-9' => 'GitLab 15.2',
-      'opensuseleap-15.3' => 'GitLab 15.11'
+      'opensuseleap-15.4' => 'GitLab 16.8',
+      'ubuntu-18.04' => 'GitLab 17.0'
     }
   end
 

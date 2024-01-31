@@ -1,16 +1,17 @@
 require 'erb'
 require 'fileutils'
-require_relative '../build/info.rb'
-require_relative "../util.rb"
-require_relative 'base.rb'
+
+require_relative '../build/info/package'
+require_relative '../util'
+require_relative 'base'
 
 module License
   class Uploader < Base
     def initialize
-      @edition = Build::Info.package
+      @edition = Build::Info::Package.name
       @license_bucket = Gitlab::Util.get_env('LICENSE_S3_BUCKET')
       @licenses_path = File.absolute_path(@license_bucket)
-      @current_version = Build::Info.release_version
+      @current_version = Build::Info::Package.release_version
       @current_minor_version = @current_version.split(".")[0, 2].join(".")
       @license_bucket_region = "eu-west-1"
       @json_data = nil

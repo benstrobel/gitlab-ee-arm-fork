@@ -37,7 +37,7 @@ directory "/etc/gitlab" do
   owner "root"
   group "root"
   mode "0775"
-  only_if { node['gitlab']['manage-storage-directories']['manage_etc'] }
+  only_if { node['gitlab']['manage_storage_directories']['manage_etc'] }
 end.run_action(:create)
 
 node.default['gitlab']['bootstrap']['enable'] = false if File.exist?("/var/opt/gitlab/bootstrapped")
@@ -71,7 +71,7 @@ end
 template "#{install_dir}/embedded/etc/gitconfig" do
   source "gitconfig-system.erb"
   mode 0755
-  variables gitconfig: node.dig('gitlab', 'omnibus-gitconfig', 'system') || {}
+  variables gitconfig: node.dig('gitlab', 'omnibus_gitconfig', 'system') || {}
 end
 
 # This recipe needs to run before gitlab-rails
@@ -83,7 +83,7 @@ include_recipe "gitlab::web-server"
 # `account` custom resource will not create them.
 include_recipe "gitlab::users"
 
-include_recipe "gitlab::gitlab-rails" if node['gitlab']['gitlab-rails']['enable']
+include_recipe "gitlab::gitlab-rails" if node['gitlab']['gitlab_rails']['enable']
 
 include_recipe "gitlab::selinux"
 
@@ -107,7 +107,7 @@ end
 include_recipe "package::runit"
 
 # Install shell after runit so `gitlab-sshd` comes up
-include_recipe "gitlab::gitlab-shell" if node['gitlab']['gitlab-rails']['enable']
+include_recipe "gitlab::gitlab-shell" if node['gitlab']['gitlab_rails']['enable']
 
 # Make global sysctl commands available
 include_recipe "package::sysctl"
@@ -123,19 +123,20 @@ include_recipe "package::sysctl"
   praefect
   gitlab-kas
 ).each do |service|
-  if node[service]['enable']
+  node_attribute_key = SettingsDSL::Utils.node_attribute_key(service)
+  if node[node_attribute_key]['enable']
     include_recipe "#{service}::enable"
   else
     include_recipe "#{service}::disable"
   end
 end
 
-if node['gitlab']['gitlab-rails']['enable'] && !(node.key?('pgbouncer') && node['pgbouncer']['enable'])
+if node['gitlab']['gitlab_rails']['enable'] && !(node.key?('pgbouncer') && node['pgbouncer']['enable'])
   include_recipe "gitlab::database_migrations"
 
   # We need to deal with initial root password only if the DB migrations were
   # applied.
-  OmnibusHelper.new(node).print_root_account_details if node['gitlab']['gitlab-rails']['auto_migrate']
+  OmnibusHelper.new(node).print_root_account_details if node['gitlab']['gitlab_rails']['auto_migrate']
 end
 
 OmnibusHelper.cleanup_root_password_file
@@ -143,7 +144,7 @@ OmnibusHelper.cleanup_root_password_file
 # crond is used by database reindexing and LetsEncrypt auto-renew.  If
 # neither are on, we disable crond to prevent stale config files from
 # being used.
-if node['gitlab']['gitlab-rails']['database_reindexing']['enable'] || (node['letsencrypt']['enable'] && node['letsencrypt']['auto_renew'])
+if node['gitlab']['gitlab_rails']['database_reindexing']['enable'] || (node['letsencrypt']['enable'] && node['letsencrypt']['auto_renew'])
   include_recipe "crond::enable"
 else
   include_recipe "crond::disable"
@@ -160,7 +161,8 @@ end
   bootstrap
   storage-check
 ].each do |service|
-  if node["gitlab"][service]["enable"]
+  node_attribute_key = SettingsDSL::Utils.node_attribute_key(service)
+  if node["gitlab"][node_attribute_key]["enable"]
     include_recipe "gitlab::#{service}"
   else
     include_recipe "gitlab::#{service}_disable"
@@ -174,24 +176,20 @@ end
   gitlab-kas
   letsencrypt
 ).each do |cookbook|
-  # `service_name` variable represents the key used to access the node
-  # attributes corresponding to the service. Will be in underscored or
-  # hyphenated form depending on whether it has been migrated to use the
-  # underscored form yet or not.
-  service_name = SettingsDSL::Utils.sanitized_key(cookbook)
-  if node[service_name]["enable"]
+  node_attribute_key = SettingsDSL::Utils.node_attribute_key(cookbook)
+  if node[node_attribute_key]["enable"]
     include_recipe "#{cookbook}::enable"
   else
     include_recipe "#{cookbook}::disable"
   end
 end
 # Configure healthcheck if we have nginx or workhorse enabled
-include_recipe "gitlab::gitlab-healthcheck" if node['gitlab']['nginx']['enable'] || node["gitlab"]["gitlab-workhorse"]["enable"]
+include_recipe "gitlab::gitlab-healthcheck" if node['gitlab']['nginx']['enable'] || node["gitlab"]["gitlab_workhorse"]["enable"]
 
 # Recipe which handles all prometheus related services
 include_recipe "monitoring"
 
-if node['gitlab']['gitlab-rails']['database_reindexing']['enable']
+if node['gitlab']['gitlab_rails']['database_reindexing']['enable']
   include_recipe 'gitlab::database_reindexing_enable'
 else
   include_recipe 'gitlab::database_reindexing_disable'

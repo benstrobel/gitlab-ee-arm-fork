@@ -16,9 +16,9 @@
 
 name 'consul'
 
-# NOTE: If updating this version to 1.13 or higher, remove `disable_compat_1.9`
-# flag from Consul configuration in ConsulHelper
-version = Gitlab::Version.new('consul', 'v1.12.5')
+# This version should be keep in sync with consul versions in
+# consul_download.rb and consul_helper.rb.
+version = Gitlab::Version.new('consul', 'v1.16.4')
 default_version version.print(false)
 
 license 'MPL-2.0'

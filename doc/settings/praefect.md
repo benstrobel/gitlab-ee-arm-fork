@@ -1,10 +1,14 @@
 ---
 stage: Systems
 group: Distribution
-info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://about.gitlab.com/handbook/product/ux/technical-writing/#assignments
+info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 ---
 
-# Gitaly Cluster **(FREE SELF)**
+# Gitaly Cluster
+
+DETAILS:
+**Tier:** Free, Premium, Ultimate
+**Offering:** Self-managed
 
 [Gitaly Cluster](https://docs.gitlab.com/ee/administration/gitaly/praefect.html) provides
 fault-tolerant storage for repositories. It uses Praefect as a router and transaction manager for

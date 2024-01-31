@@ -29,7 +29,7 @@ source git: version.remote
 dependency 'python3'
 dependency 'postgresql_new'
 
-pg_major_version = '13'
+pg_major_version = '14'
 
 build do
   env = with_standard_compiler_flags(with_embedded_path)

@@ -1,7 +1,7 @@
 ---
 stage: Systems
 group: Distribution
-info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://about.gitlab.com/handbook/product/ux/technical-writing/#assignments
+info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 ---
 
 # JiHu Edition
@@ -44,7 +44,7 @@ back to the login screen. Use the default account's username `root` to log in.
 For detailed instructions, see [installation and configuration](installation/index.md#installation-and-configuration).
 
 Additionally, you can navigate to the GitLab administration panel of your server and
-[upload your JiHu Edition license file](https://docs.gitlab.com/ee/user/admin_area/license.html#uploading-your-license).
+[upload your JiHu Edition license file](https://docs.gitlab.com/ee/administration/license.html#uploading-your-license).
 
 ## Update GitLab Enterprise Edition to JiHu Edition
 
@@ -64,7 +64,7 @@ To update EE to JH:
 
 - If you installed GitLab using a deb/rpm package:
 
-  1. Take a [backup](https://docs.gitlab.com/ee/raketasks/backup_restore.html#back-up-gitlab).
+  1. Take a [backup](https://docs.gitlab.com/ee/administration/backup_restore/backup_gitlab.html).
   1. Find the currently installed GitLab version:
 
      **For Debian/Ubuntu**

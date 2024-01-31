@@ -80,7 +80,6 @@ production: &base
     # Email server smtp settings are in [a separate file](initializers/smtp_settings.rb.sample).
 
     ## User settings
-    default_can_create_group: <%= @gitlab_default_can_create_group %>  # default: true
     username_changing_enabled: <%= @gitlab_username_changing_enabled %> # default: true - User can change her username/namespace
     ## Default theme
     ##   1 - Graphite
@@ -110,6 +109,9 @@ production: &base
     ## Webhook settings
     # Number of seconds to wait for HTTP response after sending webhook HTTP POST request (default: 10)
     webhook_timeout: <%= @webhook_timeout %>
+
+    ## HTTP client settings
+    http_client: <%= @http_client.to_json %>
 
     ### GraphQL Settings
     # Tells the rails application how long it has to complete a GraphQL request.
@@ -437,6 +439,7 @@ production: &base
     local_store:
       enabled: <%= @pages_local_store_enabled %>
       path: <%= @pages_local_store_path %>
+    namespace_in_path: <%= @pages_namespace_in_path %>
 
   ## Gravatar
   ## For Libravatar see: https://docs.gitlab.com/ee/customization/libravatar.html
@@ -586,6 +589,12 @@ production: &base
       cron: "<%= @ci_runners_stale_machines_cleanup_worker_cron %>"
     <% end %>
 
+    # Periodically process catalog resource sync events
+    <% unless @ci_catalog_resources_process_sync_events_worker_cron.nil? %>
+    ci_catalog_resources_process_sync_events_worker:
+      cron: "<%= @ci_catalog_resources_process_sync_events_worker_cron %>"
+    <% end %>
+
     ##
     # GitLab EE only jobs:
 
@@ -699,6 +708,15 @@ production: &base
     <% unless @ci_runners_stale_group_runners_prune_worker_cron.nil? %>
     ci_runners_stale_group_runners_prune_worker_cron:
       cron: "<%= @ci_runners_stale_group_runners_prune_worker_cron %>"
+    <% end %>
+
+    # Periodically sync finished builds from p_ci_finished_build_ch_sync_events to ClickHouse
+    <% unless @click_house_ci_finished_builds_sync_worker_cron.nil? %>
+    click_house_ci_finished_builds_sync_worker:
+      cron: "<%= @click_house_ci_finished_builds_sync_worker_cron %>"
+      <% unless @click_house_ci_finished_builds_sync_worker_args.nil? %>
+      args: <%= @click_house_ci_finished_builds_sync_worker_args %>
+      <% end %>
     <% end %>
 
   ## Geo
@@ -954,6 +972,18 @@ production: &base
     client_secret: <%= quote(@forti_token_cloud_client_secret) %>
     <% end %>
 
+  # DuoAuth settings
+  duo_auth:
+    # Allow using DuoAuth as OTP provider
+    enabled: <%= @duo_auth_enabled %>
+
+    <% if @duo_auth_enabled %>
+    # Hostname integration_key and secret key of duo_auth instance
+    hostname: <%= @duo_auth_hostname %>
+    integration_key: <%= quote(@duo_auth_integration_key) %>
+    secret_key: <%= quote(@duo_auth_secret_key) %>
+    <% end %>
+
   # Shared file storage settings
   shared:
     path: <%= @shared_path %>
@@ -1115,6 +1145,13 @@ production: &base
   rack_attack:
     git_basic_auth: <%= @rack_attack_git_basic_auth.to_json if @rack_attack_git_basic_auth %>
 
+
+<% if @has_jh_cookbook %>
+  #
+  # 6. JH only settings
+  # ==========================
+<%= render 'gitlab.yml.jh-partial.erb', :cookbook => 'gitlab-jh' %>
+<% end %>
 
 development:
   <<: *base

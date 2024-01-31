@@ -4,8 +4,8 @@ RSpec.describe 'gitlab::gitlab-rails' do
   using RSpec::Parameterized::TableSyntax
 
   let(:chef_run) { ChefSpec::SoloRunner.new(step_into: %w(templatesymlink runit_service)).converge('gitlab::default') }
-  let(:redis_instances) { %w(cache queues shared_state trace_chunks rate_limiting sessions repository_cache) }
-  let(:redis_cluster_instances) { %w(cluster_rate_limiting) }
+  let(:redis_instances) { RedisHelper::REDIS_INSTANCES }
+  let(:redis_cluster_instances) { %w(cache rate_limiting cluster_rate_limiting) }
   let(:config_dir) { '/var/opt/gitlab/gitlab-rails/etc/' }
   let(:default_vars) do
     {
@@ -306,6 +306,38 @@ RSpec.describe 'gitlab::gitlab-rails' do
       end
     end
 
+    context 'with TLS settings' do
+      let(:resque_yml_template) { chef_run.template('/var/opt/gitlab/gitlab-rails/etc/resque.yml') }
+      let(:resque_yml_file_content) { ChefSpec::Renderer.new(chef_run, resque_yml_template).content }
+      let(:resque_yml) { YAML.safe_load(resque_yml_file_content, aliases: true, symbolize_names: true) }
+
+      before do
+        stub_gitlab_rb(
+          gitlab_rails: {
+            redis_host: 'redis.example.com',
+            redis_port: 8888,
+            redis_password: 'mypass',
+            redis_ssl: true,
+            redis_tls_ca_cert_dir: '/tmp/certs',
+            redis_tls_ca_cert_file: '/tmp/ca.crt',
+            redis_tls_client_cert_file: '/tmp/self_signed.crt',
+            redis_tls_client_key_file: '/tmp/self_signed.key',
+          }
+        )
+      end
+
+      it 'renders configuration with tls settings' do
+        expected_output = {
+          ca_file: "/tmp/ca.crt",
+          ca_path: "/tmp/certs",
+          cert_file: "/tmp/self_signed.crt",
+          key_file: "/tmp/self_signed.key"
+        }
+
+        expect(resque_yml[:production][:ssl_params]).to eq(expected_output)
+      end
+    end
+
     shared_examples 'instances does not support redis cluster' do |instance|
       context "with disallowed instance: #{instance}" do
         before do
@@ -325,7 +357,7 @@ RSpec.describe 'gitlab::gitlab-rails' do
     end
 
     context 'with multiple redis cluster instance' do
-      %w(queues shared_state trace_chunks sessions cache).each do |instance|
+      %w(queues shared_state trace_chunks sessions).each do |instance|
         it_should_behave_like 'instances does not support redis cluster', instance
       end
 
@@ -350,7 +382,8 @@ RSpec.describe 'gitlab::gitlab-rails' do
           stub_gitlab_rb(gitlab_rails: {
                            redis_enable_client: false,
                            redis_actioncable_instance: "redis://:fakepass@fake.redis.actioncable.com:8888/2",
-                           redis_actioncable_sentinels: [{ host: 'actioncable', port: '1234' }, { host: 'actioncable', port: '3456' }]
+                           redis_actioncable_sentinels: [{ host: 'actioncable', port: '1234' }, { host: 'actioncable', port: '3456' }],
+                           redis_actioncable_sentinels_password: 'some pass'
                          })
         end
 
@@ -363,9 +396,17 @@ RSpec.describe 'gitlab::gitlab-rails' do
             hash_including(
               redis_url: "redis://:fakepass@fake.redis.actioncable.com:8888/2",
               redis_sentinels: [{ 'host' => 'actioncable', 'port' => '1234' }, { 'host' => 'actioncable', 'port' => '3456' }],
+              redis_sentinels_password: 'some pass',
               redis_enable_client: false
             )
           )
+
+          expect(chef_run).to render_file("/var/opt/gitlab/gitlab-rails/etc/cable.yml").with_content { |content|
+            generated_yml = YAML.safe_load(content)
+            expect(generated_yml.dig('production', 'url')).to eq("redis://:fakepass@fake.redis.actioncable.com:8888/2")
+            expect(generated_yml.dig('production', 'cluster')).to eq(nil)
+            expect(generated_yml.dig('production', 'sentinels')).to eq([{ "host" => 'actioncable', 'port' => 1234, 'password' => 'some pass' }, { 'host' => 'actioncable', 'port' => 3456, 'password' => 'some pass' }])
+          }
         end
       end
 
@@ -390,10 +431,18 @@ RSpec.describe 'gitlab::gitlab-rails' do
             expect(chef_run).to create_templatesymlink("Create a redis.#{instance}.yml and create a symlink to Rails root").with_variables(
               redis_url: nil,
               redis_sentinels: [],
+              redis_sentinels_password: nil,
               redis_enable_client: false,
               cluster_nodes: [{ "host" => instance, "port" => "1234" }, { "host" => instance, "port" => "3456" }],
               cluster_username: instance,
-              cluster_password: "#{instance}_password"
+              cluster_password: "#{instance}_password",
+              redis_ssl: false,
+              redis_tls_ca_cert_dir: "/opt/gitlab/embedded/ssl/certs/",
+              redis_tls_ca_cert_file: "/opt/gitlab/embedded/ssl/certs/cacert.pem",
+              redis_tls_client_cert_file: nil,
+              redis_tls_client_key_file: nil,
+              redis_encrypted_settings_file: "/var/opt/gitlab/gitlab-rails/shared/encrypted_settings/redis.#{instance}.yml.enc",
+              redis_extra_config_command: nil
             )
 
             expect(chef_run).to render_file("/var/opt/gitlab/gitlab-rails/etc/redis.#{instance}.yml").with_content { |content|
@@ -426,10 +475,18 @@ RSpec.describe 'gitlab::gitlab-rails' do
             expect(chef_run).to create_templatesymlink("Create a redis.#{instance}.yml and create a symlink to Rails root").with_variables(
               redis_url: "redis://:fakepass@fake.redis.#{instance}.com:8888/2",
               redis_sentinels: [{ "host" => instance, "port" => "1234" }, { "host" => instance, "port" => "3456" }],
+              redis_sentinels_password: nil,
               redis_enable_client: false,
               cluster_nodes: [],
               cluster_username: nil,
-              cluster_password: nil
+              cluster_password: nil,
+              redis_ssl: false,
+              redis_tls_ca_cert_dir: "/opt/gitlab/embedded/ssl/certs/",
+              redis_tls_ca_cert_file: "/opt/gitlab/embedded/ssl/certs/cacert.pem",
+              redis_tls_client_cert_file: nil,
+              redis_tls_client_key_file: nil,
+              redis_encrypted_settings_file: "/var/opt/gitlab/gitlab-rails/shared/encrypted_settings/redis.#{instance}.yml.enc",
+              redis_extra_config_command: nil
             )
 
             expect(chef_run).to render_file("/var/opt/gitlab/gitlab-rails/etc/redis.#{instance}.yml").with_content { |content|
@@ -445,8 +502,142 @@ RSpec.describe 'gitlab::gitlab-rails' do
           end
         end
 
+        context 'with Sentinel passwords' do
+          before do
+            stub_hash = { redis_enable_client: false }
+            redis_instances.each do |instance|
+              stub_hash["redis_#{instance}_instance"] = "redis://:fakepass@fake.redis.#{instance}.com:8888/2"
+              stub_hash["redis_#{instance}_sentinels"] = [{ host: instance, port: '1234' }, { host: instance, port: '3456' }]
+              stub_hash["redis_#{instance}_sentinels_password"] = 'sentinelpass'
+            end
+
+            stub_gitlab_rb(gitlab_rails: stub_hash)
+          end
+
+          it 'render separate config files' do
+            redis_instances.each do |instance|
+              expect(chef_run).to create_templatesymlink("Create a redis.#{instance}.yml and create a symlink to Rails root").with_variables(
+                redis_url: "redis://:fakepass@fake.redis.#{instance}.com:8888/2",
+                redis_sentinels: [{ "host" => instance, "port" => "1234" }, { "host" => instance, "port" => "3456" }],
+                redis_sentinels_password: 'sentinelpass',
+                redis_enable_client: false,
+                cluster_nodes: [],
+                cluster_username: nil,
+                cluster_password: nil,
+                redis_ssl: false,
+                redis_tls_ca_cert_dir: "/opt/gitlab/embedded/ssl/certs/",
+                redis_tls_ca_cert_file: "/opt/gitlab/embedded/ssl/certs/cacert.pem",
+                redis_tls_client_cert_file: nil,
+                redis_tls_client_key_file: nil,
+                redis_encrypted_settings_file: "/var/opt/gitlab/gitlab-rails/shared/encrypted_settings/redis.#{instance}.yml.enc",
+                redis_extra_config_command: nil
+              )
+
+              expect(chef_run).to render_file("/var/opt/gitlab/gitlab-rails/etc/redis.#{instance}.yml").with_content { |content|
+                generated_yml = YAML.safe_load(content)
+                expect(generated_yml.dig('production', 'url')).to eq("redis://:fakepass@fake.redis.#{instance}.com:8888/2")
+                expect(generated_yml.dig('production', 'sentinels')).to eq([{ "host" => instance, "port" => 1234, "password" => 'sentinelpass' }, { "host" => instance, "port" => 3456, "password" => 'sentinelpass' }])
+                expect(generated_yml.dig('production', 'cluster')).to eq(nil)
+                expect(generated_yml.dig('production', 'username')).to eq(nil)
+                expect(generated_yml.dig('production', 'password')).to eq(nil)
+              }
+
+              expect(chef_run).not_to delete_file("/var/opt/gitlab/gitlab-rails/etc/redis.#{instance}.yml")
+            end
+          end
+        end
+
         it 'still renders the default configuration file' do
           expect(chef_run).to create_templatesymlink('Create a resque.yml and create a symlink to Rails root')
+        end
+      end
+
+      describe 'encrypted_settings_file' do
+        cached(:chef_run) do
+          ChefSpec::SoloRunner.new(step_into: %w(templatesymlink)).converge('gitlab::default')
+        end
+
+        let(:cache_secret_file) { '/etc/gitlab/cache.redis.enc' }
+        let(:global_secret_file) { '/etc/gitlab/global.redis.enc' }
+
+        context 'with separate file for an instance' do
+          before do
+            stub_gitlab_rb(
+              gitlab_rails: {
+                redis_encrypted_settings_file: global_secret_file,
+                redis_cache_instance: 'redis://redis.cache.instance',
+                redis_cache_encrypted_settings_file: cache_secret_file,
+                redis_shared_state_instance: 'redis://redis.shared_state.instance'
+              }
+            )
+          end
+
+          it 'uses specified path for the cache instance' do
+            expect(chef_run).to render_file("/var/opt/gitlab/gitlab-rails/etc/redis.cache.yml").with_content { |content|
+              generated_yml = YAML.safe_load(content)
+              expect(generated_yml.dig('production', 'secret_file')).to eq(cache_secret_file)
+            }
+          end
+
+          it 'uses global path for the shared state instance' do
+            expect(chef_run).to render_file("/var/opt/gitlab/gitlab-rails/etc/redis.shared_state.yml").with_content { |content|
+              generated_yml = YAML.safe_load(content)
+              expect(generated_yml.dig('production', 'secret_file')).to eq(global_secret_file)
+            }
+          end
+        end
+      end
+
+      describe 'extra config command' do
+        let(:cache_command) { '/opt/redis-cache-password.sh' }
+        let(:global_command) { '/opt/redis-global.sh' }
+
+        context 'with single Redis instance' do
+          before do
+            stub_gitlab_rb(
+              gitlab_rails: {
+                redis_extra_config_command: global_command
+              }
+            )
+          end
+
+          it 'populates resque.yml with specified config command' do
+            expect(chef_run).to render_file("/var/opt/gitlab/gitlab-rails/etc/resque.yml").with_content { |content|
+              generated_yml = YAML.safe_load(content)
+              expect(generated_yml.dig('production', 'config_command')).to eq(global_command)
+            }
+          end
+        end
+
+        context 'with separate command for an instance' do
+          cached(:chef_run) do
+            ChefSpec::SoloRunner.new(step_into: %w(templatesymlink)).converge('gitlab::default')
+          end
+
+          before do
+            stub_gitlab_rb(
+              gitlab_rails: {
+                redis_extra_config_command: global_command,
+                redis_cache_instance: 'redis://redis.cache.instance',
+                redis_cache_extra_config_command: cache_command,
+                redis_shared_state_instance: 'redis://redis.shared_state.instance'
+              }
+            )
+          end
+
+          it 'uses specified command for the cache instance' do
+            expect(chef_run).to render_file("/var/opt/gitlab/gitlab-rails/etc/redis.cache.yml").with_content { |content|
+              generated_yml = YAML.safe_load(content)
+              expect(generated_yml.dig('production', 'config_command')).to eq(cache_command)
+            }
+          end
+
+          it 'uses global command for the shared state instance' do
+            expect(chef_run).to render_file("/var/opt/gitlab/gitlab-rails/etc/redis.shared_state.yml").with_content { |content|
+              generated_yml = YAML.safe_load(content)
+              expect(generated_yml.dig('production', 'config_command')).to eq(global_command)
+            }
+          end
         end
       end
     end
@@ -492,6 +683,8 @@ RSpec.describe 'gitlab::gitlab-rails' do
     gitlab_yml_path = '/var/opt/gitlab/gitlab-rails/etc/gitlab.yml'
     let(:gitlab_yml) { chef_run.template(gitlab_yml_path) }
     let(:gitlab_yml_templatesymlink) { chef_run.templatesymlink('Create a gitlab.yml and create a symlink to Rails root') }
+    let(:gitlab_yml_file_content) { ChefSpec::Renderer.new(chef_run, gitlab_yml).content }
+    let(:parsed_gitlab_yml) { YAML.safe_load(gitlab_yml_file_content, aliases: true, symbolize_names: true) }
 
     # NOTE: Test if we pass proper notifications to other resources
     describe 'rails cache management' do
@@ -518,6 +711,43 @@ RSpec.describe 'gitlab::gitlab-rails' do
         it 'should not run cache clear' do
           expect(chef_run).not_to run_execute(
             'clear the gitlab-rails cache')
+        end
+      end
+
+      context 'SSH settings' do
+        context 'defaults' do
+          it 'omits the SSH host and port' do
+            expect(parsed_gitlab_yml[:production][:gitlab][:ssh_host]).to be_nil
+            expect(parsed_gitlab_yml[:production][:gitlab_shell][:ssh_port]).to be_nil
+          end
+        end
+
+        context 'with a custom SSH hostname and port' do
+          before do
+            stub_gitlab_rb(
+              gitlab_rails: {
+                gitlab_ssh_host: 'gitlab.example.com',
+                gitlab_shell_ssh_port: 2222
+              }
+            )
+          end
+
+          it 'renders the SSH host and port' do
+            expect(parsed_gitlab_yml[:production][:gitlab][:ssh_host]).to eq('gitlab.example.com')
+            expect(parsed_gitlab_yml[:production][:gitlab_shell][:ssh_port]).to eq(2222)
+          end
+        end
+
+        context 'with an invalid SSH hostname' do
+          before do
+            stub_gitlab_rb(
+              gitlab_rails: { gitlab_ssh_host: 'gitlab.example.com:2222' }
+            )
+          end
+
+          it 'raises an exception' do
+            expect { chef_run }.to raise_error(RuntimeError, /If you wish to use a custom SSH port/)
+          end
         end
       end
     end
@@ -643,7 +873,8 @@ RSpec.describe 'gitlab::gitlab-rails' do
               'db_sslcompression' => 0,
               'db_sslcert' => nil,
               'db_sslkey' => nil,
-              'db_application_name' => nil
+              'db_application_name' => nil,
+              'db_extra_config_command' => nil
             )
           )
         end
@@ -820,6 +1051,29 @@ RSpec.describe 'gitlab::gitlab-rails' do
             )
           end
         end
+
+        context 'when db_extra_config_command is specified' do
+          cached(:chef_run) do
+            ChefSpec::SoloRunner.new(step_into: %w(templatesymlink)).converge('gitlab::default')
+          end
+
+          before do
+            stub_gitlab_rb(
+              gitlab_rails: {
+                db_extra_config_command: '/opt/database-config.sh'
+              }
+            )
+          end
+
+          it 'uses specified value in database.yml' do
+            expect(chef_run).to create_templatesymlink('Create a database.yml and create a symlink to Rails root').with_variables(
+              hash_including(
+                'db_extra_config_command' => '/opt/database-config.sh'
+              )
+            )
+            expect(generated_yml_content.dig('production', 'config_command')).to eq('/opt/database-config.sh')
+          end
+        end
       end
 
       describe 'client side statement_timeout' do
@@ -967,6 +1221,93 @@ RSpec.describe 'gitlab::gitlab-rails' do
       end
     end
 
+    describe 'gitlab_shell_secret' do
+      let(:templatesymlink) { chef_run.templatesymlink('Create a gitlab_shell_secret and create a symlink to Rails root') }
+
+      context 'by default' do
+        cached(:chef_run) do
+          ChefSpec::SoloRunner.new.converge('gitlab::default')
+        end
+
+        it 'creates the template' do
+          expect(chef_run).to create_templatesymlink("Create a gitlab_pages_secret and create a symlink to Rails root").with(
+            owner: 'root',
+            group: 'root',
+            mode: '0644'
+          )
+        end
+
+        it 'template triggers notifications' do
+          expect(templatesymlink).to notify('runit_service[gitaly]').to(:restart).delayed
+          expect(templatesymlink).to notify('runit_service[puma]').to(:restart).delayed
+          expect(templatesymlink).to notify('sidekiq_service[sidekiq]').to(:restart).delayed
+        end
+      end
+
+      context 'with gitlab-sshd enabled' do
+        let(:templatesymlink) { chef_run.templatesymlink('Create a gitlab_shell_secret and create a symlink to Rails root') }
+
+        cached(:chef_run) do
+          RSpec::Mocks.with_temporary_scope do
+            stub_gitlab_rb(
+              gitlab_sshd: { enable: true }
+            )
+          end
+
+          ChefSpec::SoloRunner.new.converge('gitlab::default')
+        end
+
+        it 'creates the template' do
+          expect(chef_run).to create_templatesymlink("Create a gitlab_pages_secret and create a symlink to Rails root").with(
+            owner: 'root',
+            group: 'root',
+            mode: '0644'
+          )
+        end
+
+        it 'template triggers notifications' do
+          expect(templatesymlink).to notify('runit_service[gitlab-sshd]').to(:restart).delayed
+          expect(templatesymlink).to notify('runit_service[gitaly]').to(:restart).delayed
+          expect(templatesymlink).to notify('runit_service[puma]').to(:restart).delayed
+          expect(templatesymlink).to notify('sidekiq_service[sidekiq]').to(:restart).delayed
+        end
+      end
+
+      context 'with specific gitlab_shell_secret' do
+        let(:gitlab_shell_secret_token) { SecureRandom.base64(32) }
+
+        cached(:chef_run) do
+          RSpec::Mocks.with_temporary_scope do
+            stub_gitlab_rb(
+              gitlab_shell: { secret_token: gitlab_shell_secret_token }
+            )
+          end
+
+          ChefSpec::SoloRunner.new.converge('gitlab::default')
+        end
+
+        it 'renders the correct node attribute' do
+          expect(chef_run).to create_templatesymlink("Create a gitlab_shell_secret and create a symlink to Rails root").with_variables(
+            secret_token: gitlab_shell_secret_token
+          )
+        end
+
+        it 'uses the correct owner and permissions' do
+          expect(chef_run).to create_templatesymlink('Create a gitlab_shell_secret and create a symlink to Rails root').with(
+            owner: 'root',
+            group: 'root',
+            mode: '0644'
+          )
+        end
+
+        it 'template triggers notifications' do
+          expect(templatesymlink).to notify('runit_service[gitaly]').to(:restart).delayed
+          expect(templatesymlink).to notify('runit_service[puma]').to(:restart).delayed
+          expect(templatesymlink).to notify('sidekiq_service[sidekiq]').to(:restart).delayed
+        end
+      end
+    end
+
     describe 'gitlab_pages_secret' do
       let(:templatesymlink) { chef_run.templatesymlink('Create a gitlab_pages_secret and create a symlink to Rails root') }
 
@@ -1087,6 +1428,12 @@ RSpec.describe 'gitlab::gitlab-rails' do
 
       context 'with KAS enabled' do
         cached(:chef_run) do
+          RSpec::Mocks.with_temporary_scope do
+            stub_gitlab_rb(
+              gitlab_kas: { enable: true }
+            )
+          end
+
           ChefSpec::SoloRunner.new.converge('gitlab::default')
         end
 
@@ -1190,6 +1537,56 @@ RSpec.describe 'gitlab::gitlab-rails' do
   end
 
   context 'SMTP settings' do
+    context 'defaults' do
+      before do
+        stub_gitlab_rb(
+          gitlab_rails: {
+            smtp_enable: true
+          }
+        )
+      end
+
+      it 'renders the default timeout values' do
+        expect(chef_run).to create_templatesymlink('Create a smtp_settings.rb and create a symlink to Rails root').with_variables(
+          hash_including(
+            'smtp_open_timeout' => 30,
+            'smtp_read_timeout' => 60
+          )
+        )
+
+        expect(chef_run).to render_file('/var/opt/gitlab/gitlab-rails/etc/smtp_settings.rb').with_content { |content|
+          expect(content).to include('open_timeout: 30')
+          expect(content).to include('read_timeout: 60')
+        }
+      end
+    end
+
+    context 'when timeouts are set' do
+      before do
+        stub_gitlab_rb(
+          gitlab_rails: {
+            smtp_enable: true,
+            smtp_open_timeout: 10,
+            smtp_read_timeout: 20
+          }
+        )
+      end
+
+      it 'renders the timeout values' do
+        expect(chef_run).to create_templatesymlink('Create a smtp_settings.rb and create a symlink to Rails root').with_variables(
+          hash_including(
+            'smtp_open_timeout' => 10,
+            'smtp_read_timeout' => 20
+          )
+        )
+
+        expect(chef_run).to render_file('/var/opt/gitlab/gitlab-rails/etc/smtp_settings.rb').with_content { |content|
+          expect(content).to include('open_timeout: 10')
+          expect(content).to include('read_timeout: 20')
+        }
+      end
+    end
+
     context 'when connection pooling is not configured' do
       it 'creates smtp_settings.rb with pooling disabled' do
         stub_gitlab_rb(
@@ -1226,6 +1623,58 @@ RSpec.describe 'gitlab::gitlab-rails' do
         }
       end
     end
+
+    context 'when STARTTLS is enabled' do
+      before do
+        stub_gitlab_rb(
+          gitlab_rails: {
+            smtp_enable: true,
+            smtp_enable_starttls_auto: true
+          }
+        )
+      end
+
+      it 'enables STARTTLS in the settings' do
+        expect(chef_run).to render_file('/var/opt/gitlab/gitlab-rails/etc/smtp_settings.rb').with_content { |content|
+          expect(content).not_to include('tls =')
+          expect(content).to include('enable_starttls_auto: true')
+        }
+      end
+    end
+
+    context 'when SMTP TLS is enabled' do
+      before do
+        stub_gitlab_rb(
+          gitlab_rails: {
+            smtp_enable: true,
+            smtp_tls: true
+          }
+        )
+      end
+
+      it 'enables SMTP TLS in the settings' do
+        expect(chef_run).to render_file('/var/opt/gitlab/gitlab-rails/etc/smtp_settings.rb').with_content { |content|
+          expect(content).to include('tls: true')
+          expect(content).not_to include('enable_starttls_auto')
+        }
+      end
+    end
+
+    context 'when TLS and STARTTLS are enabled' do
+      before do
+        stub_gitlab_rb(
+          gitlab_rails: {
+            smtp_enable: true,
+            smtp_tls: true,
+            smtp_enable_starttls_auto: true
+          }
+        )
+      end
+
+      it 'raises an exception' do
+        expect { chef_run }.to raise_error(RuntimeError)
+      end
+    end
   end
 
   describe 'cleaning up the legacy sidekiq log symlink' do
@@ -1239,6 +1688,24 @@ RSpec.describe 'gitlab::gitlab-rails' do
       allow(File).to receive(:symlink?).with('/var/log/gitlab/gitlab-rails/sidekiq.log') { false }
 
       expect(chef_run).not_to delete_link('/var/log/gitlab/gitlab-rails/sidekiq.log')
+    end
+  end
+
+  describe 'log directory and runit group' do
+    context 'default values' do
+      it_behaves_like 'enabled logged service', 'gitlab-rails', false, { log_directory_owner: 'git' }
+    end
+
+    context 'custom values' do
+      before do
+        stub_gitlab_rb(
+          gitlab_rails: {
+            log_group: 'fugee'
+          }
+        )
+      end
+      it_behaves_like 'configured logrotate service', 'gitlab-rails', 'git', 'fugee'
+      it_behaves_like 'enabled logged service', 'gitlab-rails', false, { log_directory_owner: 'git', log_group: 'fugee' }
     end
   end
 end

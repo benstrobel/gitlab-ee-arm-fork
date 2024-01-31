@@ -383,7 +383,7 @@ RSpec.describe 'monitoring::prometheus' do
   let(:chef_run) { ChefSpec::SoloRunner.new(step_into: %w(runit_service)).converge('gitlab::default') }
   let(:prometheus_yml_template) { chef_run.file('/var/opt/gitlab/prometheus/prometheus.yml') }
   let(:prometheus_yml_file_content) { ChefSpec::Renderer.new(chef_run, prometheus_yml_template).content }
-  let(:prometheus_yml) { YAML.safe_load(prometheus_yml_file_content, [], [], true, symbolize_names: true) }
+  let(:prometheus_yml) { YAML.safe_load(prometheus_yml_file_content, aliases: true, symbolize_names: true) }
 
   let(:default_vars) do
     {
@@ -435,15 +435,10 @@ RSpec.describe 'monitoring::prometheus' do
       expect(prometheus_yml).to match(expected_prometheus_yml)
 
       expect(chef_run).to render_file('/opt/gitlab/sv/prometheus/log/run')
-        .with_content(/exec svlogd -tt \/var\/log\/gitlab\/prometheus/)
+        .with_content(/svlogd -tt \/var\/log\/gitlab\/prometheus/)
     end
 
     it 'creates default set of directories' do
-      expect(chef_run).to create_directory('/var/log/gitlab/prometheus').with(
-        owner: 'gitlab-prometheus',
-        group: nil,
-        mode: '0700'
-      )
       expect(chef_run).to create_directory('/var/opt/gitlab/prometheus').with(
         owner: 'gitlab-prometheus',
         group: nil,
@@ -578,6 +573,23 @@ RSpec.describe 'monitoring::prometheus' do
         expect(chef_run).to render_file("/var/opt/gitlab/prometheus/alert-rules/node.rules")
         expect(chef_run).to render_file("/var/opt/gitlab/prometheus/alert-rules/gitlab.rules")
       end
+    end
+  end
+
+  context 'log directory and runit group' do
+    context 'default values' do
+      it_behaves_like 'enabled logged service', 'prometheus', true, { log_directory_owner: 'gitlab-prometheus' }
+    end
+
+    context 'custom values' do
+      before do
+        stub_gitlab_rb(
+          prometheus: {
+            log_group: 'fugee'
+          }
+        )
+      end
+      it_behaves_like 'enabled logged service', 'prometheus', true, { log_directory_owner: 'gitlab-prometheus', log_group: 'fugee' }
     end
   end
 

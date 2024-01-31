@@ -15,14 +15,15 @@
 # limitations under the License.
 #
 account_helper = AccountHelper.new(node)
-redis_helper = RedisHelper.new(node)
+redis_helper = NewRedisHelper::GitlabWorkhorse.new(node)
 workhorse_helper = GitlabWorkhorseHelper.new(node)
+logfiles_helper = LogfilesHelper.new(node)
+logging_settings = logfiles_helper.logging_settings('gitlab-workhorse')
 
-working_dir = node['gitlab']['gitlab-workhorse']['dir']
-log_directory = node['gitlab']['gitlab-workhorse']['log_directory']
+working_dir = node['gitlab']['gitlab_workhorse']['dir']
 gitlab_workhorse_static_etc_dir = "/opt/gitlab/etc/gitlab-workhorse"
-workhorse_env_dir = node['gitlab']['gitlab-workhorse']['env_directory']
-gitlab_workhorse_socket_dir = node['gitlab']['gitlab-workhorse']['sockets_directory']
+workhorse_env_dir = node['gitlab']['gitlab_workhorse']['env_directory']
+gitlab_workhorse_socket_dir = node['gitlab']['gitlab_workhorse']['sockets_directory']
 
 directory working_dir do
   owner account_helper.gitlab_user
@@ -41,9 +42,13 @@ if workhorse_helper.unix_socket? && !gitlab_workhorse_socket_dir.nil?
   end
 end
 
-directory log_directory do
-  owner account_helper.gitlab_user
-  mode '0700'
+# Create log_directory
+directory logging_settings[:log_directory] do
+  owner logging_settings[:log_directory_owner]
+  mode logging_settings[:log_directory_mode]
+  if log_group = logging_settings[:log_directory_group]
+    group log_group
+  end
   recursive true
 end
 
@@ -54,22 +59,24 @@ directory gitlab_workhorse_static_etc_dir do
 end
 
 env_dir workhorse_env_dir do
-  variables node['gitlab']['gitlab-workhorse']['env']
+  variables node['gitlab']['gitlab_workhorse']['env']
   notifies :restart, "runit_service[gitlab-workhorse]"
 end
 
 runit_service 'gitlab-workhorse' do
-  start_down node['gitlab']['gitlab-workhorse']['ha']
+  start_down node['gitlab']['gitlab_workhorse']['ha']
   options({
-    log_directory: log_directory
+    log_directory: logging_settings[:log_directory],
+    log_user: logging_settings[:runit_owner],
+    log_group: logging_settings[:runit_group],
   }.merge(params))
-  log_options node['gitlab']['logging'].to_hash.merge(node['gitlab']['gitlab-workhorse'].to_hash)
+  log_options logging_settings[:options]
 end
 
-consul_service node['gitlab']['gitlab-workhorse']['consul_service_name'] do
+consul_service node['gitlab']['gitlab_workhorse']['consul_service_name'] do
   id 'workhorse'
   action Prometheus.service_discovery_action
-  socket_address node['gitlab']['gitlab-workhorse']['prometheus_listen_addr']
+  socket_address node['gitlab']['gitlab_workhorse']['prometheus_listen_addr']
   reload_service false unless Services.enabled?('consul')
 end
 
@@ -79,19 +86,16 @@ version_file 'Create version file for Workhorse' do
   notifies :restart, "runit_service[gitlab-workhorse]"
 end
 
-alt_document_root = node['gitlab']['gitlab-workhorse']['alt_document_root']
-shutdown_timeout = node['gitlab']['gitlab-workhorse']['shutdown_timeout']
-_redis_host, _redis_port, redis_password = redis_helper.redis_params
-workhorse_keywatcher = node['gitlab']['gitlab-workhorse']['workhorse_keywatcher']
-redis_url = redis_helper.redis_url.to_s
-redis_sentinels = node['gitlab']['gitlab-rails']['redis_sentinels']
-redis_sentinel_master = node['redis']['master_name']
-redis_sentinel_master_password = node['redis']['master_password']
+alt_document_root = node['gitlab']['gitlab_workhorse']['alt_document_root']
+shutdown_timeout = node['gitlab']['gitlab_workhorse']['shutdown_timeout']
+workhorse_keywatcher = node['gitlab']['gitlab_workhorse']['workhorse_keywatcher']
+redis_params = redis_helper.redis_params
 config_file_path = File.join(working_dir, "config.toml")
-image_scaler_max_procs = node['gitlab']['gitlab-workhorse']['image_scaler_max_procs']
-image_scaler_max_filesize = node['gitlab']['gitlab-workhorse']['image_scaler_max_filesize']
-trusted_cidrs_for_propagation = node['gitlab']['gitlab-workhorse']['trusted_cidrs_for_propagation']
-trusted_cidrs_for_x_forwarded_for = node['gitlab']['gitlab-workhorse']['trusted_cidrs_for_x_forwarded_for']
+image_scaler_max_procs = node['gitlab']['gitlab_workhorse']['image_scaler_max_procs']
+image_scaler_max_filesize = node['gitlab']['gitlab_workhorse']['image_scaler_max_filesize']
+trusted_cidrs_for_propagation = node['gitlab']['gitlab_workhorse']['trusted_cidrs_for_propagation']
+trusted_cidrs_for_x_forwarded_for = node['gitlab']['gitlab_workhorse']['trusted_cidrs_for_x_forwarded_for']
+extra_config_command = node['gitlab']['gitlab_workhorse']['extra_config_command']
 
 template config_file_path do
   source "workhorse-config.toml.erb"
@@ -101,17 +105,18 @@ template config_file_path do
   variables(
     alt_document_root: alt_document_root,
     workhorse_keywatcher: workhorse_keywatcher,
-    redis_url: redis_url,
-    password: redis_password,
-    sentinels: redis_sentinels,
-    sentinel_master: redis_sentinel_master,
+    redis_url: redis_params[:url],
+    password: redis_params[:password],
+    sentinels: redis_params[:sentinels],
+    sentinel_master: redis_params[:sentinelMaster],
+    sentinel_password: redis_params[:sentinelPassword],
     shutdown_timeout: shutdown_timeout,
-    master_password: redis_sentinel_master_password,
     image_scaler_max_procs: image_scaler_max_procs,
     image_scaler_max_filesize: image_scaler_max_filesize,
     trusted_cidrs_for_propagation: trusted_cidrs_for_propagation,
     trusted_cidrs_for_x_forwarded_for: trusted_cidrs_for_x_forwarded_for,
-    object_store_toml: workhorse_helper.object_store_toml
+    object_store_toml: workhorse_helper.object_store_toml,
+    extra_config_command: extra_config_command
   )
   notifies :restart, "runit_service[gitlab-workhorse]"
   notifies :run, 'bash[Set proper security context on ssh files for selinux]', :delayed if SELinuxHelper.enabled?

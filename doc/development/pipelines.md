@@ -1,7 +1,7 @@
 ---
 stage: Systems
 group: Distribution
-info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://about.gitlab.com/handbook/product/ux/technical-writing/#assignments
+info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 ---
 
 # Repositories, branches, and CI pipelines
@@ -250,6 +250,9 @@ run a package build and QA for development purposes. This can be used by
 developers to get a package or Docker image for testing, or to run a full QA
 suite against their MR's changes.
 
+To debug QA failures, refer to the [Investigate QA failures](https://handbook.gitlab.com/handbook/engineering/infrastructure/test-platform/self-managed-platform-team/distribution/#investigate-qa-failures)
+section. This job also generates Allure report, see more information and the demo at [Test Report Generation in Omnibus-GitLab](allure-test-report.md).
+
 This job is run only on [Development repository](https://gitlab.com/gitlab-org/omnibus-gitlab) and [Security mirror](https://gitlab.com/gitlab-org/security/omnibus-gitlab) on branch
 pipelines.
 
@@ -284,14 +287,24 @@ This job builds a GitLab Docker image using the package that was built by
 
 This job is run only on [QA mirror](https://gitlab.com/gitlab-org/build/omnibus-gitlab-mirror) on triggered pipelines.
 
-#### `qa-test`
+#### `qa-subset-test`
+
+This job runs subset of test suite and is automatically triggered when either
+ `Trigger:CE-package` or `Trigger:EE-package` manual jobs are triggered manually.
+
+This job triggers a pipeline in the [GitLab QA Mirror](https://gitlab.com/gitlab-org/gitlab-qa-mirror), passing the GitLab Docker image created by `Trigger:gitlab-docker` job and the GitLab QA Docker image built by the GitLab Rails pipeline, so that a subset of test as mentioned in [this issue](https://gitlab.com/gitlab-org/distribution/team-tasks/-/issues/1303#we-should-keep) will run using these images
+
+This job is run only on [QA mirror](https://gitlab.com/gitlab-org/build/omnibus-gitlab-mirror) on triggered pipelines.
+
+### `qa-remaining-test-manual`
+
+This is a manual trigger job which runs the remaining tests that donot run in the `qa-subset-test` job.
+
+To run this QA jobs in MR pipeline, you need to either trigger `Trigger:CE-package` or `Trigger:EE-package` manual jobs.
 
 This job triggers a pipeline in the [GitLab QA Mirror](https://gitlab.com/gitlab-org/gitlab-qa-mirror), passing the GitLab
 Docker image created by `Trigger:gitlab-docker` job and the GitLab QA Docker
-image built by the GitLab Rails pipeline, so that a full QA run will be run
-against up using these images
-
-This job is run only on [QA mirror](https://gitlab.com/gitlab-org/build/omnibus-gitlab-mirror) on triggered pipelines.
+image built by the GitLab Rails pipeline, so that the entire suite is run using these images.
 
 #### `RAT`
 
@@ -317,7 +330,7 @@ only on EE branches.
 #### `Docker-branch`
 
 This job builds a GitLab Docker image using the package built during the Ubuntu
-20.04-branch job. The image is pushed to the GitLab container registry.
+22.04-branch job. The image is pushed to the GitLab container registry.
 
 This job is run only on [Release mirror](https://dev.gitlab.org/gitlab/omnibus-gitlab) on branch and nightly pipelines.
 
@@ -363,7 +376,7 @@ Raspberry Pi jobs are run only on CE tags while SLES jobs are run only on EE tag
 ### `Docker`
 
 This job builds a GitLab Docker image using the package built during the Ubuntu
-20.04-branch job. The image is pushed to the internal GitLab container registry.
+22.04-branch job. The image is pushed to the internal GitLab container registry.
 
 This job is run only on [Release mirror](https://dev.gitlab.org/gitlab/omnibus-gitlab) on tag pipelines.
 
@@ -445,7 +458,7 @@ This job is run only on [Release mirror](https://dev.gitlab.org/gitlab/omnibus-g
 
 This job triggers a pipeline in the
 [RAT](https://gitlab.com/gitlab-org/distribution/reference-architecture-tester)
-project passing the URL to the nightly Ubuntu 20.04 package built in this pipeline,
+project passing the URL to the nightly Ubuntu 22.04 package built in this pipeline,
 which will spin up a PostgreSQL HA instance with that package using
 [GET](https://gitlab.com/gitlab-org/gitlab-environment-toolkit), and run
 QA against that instance.
@@ -456,7 +469,7 @@ This job is run only on [Release mirror](https://dev.gitlab.org/gitlab/omnibus-g
 
 This job triggers a pipeline in the
 [RAT](https://gitlab.com/gitlab-org/distribution/reference-architecture-tester)
-project passing the URL to the Ubuntu 20.04 package built in this pipeline,
+project passing the URL to the Ubuntu 22.04 package built in this pipeline,
 which will spin up a PostgreSQL HA instance with that package using
 [GET](https://gitlab.com/gitlab-org/gitlab-environment-toolkit), and run
 QA against that instance.

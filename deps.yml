@@ -12,17 +12,14 @@ dependencies:
     - name: .* # everything else
       enabled: true
   settings:
-    # Assign to twk3 (dmountney), balasankarc, and rmarshall by default
-    gitlab_assignee_ids:
-      - 42196
-      - 4849
-      - 2602134
     gitlab_labels:
       - group::distribution
+      - section::core platform
       - devops::systems
       - type::maintenance
-      - maintenance
+      - maintenance::dependency
       - dependencies.io
+      - workflow::ready for review
     gitlab_remove_source_branch: true
     commit_message_template: |-
       {{.SubjectAndBody}}
@@ -81,6 +78,14 @@ dependencies:
         replace_in_files:
         - filename: config/software/consul.rb
           pattern: "version = Gitlab::Version.new\\('consul', 'v(\\S+)'\\)"
+          range: '< 1.17.0'
+        - filename: files/gitlab-ctl-commands-ee/lib/consul_download.rb
+          pattern: "DEFAULT_VERSION = '(\\S+)'"
+          range: '< 1.17.0'
+        - filename: files/gitlab-cookbooks/consul/libraries/consul_helper.rb
+          pattern: "SUPPORTED_MINOR = '(\\S+)'"
+          tag_filter:
+            output_as: '$1.$2'
       # go-crond
       https://github.com/webdevops/go-crond.git:
         replace_in_files:
@@ -107,6 +112,12 @@ dependencies:
         replace_in_files:
         - filename: config/software/nginx-module-vts.rb
           pattern: "Gitlab::Version.new\\('nginx-module-vts', '(\\S+)'\\)"
+      # nginx
+      https://github.com/nginx/nginx.git:
+        replace_in_files:
+        - filename: config/software/nginx.rb
+          pattern: "Gitlab::Version.new\\('nginx', 'release-(\\S+)'\\)"
+          tag_prefix: 'release-'
       # openssl
       https://github.com/openssl/openssl.git:
         replace_in_files:
@@ -119,11 +130,23 @@ dependencies:
         replace_in_files:
         - filename: config/software/remote-syslog.rb
           pattern: "default_version '(\\S+)'"
+      # rubygems
+      https://github.com/rubygems/rubygems.git:
+        replace_in_files:
+        - filename: config/software/rubygems.rb
+          pattern: "default_version '(\\S+)'"
+          range: '<= 3.x'
       # zlib
       https://github.com/madler/zlib.git:
         replace_in_files:
         - filename: config/software/zlib.rb
           pattern: "Gitlab::Version.new\\('zlib', 'v(\\S+)'\\)"
+          tag_prefix: 'v'
+      # prometheus
+      https://gitlab.com/gitlab-org/build/omnibus-mirror/prometheus.git:
+        replace_in_files:
+        - filename: config/software/prometheus.rb
+          pattern: "Gitlab::Version.new\\('prometheus', '(\\S+)'\\)"
           tag_prefix: 'v'
       # gitlab-exporter
       https://gitlab.com/gitlab-org/gitlab-exporter.git:
@@ -159,19 +182,13 @@ dependencies:
         replace_in_files:
         - filename: config/software/libjpeg-turbo.rb
           pattern: "Gitlab::Version.new\\('libjpeg-turbo', '(\\S+)'\\)"
+          range: '< 2.1.90'
       #libtiff
       https://gitlab.com/libtiff/libtiff.git:
         replace_in_files:
         - filename: config/software/libtiff.rb
           pattern: "Gitlab::Version.new\\('libtiff', 'v(\\S+)'\\)"
           tag_prefix: 'v'
-      # grafana
-      https://github.com/grafana/grafana.git:
-        replace_in_files:
-        - filename: config/software/grafana.rb
-          pattern: "Gitlab::Version.new\\('grafana', '(\\S+)'\\)"
-          tag_prefix: 'v'
-          range: '< 8.0.0'
       # gitlab-registry
       https://gitlab.com/gitlab-org/container-registry.git:
         replace_in_files:
@@ -180,6 +197,50 @@ dependencies:
           tag_filter:
             matching: 'v(\S+)-gitlab'
             sort_as: '$1'
+      # pgbouncer
+      https://github.com/pgbouncer/pgbouncer.git:
+        replace_in_files:
+        - filename: config/software/pgbouncer.rb
+          pattern: "Gitlab::Version.new\\('pgbouncer', '(\\S+)'\\)"
+          tag_filter:
+            matching: 'pgbouncer_(\d+)_(\d+)_(\d+)'
+            sort_as: '$1.$2.$3'
+      # redis
+      https://github.com/redis/redis.git:
+        replace_in_files:
+        - filename: config/software/redis.rb
+          pattern: "Gitlab::Version.new\\('redis', '(\\S+)'\\)"
+          range: '< 7.2.0'
+       # exiftool
+      https://github.com/exiftool/exiftool.git:
+        replace_in_files:
+        - filename: config/software/exiftool.rb
+          pattern: "Gitlab::Version.new\\('exiftool', '(\\S+)'\\)"
+          tag_filter:
+            matching: '(\d+).(\d+)'
+            sort_as: '$1.$2.0'
+      # curl
+      https://github.com/curl/curl.git:
+        replace_in_files:
+        - filename: config/software/curl.rb
+          pattern: "version = Gitlab::Version.new\\('curl', '(\\S+)'\\)"
+          tag_filter:
+            matching: 'curl-(\d+)_(\d+)_(\d+)'
+            sort_as: '$1.$2.$3'
+      # pcre2
+      https://github.com/PCRE2Project/pcre2.git:
+        replace_in_files:
+        - filename: config/software/pcre2.rb
+          pattern: "Gitlab::Version.new\\('pcre2', '(\\S+)'\\)"
+          tag_filter:
+            matching: 'pcre2-(\d+).(\d+)$'
+            sort_as: '$1.$2.0'
+      # git-filter-repo
+      https://github.com/newren/git-filter-repo.git:
+        replace_in_files:
+        - filename: config/software/git-filter-repo.rb
+          pattern: "Gitlab::Version.new\\('git-filter-repo', 'v(\\S+)'\\)"
+          tag_prefix: 'v'
       # deps that need updated filtering to work https://github.com/dropseed/deps-git/issues/2
       # krb5
       # https://github.com/krb5/krb5.git:
@@ -193,13 +254,6 @@ dependencies:
       #   - filename: config/software/libevent.rb
       #     pattern: "version = Gitlab::Version.new\\('libevent', '(release-\\d+\\.\\d+\\.\\d+-stable)'\\)"
       #     semver: false
-      # curl
-      # https://github.com/curl/curl.git:
-      #   replace_in_files:
-      #   - filename: config/software/curl.rb
-      #     pattern: "version = Gitlab::Version.new\\('curl', 'curl-(\\d+\\_\\d+\\_\\d+)'\\)"
-      #     semver: false
-      #     tag_prefix: 'curl-'
       # libicu
       # https://github.com/unicode-org/icu.git:
       #   replace_in_files:

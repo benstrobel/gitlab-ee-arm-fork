@@ -23,6 +23,8 @@ RSpec.describe 'gitlab::sidekiq' do
           expect(content).to match(/chmod 0700 \/run\/gitlab\/sidekiq/)
           expect(content).to match(/chown git \/run\/gitlab\/sidekiq/)
           expect(content).to match(/export prometheus_run_dir=\'\/run\/gitlab\/sidekiq\'/)
+          expect(content).to match(/rubyopt=\"-W:no-experimental\"/)
+          expect(content).to include(%(RUBYOPT="${rubyopt}"))
           expect(content).to match(%r{bin/sidekiq-cluster})
           expect(content).to match(/-m 20/) # max_concurrency
           expect(content).to match(/--timeout 25/) # shutdown timeout
@@ -50,6 +52,23 @@ RSpec.describe 'gitlab::sidekiq' do
       it 'passes timestamp flag to svlogd' do
         expect(chef_run).to render_file("/opt/gitlab/sv/sidekiq/log/run").with_content(/-tt/)
       end
+    end
+  end
+
+  context 'log directory and runit group' do
+    context 'default values' do
+      it_behaves_like 'enabled logged service', 'sidekiq', true, { log_directory_owner: 'git' }
+    end
+
+    context 'custom values' do
+      before do
+        stub_gitlab_rb(
+          sidekiq: {
+            log_group: 'fugee'
+          }
+        )
+      end
+      it_behaves_like 'enabled logged service', 'sidekiq', true, { log_directory_owner: 'git', log_group: 'fugee' }
     end
   end
 

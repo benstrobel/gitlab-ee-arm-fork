@@ -1,7 +1,8 @@
-require_relative '../aws_helper.rb'
-require_relative '../build/info.rb'
-require_relative '../build/check.rb'
 require 'omnibus'
+
+require_relative '../aws_helper'
+require_relative '../build/check'
+require_relative '../build/info/package'
 
 namespace :aws do
   namespace :ami do
@@ -12,7 +13,7 @@ namespace :aws do
       next if Build::Check.is_auto_deploy? || Build::Check.is_rc_tag?
 
       Omnibus.load_configuration('omnibus.rb')
-      AWSHelper.new(Omnibus::BuildVersion.semver, Build::Info.edition).create_ami
+      AWSHelper.new(Omnibus::BuildVersion.semver, Build::Info::Package.edition).create_ami
     end
   end
 
@@ -24,7 +25,7 @@ namespace :aws do
       next if Build::Check.is_auto_deploy? || Build::Check.is_rc_tag?
 
       Omnibus.load_configuration('omnibus.rb')
-      AWSHelper.new(Omnibus::BuildVersion.semver, Build::Info.edition).marketplace_release
+      AWSHelper.new(Omnibus::BuildVersion.semver, Build::Info::Package.edition).marketplace_release
     end
   end
 end

@@ -4,41 +4,43 @@ RSpec.describe 'gitlab-ee::geo-secondary' do
   let(:chef_run) { ChefSpec::SoloRunner.new(step_into: %w(templatesymlink)).converge('gitlab-ee::default') }
   let(:database_yml_template) { chef_run.template('/var/opt/gitlab/gitlab-rails/etc/database.yml') }
   let(:database_yml_file_content) { ChefSpec::Renderer.new(chef_run, database_yml_template).content }
-  let(:database_yml) { YAML.safe_load(database_yml_file_content, [], [], true, symbolize_names: true) }
-
+  let(:database_yml) { YAML.safe_load(database_yml_file_content, aliases: true, symbolize_names: true) }
+  let(:default_database_settings) do
+    {
+      adapter: 'postgresql',
+      application_name: nil,
+      collation: nil,
+      connect_timeout: nil,
+      database: "gitlabhq_production",
+      encoding: "unicode",
+      host: "/var/opt/gitlab/postgresql",
+      keepalives: nil,
+      keepalives_count: nil,
+      keepalives_idle: nil,
+      keepalives_interval: nil,
+      load_balancing: {
+        hosts: []
+      },
+      password: nil,
+      port: 5432,
+      prepared_statements: false,
+      socket: nil,
+      sslca: nil,
+      sslcompression: 0,
+      sslmode: nil,
+      sslrootcert: nil,
+      statement_limit: 1000,
+      tcp_user_timeout: nil,
+      username: "gitlab",
+      variables: {
+        statement_timeout: nil
+      }
+    }
+  end
   let(:default_content) do
     {
-      main: {
-        adapter: 'postgresql',
-        application_name: nil,
-        collation: nil,
-        connect_timeout: nil,
-        database: "gitlabhq_production",
-        database_tasks: true,
-        encoding: "unicode",
-        host: "/var/opt/gitlab/postgresql",
-        keepalives: nil,
-        keepalives_count: nil,
-        keepalives_idle: nil,
-        keepalives_interval: nil,
-        load_balancing: {
-          hosts: []
-        },
-        password: nil,
-        port: 5432,
-        prepared_statements: false,
-        socket: nil,
-        sslca: nil,
-        sslcompression: 0,
-        sslmode: nil,
-        sslrootcert: nil,
-        statement_limit: 1000,
-        tcp_user_timeout: nil,
-        username: "gitlab",
-        variables: {
-          statement_timeout: nil
-        }
-      }
+      main: default_database_settings.merge(database_tasks: true),
+      ci: default_database_settings.merge(database_tasks: false)
     }
   end
 
@@ -238,7 +240,7 @@ RSpec.describe 'gitlab-ee::geo-secondary' do
     end
 
     it 'allows gitlab_rails to be overriden' do
-      expect(chef_run.node['gitlab']['gitlab-rails']['enable']).to be true
+      expect(chef_run.node['gitlab']['gitlab_rails']['enable']).to be true
     end
   end
 
@@ -286,6 +288,7 @@ RSpec.describe 'gitlab-ee::geo-secondary' do
   context 'when geo_secondary_role is enabled but geo-postgresql is disabled' do
     before do
       stub_gitlab_rb(geo_secondary_role: { enable: true },
+                     geo_secondary: { db_host: '/var/opt/gitlab/geo-postgresql' },
                      geo_postgresql: { enable: false })
     end
 
@@ -298,6 +301,40 @@ RSpec.describe 'gitlab-ee::geo-secondary' do
     end
 
     it_behaves_like 'renders database.yml with both main and geo databases'
+  end
+
+  context 'when geo_secondary_role is enabled' do
+    before do
+      stub_gitlab_rb(geo_secondary_role: { enable: true },
+                     geo_postgresql: { enable: true, dir: '/tmp/geo-postgresql' })
+    end
+
+    it 'sets geo-secondary db_host to the value of geo_postgresql socket directory ' do
+      expect(database_yml[:production][:geo][:host]).to eq('/tmp/geo-postgresql')
+    end
+  end
+
+  context 'when geo_secondary_role is enabled and geo_secondary db_host is set' do
+    before do
+      stub_gitlab_rb(geo_secondary_role: { enable: true },
+                     geo_secondary: { db_host: '/some_test_directory/geo-postgresql' },
+                     geo_postgresql: { enable: true, dir: '/tmp/geo-postgresql' })
+    end
+
+    it 'sets geo-secondary db_host to the specified db_host' do
+      expect(database_yml[:production][:geo][:host]).to eq('/some_test_directory/geo-postgresql')
+    end
+  end
+
+  context 'when geo_secondary_role is enabled, and geo-postgresql is enabled, but geo-postgresql dir is not set' do
+    before do
+      stub_gitlab_rb(geo_secondary_role: { enable: true },
+                     geo_postgresql: { enable: true })
+    end
+
+    it 'sets geo-secondary db_host to the default' do
+      expect(database_yml[:production][:geo][:host]).to eq('/var/opt/gitlab/geo-postgresql')
+    end
   end
 
   context 'when geo_secondary_role is enabled' do

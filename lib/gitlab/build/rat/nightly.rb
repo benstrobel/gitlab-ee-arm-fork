@@ -1,7 +1,8 @@
-require_relative '../trigger'
-require_relative '../info'
-require_relative "../../util"
 require 'cgi'
+
+require_relative '../../util'
+require_relative '../info/package'
+require_relative '../trigger'
 
 module Build
   class RAT
@@ -20,7 +21,7 @@ module Build
           'token' => Gitlab::Util.get_env('RAT_TRIGGER_TOKEN'),
           'variables[REFERENCE_ARCHITECTURE]' => Gitlab::Util.get_env('RAT_REFERENCE_ARCHITECTURE') || 'omnibus-gitlab-mrs',
           'variables[NIGHTLY]' => "true",
-          'variables[PACKAGE_VERSION]' => Build::Info.name_version,
+          'variables[PACKAGE_VERSION]' => Build::Info::Package.name_version,
           'variables[QA_IMAGE]' => Gitlab::Util.get_env('QA_IMAGE') || image || 'gitlab/gitlab-ee-qa:nightly'
         }
       end

@@ -1,7 +1,8 @@
 require 'English'
-require_relative 'retriable.rb'
-require_relative 'build/info.rb'
-require_relative "util.rb"
+
+require_relative 'build/info/package'
+require_relative 'retriable'
+require_relative 'util'
 
 class PackageRepository
   PackageUploadError = Class.new(StandardError)
@@ -13,7 +14,7 @@ class PackageRepository
     return Gitlab::Util.get_env('RASPBERRY_REPO') if Gitlab::Util.get_env('RASPBERRY_REPO') && !Gitlab::Util.get_env('RASPBERRY_REPO').empty?
 
     rc_repository = repository_for_rc
-    rc_repository || Build::Info.package
+    rc_repository || Build::Info::Package.name
   end
 
   def repository_for_rc
@@ -21,7 +22,7 @@ class PackageRepository
   end
 
   def validate(dry_run)
-    Build::Info.package_list.each do |pkg|
+    Build::Info::Package.file_list.each do |pkg|
       checksum_filename = pkg + '.sha256'
 
       raise "Package #{pkg} is missing its checksum file #{checksum_filename}" unless dry_run || File.exist?(checksum_filename)
@@ -78,7 +79,7 @@ class PackageRepository
   def package_list(repository)
     list = []
 
-    Build::Info.package_list.each do |path|
+    Build::Info::Package.file_list.each do |path|
       platform_path = path.split("/") # ['pkg', 'ubuntu-xenial_aarch64', 'gitlab-ce.deb']
 
       if platform_path.size != 3
@@ -98,6 +99,7 @@ class PackageRepository
         '6' => %w(scientific ol),
         '7' => %w(scientific ol),
         '8' => %w(ol), # There is no Scientific Linux 8
+        '9' => %w(ol), # There is no Scientific Linux 9
       }
 
       source_os, target_os = enterprise_linux_additional_uploads.find { |os| platform.match?(/^el\/#{os}/) }

@@ -193,10 +193,12 @@ Consul
 Contentful
 Corosync
 corpuses
+Cosign
 Coursier
 CPU
 CPUs
 CRAN
+CRI-O
 cron
 crond
 cronjob
@@ -275,6 +277,8 @@ desugar
 desugars
 desynchronized
 Dev
+devfile
+devfiles
 DevOps
 Dhall
 dialogs
@@ -292,6 +296,7 @@ Dockerfiles
 Dockerize
 Dockerized
 Dockerizing
+Docusaurus
 dogfood
 dogfooding
 dogfoods
@@ -305,6 +310,7 @@ dput
 Dreamweaver
 DRIs
 DSLs
+DSN
 Dynatrace
 Ecto
 eden
@@ -327,6 +333,7 @@ ETag
 ETags
 Etsy
 Excon
+exfiltrate
 exfiltration
 ExifTool
 expirable
@@ -357,7 +364,6 @@ flamegraph
 flamegraphs
 Flawfinder
 Flickr
-Flowdock
 Fluentd
 Flutterwave
 Flycheck
@@ -369,6 +375,7 @@ FQDNs
 FreshBooks
 frontend
 Fugit
+Fulcio
 fuzzer
 fuzzing
 Gantt
@@ -393,6 +400,8 @@ Gitter
 GLab
 globals
 globbing
+globstar
+globstars
 Gmail
 Godep
 Golang
@@ -434,6 +443,7 @@ hotfixed
 hotfixes
 hotfixing
 hotspots
+HTMLHint
 http
 https
 hyperparameter
@@ -498,6 +508,7 @@ Kibana
 Kinesis
 Klar
 Knative
+KPIs
 Kramdown
 Kroki
 kubeconfig
@@ -507,6 +518,7 @@ Kubernetes
 Kubesec
 Kucoin
 Kustomize
+Kustomization
 kwargs
 Laravel
 LaunchDarkly
@@ -577,7 +589,7 @@ mitigations
 mitmproxy
 mixin
 mixins
-MLFlow
+MLflow
 Mmap
 mockup
 mockups
@@ -618,6 +630,7 @@ Nurtch
 NVMe
 nyc
 OAuth
+OCP
 Octokit
 offboarded
 offboarding
@@ -626,6 +639,7 @@ OIDs
 OKRs
 OKRs
 Okta
+OLM
 OmniAuth
 onboarding
 OpenID
@@ -669,6 +683,7 @@ Pipfile
 Pipfiles
 Piwik
 plaintext
+podman
 Poedit
 polyfill
 polyfills
@@ -773,6 +788,7 @@ reindexes
 reindexing
 reinitialize
 reinitializing
+Rekor
 relicensing
 remediations
 renderers
@@ -836,8 +852,8 @@ sanitization
 SBOMs
 sbt
 SBT
-scalers
 scalar's
+scalers
 scatterplot
 scatterplots
 schedulable
@@ -867,6 +883,7 @@ Shimo
 Shippo
 Shopify
 Sidekiq
+Sigstore
 Silverlight
 Sisense
 Sitespeed
@@ -978,7 +995,7 @@ tcpdump
 teardown
 templated
 Thanos
-Thoughtbot
+thoughtbot
 throughputs
 Tiller
 timebox
@@ -1052,6 +1069,7 @@ unencoded
 unencoder
 unencodes
 unencrypted
+unescaped
 unfollow
 unfollowed
 unfollows
@@ -1071,6 +1089,7 @@ unoptimize
 unoptimized
 unoptimizes
 unoptimizing
+unparsable
 unpatched
 unpause
 unprioritized
@@ -1185,7 +1204,7 @@ ZAProxy
 Zeitwerk
 Zendesk
 ZenTao
+Zoekt
 zsh
 Zstandard
 Zuora
-Zoekt

@@ -1,12 +1,12 @@
 ---
 stage: Systems
 group: Distribution
-info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://about.gitlab.com/handbook/product/ux/technical-writing/#assignments
+info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 ---
 
 # Set up your development environment
 
-Development of Omnibus GitLab can be done using an existing package available
+Development of the Linux package can be done using an existing package available
 from the [Downloads page](https://about.gitlab.com/install/). To know how to setup
 a build environment to build these packages and use them, please read
 [Setting up a Build Environment](../build/build_package.md#prepare-a-build-environment)
@@ -131,6 +131,10 @@ This ensures that your new work is behaving as expected, and not breaking anythi
    GITLAB_USERNAME=$USERNAME GITLAB_PASSWORD=$PASSWORD bundle exec bin/qa Test::Instance $DEV_INSTANCE_URL
    ```
 
+### Trigger QA pipeline against deployed instance
+
+If there is sustained network access to the deployed instance, you can trigger GitLab QA tests against the deployed instance using the [GitLab QA Executor](https://gitlab.com/gitlab-org/quality/gitlab-qa-executor) project. It contains CI configuration to run GitLab QA against self-managed GitLab environments with parallelization.
+
 ## Run specific chefspec tests
 
 You can also test your changes against the current tests (or to test your newly added tests).
@@ -189,6 +193,9 @@ gitlab_rails['env'] = {
     "CUSTOMER_PORTAL_URL" => "https://customers.staging.gitlab.com"
 }
 ```
+
+NOTE:
+For [GitLab Geo](https://docs.gitlab.com/ee/administration/geo/), deployments using the above configuration must be added to each secondary site.
 
 ## OpenShift GitLab Development Setup
 

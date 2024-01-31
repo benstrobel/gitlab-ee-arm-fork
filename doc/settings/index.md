@@ -1,10 +1,14 @@
 ---
 stage: Systems
 group: Distribution
-info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://about.gitlab.com/handbook/product/ux/technical-writing/#assignments
+info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 ---
 
-# Configuring Omnibus GitLab **(FREE SELF)**
+# Configuring a Linux package installation
+
+DETAILS:
+**Tier:** Free, Premium, Ultimate
+**Offering:** Self-managed
 
 - [Asset proxy server](https://docs.gitlab.com/ee/security/asset_proxy.html)
 - [Backups](backups.md)
@@ -13,7 +17,6 @@ info: To determine the technical writer assigned to the Stage/Group associated w
 - [Environment variables](environment-variables.md)
 - [Gitaly Cluster](praefect.md)
 - [`gitlab.yml`](gitlab.yml.md)
-- [Grafana](grafana.md)
 - [LDAP](https://docs.gitlab.com/ee/administration/auth/ldap/index.html)
 - [Logs](logs.md)
 - [Mattermost](https://docs.gitlab.com/ee/integration/mattermost/)

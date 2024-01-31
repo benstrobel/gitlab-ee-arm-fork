@@ -1,9 +1,9 @@
-require_relative 'build/info.rb'
-require_relative 'util.rb'
-
 require 'aws-sdk-ec2'
 require 'aws-sdk-marketplacecatalog'
 require 'json'
+
+require_relative 'build/info/ci'
+require_relative 'util'
 
 class AWSHelper
   def initialize(version, type)
@@ -17,7 +17,6 @@ class AWSHelper
   def create_ami
     release_type = Gitlab::Util.get_env('AWS_RELEASE_TYPE')
     architecture = Gitlab::Util.get_env('AWS_ARCHITECTURE')
-    args = {}
 
     if (@type == 'ee') && release_type
       @type = "ee-#{release_type}"
@@ -25,13 +24,14 @@ class AWSHelper
     end
 
     if architecture
-      args = { arch: architecture }
       @type = "#{@type}-#{architecture}"
+    else
+      architecture = 'amd64'
     end
 
-    @download_url = Build::Info.deb_package_download_url(**args)
+    @download_url = Build::Info::CI.package_download_url(job_name: "Ubuntu-20.04", arch: architecture)
 
-    system(*%W[support/packer/packer_ami.sh #{@version} #{@type} #{@download_url} #{@license_file}])
+    system(*%W[support/packer/packer_ami.sh #{@version} #{@type} #{@download_url} #{Build::Info::CI.job_token} #{@license_file}])
   end
 
   def set_marketplace_details

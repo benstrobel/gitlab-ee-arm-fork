@@ -48,16 +48,16 @@ RSpec.describe 'monitoring::gitlab-exporter' do
         .with_content { |content|
           expect(content).to match(/exec chpst -P/)
           expect(content).to match(/\/opt\/gitlab\/embedded\/bin\/gitlab-exporter/)
+          expect(content).not_to match(/extra-config-command/)
         }
 
       expect(chef_run).to render_file('/var/opt/gitlab/gitlab-exporter/gitlab-exporter.yml')
         .with_content { |content|
-          # Not disabling this Cop fails the test with:
-          # Psych::BadAlias: Unknown alias: db_common
-          settings = YAML.load(content) # rubocop:disable Security/YAMLLoad
+          settings = YAML.safe_load(content, aliases: true)
           expect(settings.dig('server', 'name')).to eq('webrick')
           expect(settings.dig('probes', 'database')).not_to be_nil
           expect(settings.dig('probes', 'ruby')).not_to be_nil
+          expect(settings.dig('probes', 'sidekiq')).not_to be_nil
           expect(settings.dig('probes', 'metrics', 'rows_count')).not_to be_nil
           expect(settings['server']).not_to include('tls_enabled')
 
@@ -66,15 +66,7 @@ RSpec.describe 'monitoring::gitlab-exporter' do
         }
 
       expect(chef_run).to render_file('/opt/gitlab/sv/gitlab-exporter/log/run')
-        .with_content(/exec svlogd -tt \/var\/log\/gitlab\/gitlab-exporter/)
-    end
-
-    it 'creates default set of directories' do
-      expect(chef_run).to create_directory('/var/log/gitlab/gitlab-exporter').with(
-        owner: 'git',
-        group: nil,
-        mode: '0700'
-      )
+        .with_content(/svlogd -tt \/var\/log\/gitlab\/gitlab-exporter/)
     end
   end
 
@@ -114,9 +106,7 @@ RSpec.describe 'monitoring::gitlab-exporter' do
     it 'populates TLS related settings in config file' do
       expect(chef_run).to render_file('/var/opt/gitlab/gitlab-exporter/gitlab-exporter.yml')
         .with_content { |content|
-          # Not disabling this Cop fails the test with:
-          # Psych::BadAlias: Unknown alias: db_common
-          settings = YAML.load(content) # rubocop:disable Security/YAMLLoad
+          settings = YAML.safe_load(content, aliases: true)
           expect(settings.dig('server', 'tls_enabled')).to be_truthy
           expect(settings.dig('server', 'listen_address')).to eq('0.0.0.0')
           expect(settings.dig('server', 'listen_port')).to eq(8443)
@@ -179,7 +169,7 @@ RSpec.describe 'monitoring::gitlab-exporter' do
     it 'adds tranport options to elasticsearch config' do
       expect(chef_run).to render_file('/var/opt/gitlab/gitlab-exporter/gitlab-exporter.yml')
         .with_content { |content|
-          transport_options = YAML.load(content) # rubocop:disable Security/YAMLLoad
+          transport_options = YAML.safe_load(content, aliases: true)
             .dig('probes', 'elasticsearch', 'opts').first['options']
           expect(transport_options).to eq({ 'headers' => { 'Authorization' => authorization } })
         }
@@ -214,9 +204,48 @@ RSpec.describe 'monitoring::gitlab-exporter' do
 
     it 'populates the files with expected configuration' do
       expect(chef_run).to render_file('/opt/gitlab/sv/gitlab-exporter/log/run')
-        .with_content(/exec svlogd -tt foo/)
+        .with_content(/svlogd -tt foo/)
+    end
+  end
+
+  context 'log directory and runit group' do
+    context 'default values' do
+      before do
+        stub_gitlab_rb(gitlab_exporter: { enable: true })
+      end
+      it_behaves_like 'enabled logged service', 'gitlab-exporter', true, { log_directory_owner: 'git' }
+    end
+
+    context 'custom values' do
+      before do
+        stub_gitlab_rb(
+          gitlab_exporter: {
+            enable: true,
+            log_group: 'fugee'
+          }
+        )
+      end
+      it_behaves_like 'enabled logged service', 'gitlab-exporter', true, { log_directory_owner: 'git', log_group: 'fugee' }
     end
   end
 
   include_examples "consul service discovery", "gitlab_exporter", "gitlab-exporter"
+
+  context 'when command to generate external config is specified' do
+    before do
+      stub_gitlab_rb(
+        gitlab_exporter: {
+          enable: true,
+          extra_config_command: "/opt/exporter-redis-config.sh"
+        }
+      )
+    end
+
+    it 'passes the command to gitlab-exporter' do
+      expect(chef_run).to render_file('/opt/gitlab/sv/gitlab-exporter/run')
+        .with_content { |content|
+          expect(content).to match(%r{--extra-config-command "/opt/exporter-redis-config.sh"})
+        }
+    end
+  end
 end

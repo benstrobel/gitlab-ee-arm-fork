@@ -2,17 +2,10 @@ RSpec.shared_examples 'enabled registry service' do
   it 'creates default set of directories' do
     expect(chef_run.node['registry']['dir'])
       .to eql('/var/opt/gitlab/registry')
-    expect(chef_run.node['registry']['log_directory'])
-      .to eql('/var/log/gitlab/registry')
-    expect(chef_run.node['gitlab']['gitlab-rails']['registry_path'])
+    expect(chef_run.node['gitlab']['gitlab_rails']['registry_path'])
       .to eql('/var/opt/gitlab/gitlab-rails/shared/registry')
 
     expect(chef_run).to create_directory('/var/opt/gitlab/registry')
-    expect(chef_run).to create_directory('/var/log/gitlab/registry').with(
-      owner: 'registry',
-      group: nil,
-      mode: '0700'
-    )
     expect(chef_run).to create_directory('/var/opt/gitlab/gitlab-rails/shared/registry').with(
       owner: 'registry',
       group: 'git',
@@ -69,13 +62,14 @@ RSpec.shared_examples 'enabled registry service' do
         expect(content).to match(/validation:\s*disabled: true$/)
         expect(content).not_to match(/^compatibility:/)
         expect(content).not_to match(/^middleware:/)
+        expect(content).not_to match(/^database:/)
       end
     )
   end
 
   it 'populates default settings for svlogd' do
     expect(chef_run).to render_file('/opt/gitlab/sv/registry/log/run')
-      .with_content(/exec svlogd -tt \/var\/log\/gitlab\/registry/)
+      .with_content(/svlogd -tt \/var\/log\/gitlab\/registry/)
   end
 
   it 'creates a default VERSION file and restarts service' do

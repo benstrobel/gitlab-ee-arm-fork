@@ -15,7 +15,7 @@
 #
 
 name 'acme-client'
-default_version '2.0.13'
+default_version '2.0.16'
 
 license 'MIT'
 license_file 'LICENSE.txt'
@@ -23,6 +23,7 @@ license_file 'LICENSE.txt'
 skip_transitive_dependency_licensing true
 
 dependency 'ruby'
+dependency 'rubygems'
 
 build do
   patch source: 'add-license-file.patch'

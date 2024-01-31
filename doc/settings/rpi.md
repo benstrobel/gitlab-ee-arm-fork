@@ -1,12 +1,14 @@
 ---
 stage: Systems
 group: Distribution
-info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://about.gitlab.com/handbook/product/ux/technical-writing/#assignments
+info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 ---
 
-# Running on a Raspberry Pi **(FREE SELF)**
+# Running on a Raspberry Pi
 
-> Debian Buster support was added in Omnibus GitLab 13.1.
+DETAILS:
+**Tier:** Free, Premium, Ultimate
+**Offering:** Self-managed
 
 In order to run GitLab Community Edition on a Raspberry Pi, you need the newest
 Pi 4 with at least 4GB of RAM for best results. You might be able to run GitLab
@@ -22,7 +24,7 @@ Even with a newer Pi, the first setting you will want to change is to ensure
 the device has enough memory available by expanding the swap space to 4GB.
 
 On Raspbian, swap can be configured in `/etc/dphys-swapfile`.
-See [the manpage](https://manpages.ubuntu.com/manpages/bionic/man8/dphys-swapfile.8.html#config) for available settings.
+See [the manpage](https://manpages.ubuntu.com/manpages/lunar/en/man8/dphys-swapfile.8.html) for available settings.
 
 ## Install GitLab
 

@@ -28,14 +28,53 @@ RSpec.describe 'gitlab-ee::geo-logcursor' do
   end
 
   describe 'when enabled' do
-    before do
-      stub_gitlab_rb(
-        geo_logcursor: {
-          enable: true,
-        }
-      )
+    context 'with default settings' do
+      before do
+        stub_gitlab_rb(
+          geo_logcursor: {
+            enable: true,
+          }
+        )
+      end
+
+      it_behaves_like 'enabled runit service', 'geo-logcursor', 'root', 'root'
     end
 
-    it_behaves_like 'enabled runit service', 'geo-logcursor', 'root', 'root'
+    context 'with user specified settings' do
+      before do
+        stub_gitlab_rb(
+          geo_logcursor: {
+            enable: true,
+          },
+          user: {
+            username: 'foo',
+            group: 'bar'
+          }
+        )
+      end
+
+      it_behaves_like 'enabled runit service', 'geo-logcursor', 'root', 'root', 'foo', 'bar'
+    end
+  end
+
+  context 'log directory and runit group' do
+    context 'default values' do
+      before do
+        stub_gitlab_rb(geo_logcursor: { enable: true })
+      end
+      it_behaves_like 'enabled logged service', 'geo-logcursor', true, { log_directory_owner: 'git' }
+    end
+
+    context 'custom values' do
+      before do
+        stub_gitlab_rb(
+          geo_logcursor: {
+            enable: true,
+            log_group: 'fugee'
+          }
+        )
+      end
+      it_behaves_like 'enabled logged service', 'geo-logcursor', true, { log_directory_owner: 'git', log_group: 'fugee' }
+    end
   end
 end

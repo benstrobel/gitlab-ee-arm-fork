@@ -1,5 +1,4 @@
 require 'spec_helper'
-require 'gitlab/build'
 require 'gitlab/deployer_helper'
 
 RSpec.describe DeployerHelper do
@@ -7,7 +6,7 @@ RSpec.describe DeployerHelper do
   describe '#trigger_deploy' do
     it 'triggers an auto deploy' do
       response = instance_double('response', body: JSON.dump(web_url: 'http://example.com'), status: 201)
-      allow(Build::Info).to receive(:docker_tag).and_return('some-version')
+      allow(Build::Info::Docker).to receive(:tag).and_return('some-version')
       expect(HTTP)
         .to receive(:post)
         .with(
@@ -27,7 +26,7 @@ RSpec.describe DeployerHelper do
       # Set this to zero so there we don't have delays during tests
       stub_const('DeployerHelper::TRIGGER_RETRY_INTERVAL', 0)
       response = instance_double('response', body: JSON.dump(web_url: 'http://example.com'), status: 401)
-      allow(Build::Info).to receive(:docker_tag).and_return('some-version')
+      allow(Build::Info::Docker).to receive(:tag).and_return('some-version')
       expect(HTTP)
         .to receive(:post)
         .with(

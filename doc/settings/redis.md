@@ -1,14 +1,18 @@
 ---
 stage: Systems
 group: Distribution
-info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://about.gitlab.com/handbook/product/ux/technical-writing/#assignments
+info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 ---
 
-# Configuring Redis **(FREE SELF)**
+# Configuring Redis
+
+DETAILS:
+**Tier:** Free, Premium, Ultimate
+**Offering:** Self-managed
 
 ## Using an alternate local Redis instance
 
-Omnibus GitLab includes Redis by default. To direct the GitLab
+Linux package installations include Redis by default. To direct the GitLab
 application to your own *locally* running Redis instance:
 
 1. Edit `/etc/gitlab/gitlab.rb`:
@@ -37,7 +41,7 @@ application to your own *locally* running Redis instance:
 ## Making the bundled Redis reachable via TCP
 
 Use the following settings if you want to make the Redis instance
-managed by Omnibus GitLab reachable via TCP:
+managed by the Linux package reachable via TCP:
 
 1. Edit `/etc/gitlab/gitlab.rb`:
 
@@ -52,11 +56,11 @@ managed by Omnibus GitLab reachable via TCP:
    sudo gitlab-ctl reconfigure
    ```
 
-## Setting up a Redis-only server using Omnibus GitLab
+## Setting up a Redis-only server using the Linux package
 
 If you'd like to set up Redis in a separate server than the GitLab application,
 you can use the
-[bundled Redis in Omnibus GitLab](https://docs.gitlab.com/ee/administration/redis/standalone.html).
+[bundled Redis from a Linux package installation](https://docs.gitlab.com/ee/administration/redis/standalone.html).
 
 ## Running with multiple Redis instances
 
@@ -103,7 +107,7 @@ redis['tcp_timeout'] = "60"
 redis['tcp_keepalive'] = "300"
 ```
 
-## Announce ip from hostname
+## Announce IP from hostname
 
 Currently the only way to enable hostnames in Redis is by setting `redis['announce_ip']`. However,
 this would need to be set uniquely per Redis instance. `announce_ip_from_hostname` is a boolean that allows us to turn this on or off.
@@ -227,6 +231,10 @@ redis['io_threads'] = 4
 redis['io_threads_do_reads'] = true
 ```
 
+## Provide sensitive configuration to Redis clients without plain text storage
+
+For more information, see the example in [configuration documentation](../settings/configuration.md#provide-redis-password-to-client-components).
+
 ## Troubleshooting
 
 ### `x509: certificate signed by unknown authority`
@@ -272,7 +280,7 @@ troubleshoot this error:
    gitlab_rails['redis_password'] = 'your-password-here'
    ```
 
-1. If you are using the Omnibus-provided Redis server, check that the server has the same password:
+1. If you are using the Linux package-provided Redis server, check that the server has the same password:
 
    ```ruby
    redis['password'] = 'your-password-here'

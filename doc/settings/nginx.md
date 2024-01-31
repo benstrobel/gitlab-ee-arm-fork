@@ -1,10 +1,14 @@
 ---
 stage: Systems
 group: Distribution
-info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://about.gitlab.com/handbook/product/ux/technical-writing/#assignments
+info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 ---
 
-# NGINX settings **(FREE SELF)**
+# NGINX settings
+
+DETAILS:
+**Tier:** Free, Premium, Ultimate
+**Offering:** Self-managed
 
 ## Service-specific NGINX settings
 
@@ -34,7 +38,7 @@ or incompatible configuration may yield to unavailability of service.
 
 ## Enable HTTPS
 
-By default, Omnibus GitLab does not use HTTPS. If you want to enable HTTPS for
+By default, Linux package installations do not use HTTPS. If you want to enable HTTPS for
 `gitlab.example.com`, you can:
 
 - [Use Let's Encrypt for free, automated HTTPS](ssl/index.md#enable-the-lets-encrypt-integration).
@@ -46,10 +50,10 @@ see [External, proxy, and load balancer SSL termination](ssl/index.md#configure-
 
 ## Change the default proxy headers
 
-By default, when you specify `external_url` Omnibus GitLab will set a few
+By default, when you specify `external_url`, a Linux package installation sets a few
 NGINX proxy headers that are assumed to be sane in most environments.
 
-For example, Omnibus GitLab will set:
+For example, a Linux package installation sets:
 
 ```plaintext
   "X-Forwarded-Proto" => "https",
@@ -100,7 +104,7 @@ Description of the options:
 
 - <http://nginx.org/en/docs/http/ngx_http_realip_module.html>
 
-By default, Omnibus GitLab will use the IP addresses in `real_ip_trusted_addresses`
+By default, Linux package installations use the IP addresses in `real_ip_trusted_addresses`
 as GitLab trusted proxies, which will keep users from being listed as signed
 in from those IPs.
 
@@ -130,8 +134,8 @@ Ensure to also adjust any other environments you might have, like monitoring che
 
 ## Using a non-bundled web-server
 
-By default, Omnibus GitLab installs GitLab with bundled NGINX.
-Omnibus GitLab allows webserver access through the `gitlab-www` user, which resides
+By default, the Linux package installs GitLab with bundled NGINX.
+Linux package installations allow webserver access through the `gitlab-www` user, which resides
 in the group with the same name. To allow an external webserver access to
 GitLab, the external webserver user needs to be added to the `gitlab-www` group.
 
@@ -148,12 +152,13 @@ will have to perform the following steps:
 
 1. **Set the username of the non-bundled web-server user**
 
-   By default, Omnibus GitLab has no default setting for the external webserver
+   By default, Linux package installations have no default setting for the external webserver
    user, you have to specify it in the configuration. For Debian/Ubuntu the
    default user is `www-data` for both Apache/NGINX whereas for RHEL/CentOS
    the NGINX user is `nginx`.
 
-   Make sure you have first installed Apache/NGINX so the webserver user is created, otherwise omnibus will fail while reconfiguring.
+   Make sure you have first installed Apache/NGINX so the webserver user is created, otherwise a Linux package installation
+   fails while reconfiguring.
 
    Let's say for example that the webserver user is `www-data`.
    In `/etc/gitlab/gitlab.rb` set:
@@ -172,7 +177,7 @@ will have to perform the following steps:
 
 1. **Add the non-bundled web-server to the list of trusted proxies**
 
-   Normally, Omnibus GitLab defaults the list of trusted proxies to what was
+   Normally, Linux package installations default the list of trusted proxies to what was
    configured in the `real_ip` module for the bundled NGINX.
 
    For non-bundled web-servers the list needs to be configured directly, and should
@@ -196,14 +201,15 @@ will have to perform the following steps:
 
    Run `sudo gitlab-ctl reconfigure` for the change to take effect.
 
-1. **Download the right web server configs**
+1. **Download the correct web server configuration**
 
-   Go to [GitLab recipes repository](https://gitlab.com/gitlab-org/gitlab-recipes/tree/master/web-server) and look for the omnibus
-   configs in the webserver directory of your choice. Make sure you pick the
-   right configuration file depending whether you choose to serve GitLab with
-   SSL or not. The only thing you need to change is `YOUR_SERVER_FQDN` with
-   your own FQDN and if you use SSL, the location where your SSL keys currently
-   reside. You also might need to change the location of your log files.
+   Go to [GitLab repository](https://gitlab.com/gitlab-org/gitlab/-/tree/master/lib/support/nginx) and download
+   the required configuration. Select the correct configuration file depending whether you are serving GitLab with
+   SSL or not. You might need to make some changes, such as:
+
+   - The value of `YOUR_SERVER_FQDN` set to your FQDN.
+   - If you use SSL, the location of your SSL keys.
+   - The location of your log files.
 
 ## Setting the NGINX listen address or addresses
 
@@ -334,6 +340,7 @@ This inserts the defined string into the end of the `server` block of
 
   ```conf
   proxy_cache off;
+  proxy_http_version 1.1;
   proxy_pass http://gitlab-workhorse;
   ```
 
@@ -350,14 +357,30 @@ existing server blocks, you can use the following setting.
 
 ```ruby
 # Example: include a directory to scan for additional config files
-nginx['custom_nginx_config'] = "include /etc/nginx/conf.d/*.conf;"
+nginx['custom_nginx_config'] = "include /etc/gitlab/nginx/sites-enabled/*.conf;"
 ```
 
+You should create custom server blocks in the `/etc/gitlab/nginx/sites-available` directory. To enable them, symlink them into the
+`/etc/gitlab/nginx/sites-enabled` directory:
+
+1. Create the `/etc/gitlab/nginx/sites-enabled` directory.
+1. Run the following command:
+
+   ```shell
+   sudo ln -s /etc/gitlab/nginx/sites-available/example.conf /etc/gitlab/nginx/sites-enabled/example.conf 
+   ```
+
+You can add domains for server blocks [as an alternative name](ssl/index.md#add-alternative-domains-to-the-certificate)
+to the generated Let's Encrypt SSL certificate.
+
 Run `gitlab-ctl reconfigure` to rewrite the NGINX configuration and restart
-NGINX.
+NGINX. You must reload NGINX (`gitlab-ctl hup nginx`) or restart NGINX (`gitlab-ctl restart nginx`) whenever you make changes to the custom server blocks.
 
 This inserts the defined string into the end of the `http` block of
 `/var/opt/gitlab/nginx/conf/nginx.conf`.
+
+Custom NGINX settings inside the `/etc/gitlab/` directory are backed up to `/etc/gitlab/config_backup/`
+during an upgrade and when `sudo gitlab-ctl backup-etc` is manually executed.
 
 ## Custom error pages
 
@@ -387,12 +410,11 @@ NGINX.
 
 In some cases you may want to host GitLab using an existing Passenger/NGINX
 installation but still have the convenience of updating and installing using
-the omnibus packages.
+the Linux packages.
 
 NOTE:
-When disabling NGINX, you won't be able to access
-other services included by Omnibus, like Grafana, Mattermost, etc. unless
-you manually add them in `nginx.conf`.
+When disabling NGINX, you won't be able to access other services included in a Linux package installation such as
+Mattermost unless you manually add them in `nginx.conf`.
 
 ### Configuration
 
@@ -531,6 +553,7 @@ server {
     proxy_set_header    X-Forwarded-For     $proxy_add_x_forwarded_for;
     proxy_set_header    X-Forwarded-Proto   $scheme;
 
+    proxy_http_version 1.1;
     proxy_pass http://gitlab-workhorse;
 
     ## The following settings only work with NGINX 1.7.11 or newer
@@ -552,11 +575,6 @@ server {
     add_header Cache-Control public;
   }
 
-  ## To access Grafana
-  location /-/grafana/ {
-    proxy_pass http://localhost:3000/;
-  }
-
   error_page 502 /502.html;
 }
 ```
@@ -572,7 +590,7 @@ to do so simply uncomment:
 
 Then run `sudo service nginx reload`.
 
-## Enabling/Disabling nginx_status
+## Enabling/Disabling `nginx_status`
 
 By default you will have an NGINX health-check endpoint configured at `127.0.0.1:8060/nginx_status` to monitor your NGINX server status.
 
@@ -650,7 +668,7 @@ Make sure you don't have the `proxy_set_header` configuration in
 
 ### `javax.net.ssl.SSLHandshakeException: Received fatal alert: handshake_failure`
 
-Starting with GitLab 10, the Omnibus GitLab package no longer supports TLSv1 protocol by default.
+Linux package installations don't support TLSv1 protocol by default.
 This can cause connection issues with some older Java based IDE clients when interacting with
 your GitLab instance.
 We strongly urge you to upgrade ciphers on your server, similar to what was mentioned
@@ -688,7 +706,7 @@ sudo gitlab-ctl hup nginx
 
 If you see `Request Entity Too Large` in the [NGINX logs](https://docs.gitlab.com/ee/administration/logs/index.html#nginx-logs),
 you will need to increase the [Client Max Body Size](http://nginx.org/en/docs/http/ngx_http_core_module.html#client_max_body_size).
-You may encounter this error if you have increased the [Max import size](https://docs.gitlab.com/ee/user/admin_area/settings/account_and_limit_settings.html#max-import-size).
+You may encounter this error if you have increased the [Max import size](https://docs.gitlab.com/ee/administration/settings/account_and_limit_settings.html#max-import-size).
 In a Kubernetes-based GitLab installation, this setting is
 [named differently](https://docs.gitlab.com/charts/charts/gitlab/webservice/#proxybodysize).
 
@@ -772,3 +790,21 @@ If you get this error, check your NGINX configuration file if you have a trailin
    ```shell
    sudo systemctl restart nginx
    ```
+
+### GitLab is presenting 502 errors and `worker_connections are not enough` in logs
+
+If you get a `worker_connections are not enough` error in the logs, configure the NGINX worker connections to a higher value:
+
+1. Edit `/etc/gitlab/gitlab.rb`:
+
+   ```ruby
+   gitlab['nginx']['worker_connections'] = 10240
+   ```
+
+1. Reconfigure GitLab:
+
+   ```shell
+   sudo gitlab-ctl reconfigure
+   ```
+
+The default value is [10240 connections](https://gitlab.com/gitlab-org/omnibus-gitlab/-/blob/86f98401113eb843658b63d45d58be8b706216f3/files/gitlab-cookbooks/gitlab/attributes/default.rb#L750).

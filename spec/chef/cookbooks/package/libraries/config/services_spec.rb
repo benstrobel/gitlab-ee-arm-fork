@@ -204,13 +204,13 @@ RSpec.describe Services do
 
         Services.enable_group('rails')
         expect(node['gitlab']['puma']['enable']).to be true
-        expect(node['monitoring']['gitlab-exporter']['enable']).to be true
+        expect(node['monitoring']['gitlab_exporter']['enable']).to be true
       end
 
       it 'supports exceptions' do
         Services.disable_group('monitoring')
         Services.enable_group('rails', except: 'monitoring')
-        expect(node['monitoring']['gitlab-exporter']['enable']).to be false
+        expect(node['monitoring']['gitlab_exporter']['enable']).to be false
         expect(node['gitlab']['puma']['enable']).to be true
 
         Services.enable_group('monitoring')
@@ -237,13 +237,13 @@ RSpec.describe Services do
         Services.enable_group('redis', 'rails', except: 'monitoring')
         expect(node['redis']['enable']).to be true
         expect(node['gitlab']['puma']['enable']).to be true
-        expect(node['monitoring']['gitlab-exporter']['enable']).to be false
+        expect(node['monitoring']['gitlab_exporter']['enable']).to be false
         expect(node['monitoring']['redis_exporter']['enable']).to be false
 
         Services.enable_group('postgres')
         Services.disable_group('redis', 'monitoring', except: 'postgres')
         expect(node['redis']['enable']).to be false
-        expect(node['monitoring']['postgres-exporter']['enable']).to be true
+        expect(node['monitoring']['postgres_exporter']['enable']).to be true
         expect(node['monitoring']['prometheus']['enable']).to be false
       end
 
@@ -256,10 +256,10 @@ RSpec.describe Services do
 
         Services.enable_group('sidekiq', 'monitoring')
         Services.disable_group('rails', 'postgres', except: %w(sidekiq monitoring))
-        expect(node['gitlab']['gitlab-workhorse']['enable']).to be false
+        expect(node['gitlab']['gitlab_workhorse']['enable']).to be false
         expect(node['gitlab']['sidekiq']['enable']).to be true
         expect(node['postgresql']['enable']).to be false
-        expect(node['monitoring']['postgres-exporter']['enable']).to be true
+        expect(node['monitoring']['postgres_exporter']['enable']).to be true
       end
 
       it 'ignores disable on system services' do
@@ -282,13 +282,13 @@ RSpec.describe Services do
         Services.disable_group('monitoring')
         Services.enable_group(Services::ALL_GROUPS, except: 'monitoring')
         expect(node['gitlab']['puma']['enable']).to be true
-        expect(node['monitoring']['gitlab-exporter']['enable']).to be false
+        expect(node['monitoring']['gitlab_exporter']['enable']).to be false
       end
 
       it 'disables all others' do
         Services.enable_group('monitoring')
         Services.disable_group(Services::ALL_GROUPS, except: 'monitoring')
-        expect(node['monitoring']['postgres-exporter']['enable']).to be true
+        expect(node['monitoring']['postgres_exporter']['enable']).to be true
         expect(node['postgresql']['enable']).to be false
       end
     end

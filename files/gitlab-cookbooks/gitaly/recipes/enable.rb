@@ -16,9 +16,10 @@
 #
 account_helper = AccountHelper.new(node)
 omnibus_helper = OmnibusHelper.new(node)
+logfiles_helper = LogfilesHelper.new(node)
+logging_settings = logfiles_helper.logging_settings('gitaly')
 
 working_dir = node['gitaly']['dir']
-log_directory = node.dig('gitaly', 'configuration', 'logging', 'dir')
 env_directory = node['gitaly']['env_directory']
 config_path = File.join(working_dir, "config.toml")
 gitaly_path = node['gitaly']['bin_path']
@@ -29,6 +30,7 @@ open_files_ulimit = node['gitaly']['open_files_ulimit']
 runtime_dir = node.dig('gitaly', 'configuration', 'runtime_dir')
 cgroups_mountpoint = node.dig('gitaly', 'configuration', 'cgroups', 'mountpoint')
 cgroups_hierarchy_root = node.dig('gitaly', 'configuration', 'cgroups', 'hierarchy_root')
+use_wrapper = node['gitaly']['use_wrapper']
 
 directory working_dir do
   owner account_helper.gitlab_user
@@ -42,9 +44,12 @@ directory runtime_dir do
   recursive true
 end
 
-directory log_directory do
-  owner account_helper.gitlab_user
-  mode '0700'
+directory logging_settings[:log_directory] do
+  owner logging_settings[:log_directory_owner]
+  mode logging_settings[:log_directory_mode]
+  if log_group = logging_settings[:log_directory_group]
+    group log_group
+  end
   recursive true
 end
 
@@ -97,7 +102,7 @@ template "Create Gitaly config.toml" do
           gitlab: {
             url: gitlab_url,
             relative_url_root: gitlab_relative_path,
-            'http-settings': node.dig('gitlab', 'gitlab-shell', 'http_settings')
+            'http-settings': node.dig('gitlab', 'gitlab_shell', 'http_settings')
           }.compact,
 
           # These options below were historically hard coded values in the template. They
@@ -116,11 +121,6 @@ template "Create Gitaly config.toml" do
               dir: '/opt/gitlab/embedded/service/gitlab-shell'
             }
           ),
-          'gitaly-ruby': (node.dig('gitaly', 'configuration', 'gitaly-ruby') || {}).merge(
-            {
-              dir: '/opt/gitlab/embedded/service/gitaly-ruby'
-            }
-          )
         }
       )
     }
@@ -139,13 +139,16 @@ runit_service 'gitaly' do
     bin_path: gitaly_path,
     wrapper_path: wrapper_path,
     config_path: config_path,
-    log_directory: log_directory,
+    log_directory: logging_settings[:log_directory],
+    log_user: logging_settings[:runit_owner],
+    log_group: logging_settings[:runit_group],
     json_logging: json_logging,
     open_files_ulimit: open_files_ulimit,
     cgroups_mountpoint: cgroups_mountpoint,
     cgroups_hierarchy_root: cgroups_hierarchy_root,
+    use_wrapper: use_wrapper,
   }.merge(params))
-  log_options node['gitlab']['logging'].to_hash.merge(node['gitaly'].to_hash)
+  log_options logging_settings[:options]
 end
 
 if node['gitlab']['bootstrap']['enable']
@@ -157,13 +160,6 @@ end
 version_file 'Create version file for Gitaly' do
   version_file_path File.join(working_dir, 'VERSION')
   version_check_cmd "/opt/gitlab/embedded/bin/ruby -rdigest/sha2 -e 'puts %(sha256:) + Digest::SHA256.file(%(/opt/gitlab/embedded/bin/gitaly)).hexdigest'"
-  notifies :hup, "runit_service[gitaly]"
-end
-
-# If a version of ruby changes restart gitaly-ruby
-version_file 'Create Ruby version file for Gitaly' do
-  version_file_path File.join(working_dir, 'RUBY_VERSION')
-  version_check_cmd '/opt/gitlab/embedded/bin/ruby --version'
   notifies :hup, "runit_service[gitaly]"
 end
 

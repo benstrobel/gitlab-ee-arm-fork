@@ -1,3 +1,9 @@
+require_relative 'gitlab_image'
+require_relative 'info/docker'
+require_relative 'info/git'
+require_relative 'info/package'
+require_relative 'info/qa'
+
 module Build
   class Facts
     class << self
@@ -12,7 +18,7 @@ module Build
           :latest_stable_tag,
           :latest_tag
         ].each do |fact|
-          content = Build::Info.send(fact) # rubocop:disable GitlabSecurity/PublicSend
+          content = Build::Info::Git.send(fact) # rubocop:disable GitlabSecurity/PublicSend
           File.write("build_facts/#{fact}", content) unless content.nil?
         end
       end
@@ -63,24 +69,22 @@ module Build
           BUILDER_IMAGE_REGISTRY=#{Gitlab::Util.get_env('BUILDER_IMAGE_REGISTRY')}
           PUBLIC_BUILDER_IMAGE_REGISTRY=#{Gitlab::Util.get_env('PUBLIC_BUILDER_IMAGE_REGISTRY')}
           COMPILE_ASSETS=#{Gitlab::Util.get_env('COMPILE_ASSETS') || 'false'}
-          EDITION=#{Build::Info.edition.upcase}
+          EDITION=#{Build::Info::Package.edition.upcase}
           ee=#{Build::Check.is_ee? || 'false'}
         ]
       end
 
       def qa_trigger_vars
         %W[
-          QA_BRANCH=#{Gitlab::Util.get_env('QA_BRANCH') || 'master'}
-          QA_RELEASE=#{Build::GitlabImage.gitlab_registry_image_address(tag: Build::Info.docker_tag)}
-          QA_IMAGE=#{Build::Info.qa_image}
+          QA_RELEASE=#{Build::GitlabImage.gitlab_registry_image_address(tag: Build::Info::Docker.tag)}
+          QA_IMAGE=#{Build::Info::QA.image}
           QA_TESTS=#{Gitlab::Util.get_env('QA_TESTS')}
-          ALLURE_JOB_NAME=#{Gitlab::Util.get_env('ALLURE_JOB_NAME')}
-          GITLAB_QA_OPTIONS=#{Gitlab::Util.get_env('GITLAB_QA_OPTIONS')}
-          KNAPSACK_GENERATE_REPORT=#{generate_knapsack_report?}
+          ALLURE_JOB_NAME=#{allure_job_name}-#{Build::Info::Package.edition}
+          GITLAB_SEMVER_VERSION=#{Build::Info::Git.latest_stable_tag.tr('+', '-')}
           RAT_REFERENCE_ARCHITECTURE=#{Gitlab::Util.get_env('RAT_REFERENCE_ARCHITECTURE') || 'omnibus-gitlab-mrs'}
           RAT_FIPS_REFERENCE_ARCHITECTURE=#{Gitlab::Util.get_env('RAT_FIPS_REFERENCE_ARCHITECTURE') || 'omnibus-gitlab-mrs-fips-ubuntu'}
-          RAT_PACKAGE_URL=#{Gitlab::Util.get_env('PACKAGE_URL') || Build::Info.triggered_build_package_url(fips: false)}
-          RAT_FIPS_PACKAGE_URL=#{Gitlab::Util.get_env('FIPS_PACKAGE_URL') || Build::Info.triggered_build_package_url(fips: true)}
+          RAT_PACKAGE_URL=#{Gitlab::Util.get_env('PACKAGE_URL') || Build::Info::CI.triggered_package_download_url(fips: false)}
+          RAT_FIPS_PACKAGE_URL=#{Gitlab::Util.get_env('FIPS_PACKAGE_URL') || Build::Info::CI.triggered_package_download_url(fips: true)}
         ]
       end
 
@@ -96,8 +100,8 @@ module Build
 
       private
 
-      def generate_knapsack_report?
-        (upstream_project == "gitlab-org/gitlab" && upstream_ref == "master").to_s
+      def allure_job_name
+        (upstream_project || Gitlab::Util.get_env('CI_PROJECT_NAME')).split('/').last
       end
 
       def upstream_project

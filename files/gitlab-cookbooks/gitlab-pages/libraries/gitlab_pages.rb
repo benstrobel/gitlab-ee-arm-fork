@@ -17,6 +17,7 @@
 
 require_relative '../../gitlab/libraries/helpers/authorizer_helper'
 require_relative '../../package/libraries/helpers/shell_out_helper'
+require_relative '../../package/libraries/helpers/logging_helper'
 
 module GitlabPages
   class << self
@@ -26,7 +27,10 @@ module GitlabPages
     def parse_variables
       parse_pages_external_url
       parse_gitlab_pages_daemon
-      parse_secrets
+      # Only call parse_secrets when not generating a defaults secrets file.
+      parse_secrets unless Gitlab['node'][SecretsHelper::SECRETS_FILE_CHEF_ATTR]
+      parse_automatic_oauth_registration
+      parse_namespace_in_path
     end
 
     def parse_pages_external_url
@@ -109,15 +113,55 @@ module GitlabPages
       Gitlab['gitlab_pages']['auth_secret'] ||= SecretsHelper.generate_hex(64) if Gitlab['gitlab_pages']['access_control']
       Gitlab['gitlab_pages']['gitlab_id'] ||= SecretsHelper.generate_urlsafe_base64
       Gitlab['gitlab_pages']['gitlab_secret'] ||= SecretsHelper.generate_urlsafe_base64
+      Gitlab['gitlab_pages']['api_secret_key'] ||= Base64.strict_encode64(SecureRandom.random_bytes(32))
+    end
+
+    def validate_secrets
+      return unless Gitlab['gitlab_pages']['api_secret_key']
 
       # Pages and GitLab expects exactly 32 bytes, encoded with base64
-      if Gitlab['gitlab_pages']['api_secret_key']
-        bytes = Base64.strict_decode64(Gitlab['gitlab_pages']['api_secret_key'])
-        raise "gitlab_pages['api_secret_key'] should be exactly 32 bytes" if bytes.length != 32
-      else
-        bytes = SecureRandom.random_bytes(32)
-        Gitlab['gitlab_pages']['api_secret_key'] = Base64.strict_encode64(bytes)
-      end
+      bytes = Base64.strict_decode64(Gitlab['gitlab_pages']['api_secret_key'])
+      raise "gitlab_pages['api_secret_key'] should be exactly 32 bytes" if bytes.length != 32
+    end
+
+    def parse_automatic_oauth_registration
+      # If GitLab Pages isn't enabled, do nothing.
+      return unless Gitlab['gitlab_pages']['enable']
+
+      # If writing to gitlab-secrets.json file is not explicitly disabled, do
+      # nothing.
+      return if Gitlab['package']['generate_secrets_json_file'] != false
+
+      Gitlab['gitlab_pages']['register_as_oauth_app'] = false
+
+      LoggingHelper.warning("Writing secrets to `gitlab-secrets.json` file is disabled. Hence, not automatically registering GitLab Pages as an Oauth App. So, GitLab SSO will not be available as a login option.")
+    end
+
+    def parse_namespace_in_path
+      # If GitLab Pages isn't enabled or namespace_in_path is isn't enabled, do nothing.
+      return unless Gitlab['gitlab_pages']['enable'] && Gitlab['gitlab_pages']['namespace_in_path']
+
+      Gitlab['pages_nginx']['namespace_in_path'] = Gitlab['gitlab_pages']['namespace_in_path']
+      url_scheme = Gitlab['gitlab_rails']['pages_https'] ? 'https' : 'http'
+
+      pages_port = Gitlab['gitlab_rails']['pages_port']
+      # Add the following when pages_port is not 80 or 443
+      Gitlab['pages_nginx']['proxy_redirect'] =
+        if [80, 443].include?(pages_port)
+          {
+            "~^#{url_scheme}://(projects\\.#{Gitlab['pages_nginx']['fqdn_regex']})/(.*)$" => "#{url_scheme}://$1/$2",
+            "~^#{url_scheme}://(.*)\\.(#{Gitlab['pages_nginx']['fqdn_regex']})/(.*)$" => "#{url_scheme}://$2/$1/$3",
+            "~^//(.*)\\.(#{Gitlab['pages_nginx']['fqdn_regex']})/(.*)$" => "/$1/$3",
+            "~^/(.*)$" => "/$namespace/$1",
+          }
+        else
+          {
+            "~^#{url_scheme}://(projects\\.#{Gitlab['pages_nginx']['fqdn_regex']}:#{pages_port})/(.*)$" => "#{url_scheme}://$1/$2",
+            "~^#{url_scheme}://(.*)\\.(#{Gitlab['pages_nginx']['fqdn_regex']}:#{pages_port})/(.*)$" => "#{url_scheme}://$2/$1/$3",
+            "~^//(.*)\\.(#{Gitlab['pages_nginx']['fqdn_regex']}:#{pages_port})/(.*)$" => "/$1/$3",
+            "~^/(.*)$" => "/$namespace/$1",
+          }
+        end
     end
   end
 end

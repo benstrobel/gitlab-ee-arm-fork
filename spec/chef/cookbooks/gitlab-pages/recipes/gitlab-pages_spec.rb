@@ -45,10 +45,6 @@ RSpec.describe 'gitlab::gitlab-pages' do
       expect(chef_run).to render_file("/opt/gitlab/sv/gitlab-pages/run").with_content(%r{-config="/var/opt/gitlab/gitlab-pages/gitlab-pages-config"})
     end
 
-    it 'renders the pages log run file' do
-      expect(chef_run).to render_file("/opt/gitlab/sv/gitlab-pages/log/run").with_content(%r{exec svlogd /var/log/gitlab/gitlab-pages})
-    end
-
     it 'deletes old admin.secret file' do
       expect(chef_run).to delete_file("/var/opt/gitlab/gitlab-pages/admin.secret")
     end
@@ -151,6 +147,28 @@ RSpec.describe 'gitlab::gitlab-pages' do
           }
         end
       end
+
+      context 'when generating gitlab-secrets.json file is disabled' do
+        before do
+          stub_gitlab_rb(
+            package: {
+              generate_secrets_json_file: false
+            }
+          )
+
+          allow(LoggingHelper).to receive(:warning).and_call_original
+        end
+
+        it 'does not register as an oauth app with GitLab' do
+          expect(chef_run).not_to run_ruby_block('authorize pages with gitlab')
+        end
+
+        it 'displays a warning about disabling automatic oauth registration' do
+          expect(LoggingHelper).to receive(:warning).with(/not automatically registering GitLab Pages as an Oauth App/)
+
+          chef_run
+        end
+      end
     end
 
     context 'with custom port' do
@@ -196,6 +214,7 @@ RSpec.describe 'gitlab::gitlab-pages' do
             auth_secret: 'auth_secret',
             auth_redirect_uri: 'https://projects.pages.example.com/auth',
             auth_scope: 'read_api',
+            auth_timeout: '10s',
             auth_cookie_session_timeout: '20m',
             access_control: true,
             insecure_ciphers: true,
@@ -236,6 +255,7 @@ RSpec.describe 'gitlab::gitlab-pages' do
             redirects_max_path_segments: 50,
             redirects_max_rule_count: 2000,
             enable_disk: true,
+            namespace_in_path: true,
             env: {
               GITLAB_CONTINUOUS_PROFILING: "stackdriver?service=gitlab-pages",
             },
@@ -253,6 +273,7 @@ RSpec.describe 'gitlab::gitlab-pages' do
             auth-client-secret=app_secret
             auth-secret=auth_secret
             auth-scope=read_api
+            auth-timeout=10s
             auth-cookie-session-timeout=20m
             zip-cache-expiration=120s
             zip-cache-cleanup=1m
@@ -309,6 +330,7 @@ RSpec.describe 'gitlab::gitlab-pages' do
             redirects-max-path-segments=50
             redirects-max-rule-count=2000
             header=X-XSS-Protection: 1; mode=block;;X-Content-Type-Options: nosniff;;Test: Header
+            namespace-in-path=true
         EOS
 
         expect(chef_run).to render_file("/var/opt/gitlab/pages/gitlab-pages-config").with_content(expected_content)
@@ -322,22 +344,21 @@ RSpec.describe 'gitlab::gitlab-pages' do
       end
     end
 
-    describe 'logrotate settings' do
+    context 'log directory and runit group' do
       context 'default values' do
-        it_behaves_like 'configured logrotate service', 'gitlab-pages', 'git', 'git'
+        it_behaves_like 'enabled logged service', 'gitlab-pages', true, { log_directory_owner: 'git' }
       end
 
-      context 'specified username and group' do
+      context 'custom values' do
         before do
           stub_gitlab_rb(
-            user: {
-              username: 'foo',
-              group: 'bar'
+            gitlab_pages: {
+              log_group: 'fugee'
             }
           )
         end
-
-        it_behaves_like 'configured logrotate service', 'gitlab-pages', 'foo', 'bar'
+        it_behaves_like 'configured logrotate service', 'gitlab-pages', 'git', 'fugee'
+        it_behaves_like 'enabled logged service', 'gitlab-pages', true, { log_directory_owner: 'git', log_group: 'fugee' }
       end
     end
   end

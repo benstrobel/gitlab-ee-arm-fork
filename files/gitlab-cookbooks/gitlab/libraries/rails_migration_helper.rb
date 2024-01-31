@@ -8,7 +8,7 @@ class RailsMigrationHelper
   def initialize(node)
     @node = node
     @status_file_prefix = 'db-migrate'
-    @attributes_node = node['gitlab']['gitlab-rails']
+    @attributes_node = node['gitlab']['gitlab_rails']
   end
 
   def migrated?
@@ -17,7 +17,7 @@ class RailsMigrationHelper
 
   def db_migrate_status_file
     @db_migrate_status_file ||= begin
-      upgrade_status_dir = ::File.join(node['gitlab']['gitlab-rails']['dir'], 'upgrade-status')
+      upgrade_status_dir = ::File.join(node['gitlab']['gitlab_rails']['dir'], 'upgrade-status')
       ::File.join(upgrade_status_dir, "#{status_file_prefix}-#{connection_digest}-#{revision}")
     end
   end
@@ -40,6 +40,11 @@ class RailsMigrationHelper
       db_port
       db_socket
     ).collect { |attribute| attributes_node[attribute] }
+
+    # To trigger a db:migrate run when new databases are introduced, so that
+    # those schema is populated in them.
+    database_names = attributes_node['databases']&.select { |_, details| details['enable'] }&.keys
+    connection_attributes << database_names if database_names
 
     Digest::MD5.hexdigest(Marshal.dump(connection_attributes))
   end
