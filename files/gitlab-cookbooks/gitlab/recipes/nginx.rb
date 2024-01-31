@@ -383,9 +383,7 @@ bash 'generate dhparams.pem' do
   action
   only_if { generate_dhparam }
 
-  if node['gitlab']['nginx']['ssl_dhparam_use_dsa']
-    environment 'DHPARAM_USE_DSA' => "true"
-  end
+  environment 'DHPARAM_USE_DSA' => "true" if node['gitlab']['nginx']['ssl_dhparam_use_dsa']
 
   code <<~EOS
   set -e
