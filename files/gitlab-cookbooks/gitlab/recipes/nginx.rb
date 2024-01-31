@@ -376,7 +376,7 @@ if nginx_vars.key?('custom_error_pages')
 end
 
 dhparam_file = node['gitlab']['nginx']['ssl_dhparam'] || "/etc/gitlab/ssl/dhparams.pem"
-generate_dhparam = node['gitlab']['nginx']['ssl_generate_dhparam'] and not File.exists?(dhparam_file)
+generate_dhparam = node['gitlab']['nginx']['ssl_generate_dhparam'] && !File.exist?(dhparam_file)
 dhparam_bits = node['gitlab']['nginx']['ssl_dhparam_bits']
 
 bash 'generate dhparams.pem' do
