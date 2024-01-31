@@ -890,13 +890,16 @@ default['gitlab']['nginx']['ssl_verify_client'] = nil # do not enable 2-way SSL 
 default['gitlab']['nginx']['ssl_verify_depth'] = "1" # n/a if ssl_verify_client off
 default['gitlab']['nginx']['ssl_certificate'] = "/etc/gitlab/ssl/#{node['fqdn']}.crt"
 default['gitlab']['nginx']['ssl_certificate_key'] = "/etc/gitlab/ssl/#{node['fqdn']}.key"
-default['gitlab']['nginx']['ssl_ciphers'] = "ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384" # Only used when nginx['ssl_protocols'] contains something else than TLSv1.3
+default['gitlab']['nginx']['ssl_ciphers'] = "ECDHE:DHE:!ARIA:!CAMELLIA:!SHA1:!SHA256:!SHA384:@STRENGTH"
 default['gitlab']['nginx']['ssl_prefer_server_ciphers'] = "off" # settings from by https://ssl-config.mozilla.org/#server=nginx&version=1.17.7&config=intermediate&openssl=1.1.1d&ocsp=false&guideline=5.6
-default['gitlab']['nginx']['ssl_protocols'] = "TLSv1.3"
+default['gitlab']['nginx']['ssl_protocols'] = "TLSv1.2 TLSv1.3" # recommended by https://raymii.org/s/tutorials/Strong_SSL_Security_On_nginx.html & https://cipherli.st/
 default['gitlab']['nginx']['ssl_session_cache'] = "shared:SSL:10m"
 default['gitlab']['nginx']['ssl_session_tickets'] = "off"
 default['gitlab']['nginx']['ssl_session_timeout'] = "1d" # settings from by https://ssl-config.mozilla.org/#server=nginx&version=1.17.7&config=intermediate&openssl=1.1.1d&ocsp=false&guideline=5.6
-default['gitlab']['nginx']['ssl_dhparam'] = nil # Path to dhparam.pem, unnecessary if ssl_protocols is onyl TLSv1.3, use settings from https://ssl-config.mozilla.org/#server=nginx&version=1.17.7&config=intermediate&openssl=1.1.1d&ocsp=false&guideline=5.6 otherwise
+default['gitlab']['nginx']['ssl_generate_dhparams'] = true
+default['gitlab']['nginx']['ssl_dhparam'] = nil # Path to dhparams.pem, eg. /etc/gitlab/ssl/dhparams.pem
+default['gitlab']['nginx']['ssl_dhparam_bits'] = 4096 # 1024, 2048, or 4096 bits
+default['gitlab']['nginx']['ssl_dhparam_use_dsa'] = true # generate using DSA (faster)
 default['gitlab']['nginx']['ssl_password_file'] = nil
 default['gitlab']['nginx']['listen_addresses'] = ['*']
 default['gitlab']['nginx']['listen_port'] = nil # override only if you have a reverse proxy

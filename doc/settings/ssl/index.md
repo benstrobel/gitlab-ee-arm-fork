@@ -466,18 +466,15 @@ To change the SSL ciphers:
    sudo gitlab-ctl reconfigure
    ```
 
-To enable the `ssl_dhparam` directive:
+## Use custom DH parameters
 
-1. Generate `dhparams.pem`:
-
-   ```shell
-   openssl dhparam -out /etc/gitlab/ssl/dhparams.pem 2048
-   ```
+A `dhparams.pem` is generated during installation. To change the `dhparams.pem` in
+use:
 
 1. Edit `/etc/gitlab/gitlab.rb`:
 
    ```ruby
-   nginx['ssl_dhparam'] = "/etc/gitlab/ssl/dhparams.pem"
+   nginx['ssl_dhparam'] = "/path/to/dhparams.pem"
    ```
 
 1. Reconfigure GitLab:

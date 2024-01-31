@@ -94,11 +94,9 @@ server { ## HTTPS server
   ssl_verify_depth <%= @ssl_verify_depth%>;
   <% end %>
 
-  ssl_protocols  <%= @ssl_protocols %>;
-  <% if @ssl_ciphers || @ssl_protocols != "TLSv1.3" %>
   # GitLab needs backwards compatible ciphers to retain compatibility with Java IDEs
   ssl_ciphers '<%= @ssl_ciphers %>';
-  <% end %>
+  ssl_protocols  <%= @ssl_protocols %>;
   ssl_prefer_server_ciphers <%= @ssl_prefer_server_ciphers %>;
   ssl_session_cache  <%= @ssl_session_cache %>;
   ssl_session_tickets <%= @ssl_session_tickets %>;

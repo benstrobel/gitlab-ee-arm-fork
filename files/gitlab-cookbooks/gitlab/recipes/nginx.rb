@@ -375,6 +375,38 @@ if nginx_vars.key?('custom_error_pages')
   end
 end
 
+dhparam_file = node['gitlab']['nginx']['ssl_dhparam'] || "/etc/gitlab/ssl/dhparams.pem"
+generate_dhparam = node['gitlab']['nginx']['ssl_generate_dhparam'] and not File.exists?(dhparam_file)
+dhparam_bits = node['gitlab']['nginx']['ssl_dhparam_bits']
+
+bash 'generate dhparams.pem' do
+  action
+  only_if { generate_dhparam }
+
+  if node['gitlab']['nginx']['ssl_dhparam_use_dsa']
+    environment 'DHPARAM_USE_DSA' => "true"
+  end
+
+  code <<~EOS
+  set -e
+  mkdir -p "$(dirname #{dhparam_file})"
+
+  echo "Generating #{dhparam_file}..."
+  if [[ -n ${DHPARAM_USE_DSA} ]]; then
+    openssl dhparam -dsaparam -out "#{dhparam_file}" "#{dhparam_bits}"
+  else
+    openssl dhparam -out "#{dhparam_file}" "#{dhparam_bits}"
+  fi
+
+  if [[ -f #{dhparam_file} ]]; then
+    chmod 0600 "#{dhparam_file}"
+  else
+    echo "Failed to generate #{dhparam_file}, aborting"
+    exit 1
+  fi
+  EOS
+end
+
 include_recipe 'nginx::enable'
 
 if node['gitlab']['bootstrap']['enable']
