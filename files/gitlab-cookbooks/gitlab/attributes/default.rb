@@ -896,7 +896,7 @@ default['gitlab']['nginx']['ssl_protocols'] = "TLSv1.2 TLSv1.3" # recommended by
 default['gitlab']['nginx']['ssl_session_cache'] = "shared:SSL:10m"
 default['gitlab']['nginx']['ssl_session_tickets'] = "off"
 default['gitlab']['nginx']['ssl_session_timeout'] = "1d" # settings from by https://ssl-config.mozilla.org/#server=nginx&version=1.17.7&config=intermediate&openssl=1.1.1d&ocsp=false&guideline=5.6
-default['gitlab']['nginx']['ssl_generate_dhparams'] = true
+default['gitlab']['nginx']['ssl_generate_dhparam'] = true
 default['gitlab']['nginx']['ssl_dhparam'] = nil # Path to dhparams.pem, eg. /etc/gitlab/ssl/dhparams.pem
 default['gitlab']['nginx']['ssl_dhparam_bits'] = 4096 # 1024, 2048, or 4096 bits
 default['gitlab']['nginx']['ssl_dhparam_use_dsa'] = true # generate using DSA (faster)

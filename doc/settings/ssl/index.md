@@ -466,6 +466,27 @@ To change the SSL ciphers:
    sudo gitlab-ctl reconfigure
    ```
 
+## Configure DH parameters
+
+The default `dhparams.pem` created during installation is 4096 bits long and uses
+DSA for faster generation. While these defaults should be suitable for the
+majority of use cases (including on https://gitlab.com), it is possible to tune
+the settings for your specific application. However, these settings should only
+be changed after consultation with a cryptography expert.
+
+1. Edit `/etc/gitlab/gitlab.rb`
+
+   ```ruby
+   nginx['ssl_dhparam_bits'] = 4096
+   nginx['ssl_dhparam_use_dsa'] = true
+   ```
+
+1. Reconfigure GitLab:
+
+   ```shell
+   sudo gitlab-ctl reconfigure
+   ```
+
 ## Use custom DH parameters
 
 A `dhparams.pem` is generated during installation. To change the `dhparams.pem` in
@@ -474,6 +495,7 @@ use:
 1. Edit `/etc/gitlab/gitlab.rb`:
 
    ```ruby
+   nginx['ssl_generate_dhparam'] = false
    nginx['ssl_dhparam'] = "/path/to/dhparams.pem"
    ```
 
