@@ -470,7 +470,7 @@ To change the SSL ciphers:
 
 The default `dhparams.pem` created during installation is 4096 bits long and uses
 DSA for faster generation. While these defaults should be suitable for the
-majority of use cases (including on https://gitlab.com), it is possible to tune
+majority of use cases (including on <https://gitlab.com>), it is possible to tune
 the settings for your specific application. However, these settings should only
 be changed after consultation with a cryptography expert.
 
