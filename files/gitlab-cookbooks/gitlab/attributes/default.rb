@@ -890,7 +890,7 @@ default['gitlab']['nginx']['ssl_verify_client'] = nil # do not enable 2-way SSL 
 default['gitlab']['nginx']['ssl_verify_depth'] = "1" # n/a if ssl_verify_client off
 default['gitlab']['nginx']['ssl_certificate'] = "/etc/gitlab/ssl/#{node['fqdn']}.crt"
 default['gitlab']['nginx']['ssl_certificate_key'] = "/etc/gitlab/ssl/#{node['fqdn']}.key"
-default['gitlab']['nginx']['ssl_ciphers'] = "ECDHE:DHE:!ARIA:!CAMELLIA:!SHA1:!SHA256:!SHA384:@STRENGTH"
+default['gitlab']['nginx']['ssl_ciphers'] = "ECDHE:DHE:!ARIA:!CAMELLIA:!SHA1:!SHA256:!SHA384:!DSS:!eNULL:!aNULL"
 default['gitlab']['nginx']['ssl_prefer_server_ciphers'] = "off" # settings from by https://ssl-config.mozilla.org/#server=nginx&version=1.17.7&config=intermediate&openssl=1.1.1d&ocsp=false&guideline=5.6
 default['gitlab']['nginx']['ssl_protocols'] = "TLSv1.2 TLSv1.3" # recommended by https://raymii.org/s/tutorials/Strong_SSL_Security_On_nginx.html & https://cipherli.st/
 default['gitlab']['nginx']['ssl_session_cache'] = "shared:SSL:10m"

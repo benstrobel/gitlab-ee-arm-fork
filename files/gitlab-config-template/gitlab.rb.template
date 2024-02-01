@@ -1663,7 +1663,7 @@ external_url 'GENERATED_EXTERNAL_URL'
 
 # nginx['ssl_certificate'] = "/etc/gitlab/ssl/#{node['fqdn']}.crt"
 # nginx['ssl_certificate_key'] = "/etc/gitlab/ssl/#{node['fqdn']}.key"
-# nginx['ssl_ciphers'] = "ECDHE:DHE:!ARIA:!CAMELLIA:!SHA1:!SHA256:!SHA384:@STRENGTH"
+# nginx['ssl_ciphers'] = "ECDHE:DHE:!ARIA:!CAMELLIA:!SHA1:!SHA256:!SHA384:!DSS:!eNULL:!aNULL"
 # nginx['ssl_prefer_server_ciphers'] = "off"
 
 ##! **Recommended by: https://raymii.org/s/tutorials/Strong_SSL_Security_On_nginx.html
