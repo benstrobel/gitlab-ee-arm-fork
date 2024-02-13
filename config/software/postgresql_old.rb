@@ -15,8 +15,8 @@
 # limitations under the License.
 #
 
-name 'postgresql_old'
-default_version '12.14'
+name 'postgresql'
+default_version '13.13'
 
 license 'PostgreSQL'
 license_file 'COPYRIGHT'
@@ -30,11 +30,11 @@ dependency 'ncurses'
 dependency 'libossp-uuid'
 dependency 'config_guess'
 
-version '12.14' do
-  source sha256: '785610237d382c842d356e347138e58c06ffeae240e6cc0b52ac5ebcc30d043e'
+version '13.13' do
+  source sha256: '8af69c2599047a2ad246567d68ec4131aef116954d8c3e469e9789080b37a474'
 end
 
-major_version = '12'
+major_version = '13'
 
 source url: "https://ftp.postgresql.org/pub/source/v#{version}/postgresql-#{version}.tar.bz2"
 
