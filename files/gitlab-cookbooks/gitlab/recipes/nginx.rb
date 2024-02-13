@@ -375,26 +375,24 @@ if nginx_vars.key?('custom_error_pages')
   end
 end
 
-dhparam_file = node['gitlab']['nginx']['ssl_dhparam'] || "/etc/gitlab/ssl/dhparams.pem"
-generate_dhparam = node['gitlab']['nginx']['ssl_generate_dhparam'] && !File.exist?(dhparam_file)
+dhparam_file = node['gitlab']['nginx']['ssl_dhparam']
+generate_dhparam = node['gitlab']['nginx']['ssl_generate_dhparam'] && !dhparam_file.empty? && !File.exist?(dhparam_file)
 dhparam_bits = node['gitlab']['nginx']['ssl_dhparam_bits']
+
+dhparam_cmd =  [ "openssl", "dhparam" ]
+dhparam_cmd << [ "-dsaparam" ] if generate_dhparam
+dhparam_cmd << [ "-out", "\"#{dhparam_file}\"", "\"#{dhparam_bits}\"" ]
 
 bash 'generate dhparams.pem' do
   action
   only_if { generate_dhparam }
-
-  environment 'DHPARAM_USE_DSA' => "true" if node['gitlab']['nginx']['ssl_dhparam_use_dsa']
 
   code <<~EOS
   set -e
   mkdir -p "$(dirname #{dhparam_file})"
 
   echo "Generating #{dhparam_file}..."
-  if [[ -n ${DHPARAM_USE_DSA} ]]; then
-    openssl dhparam -dsaparam -out "#{dhparam_file}" "#{dhparam_bits}"
-  else
-    openssl dhparam -out "#{dhparam_file}" "#{dhparam_bits}"
-  fi
+  #{dhparam_cmd.join " "}
 
   if [[ -f #{dhparam_file} ]]; then
     chmod 0600 "#{dhparam_file}"

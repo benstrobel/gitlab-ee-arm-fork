@@ -1684,7 +1684,7 @@ external_url 'GENERATED_EXTERNAL_URL'
 
 ##! Used only for "classic" DH/DHE key exchanges (TLSv1.2)
 # nginx['ssl_generate_dhparam'] = true
-# nginx['ssl_dhparam'] = nil # Path to dhparams.pem, eg. /etc/gitlab/ssl/dhparams.pem
+# nginx['ssl_dhparam'] = "/etc/gitlab/ssl/dhparams.pem"
 # nginx['ssl_dhparam_bits'] = 4096 # 1024, 2048, or 4096 bits
 # nginx['ssl_dhparam_use_dsa'] = true # generate using DSA (faster)
 

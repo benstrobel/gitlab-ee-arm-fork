@@ -505,6 +505,29 @@ use:
    sudo gitlab-ctl reconfigure
    ```
 
+## Disable custom DH parameters
+
+If you do not want custom DH parameters, you can disable them. To disable custom
+DH parameters:
+
+1. Edit `/etc/gitlab/gitlab.rb`:
+
+   ```ruby
+   nginx['ssl_generate_dhparam'] = false
+   nginx['ssl_dhparam'] = nil
+   ```
+1. Delete any custom DH parameters file that might have been generated:
+
+   ```console
+   rm -f /path/to/dhparams.pem
+   ```
+
+1. Reconfigure GitLab:
+
+   ```shell
+   sudo gitlab-ctl reconfigure
+   ```
+
 ## Configure the HTTP/2 protocol
 
 By default, when you specify that your GitLab instance is reachable
