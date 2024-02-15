@@ -1162,9 +1162,11 @@ external_url 'GENERATED_EXTERNAL_URL'
 # gitlab_workhorse['redis_sentinel_master_ip'] = nil
 # gitlab_workhorse['redis_sentinel_master_port'] = nil
 
-
 ##! Command to generate extra configuration
 # gitlab_workhorse['extra_config_command'] = nil
+
+##! Metadata configuration section
+# gitlab_workhorse['metadata_zip_reader_limit_bytes'] = nil
 
 ################################################################################
 ## GitLab User Settings
@@ -1255,6 +1257,7 @@ external_url 'GENERATED_EXTERNAL_URL'
 # sidekiq['log_format'] = "json"
 # sidekiq['shutdown_timeout'] = 4
 # sidekiq['interval'] = nil
+# sidekiq['concurrency'] = nil
 # sidekiq['max_concurrency'] = 20
 # sidekiq['min_concurrency'] = nil
 
