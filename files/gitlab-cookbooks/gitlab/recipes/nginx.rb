@@ -379,9 +379,9 @@ dhparam_file = node['gitlab']['nginx']['ssl_dhparam']
 generate_dhparam = node['gitlab']['nginx']['ssl_generate_dhparam'] && !dhparam_file.empty? && !File.exist?(dhparam_file)
 dhparam_bits = node['gitlab']['nginx']['ssl_dhparam_bits']
 
-dhparam_cmd =  [ "openssl", "dhparam" ]
-dhparam_cmd << [ "-dsaparam" ] if generate_dhparam
-dhparam_cmd << [ "-out", "\"#{dhparam_file}\"", "\"#{dhparam_bits}\"" ]
+dhparam_cmd =  %w[openssl dhparam]
+dhparam_cmd << %w[-dsaparam] if generate_dhparam
+dhparam_cmd << %W[-out '#{dhparam_file}' '#{dhparam_bits}']
 
 bash 'generate dhparams.pem' do
   action
@@ -392,7 +392,7 @@ bash 'generate dhparams.pem' do
   mkdir -p "$(dirname #{dhparam_file})"
 
   echo "Generating #{dhparam_file}..."
-  #{dhparam_cmd.join " "}
+  #{dhparam_cmd.join ' '}
 
   if [[ -f #{dhparam_file} ]]; then
     chmod 0600 "#{dhparam_file}"

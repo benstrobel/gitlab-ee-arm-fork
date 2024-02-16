@@ -516,6 +516,7 @@ DH parameters:
    nginx['ssl_generate_dhparam'] = false
    nginx['ssl_dhparam'] = nil
    ```
+
 1. Delete any custom DH parameters file that might have been generated:
 
    ```console
