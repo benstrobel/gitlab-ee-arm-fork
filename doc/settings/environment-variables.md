@@ -25,6 +25,10 @@ gitlab_rails['env'] = {
 }
 ```
 
+NOTE:
+The `no_proxy` variable doesn't support CIDR blocks, a comma-separated list of IP addresses is needed to bypass 
+the proxy.
+
 You can also override environment variables from other GitLab components which
 might be required if you are behind a proxy:
 
