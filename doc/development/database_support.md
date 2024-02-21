@@ -46,7 +46,7 @@ For example in `registry` cookbook:
    action. The `create`  action can leverage the existing `postgresql` custom
    resources to setup the required database objects for the component.
 
-   See: 
+   See:
    - `postgresql_user`
    - `postgresql_database`
    - `postgresql_schema`

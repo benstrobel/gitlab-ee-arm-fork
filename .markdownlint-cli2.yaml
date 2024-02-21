@@ -2,6 +2,9 @@
 # Base Markdownlint configuration
 # Extended Markdownlint configuration in doc/.markdownlint/
 # See https://github.com/DavidAnson/markdownlint/blob/main/doc/Rules.md for explanations of each rule
+globs:
+  - doc/**/*.md
+
 config:
   # First, set the default
   default: true
@@ -24,7 +27,7 @@ config:
   no-inline-html: false             # MD033
   no-trailing-punctuation:          # MD026
     punctuation: ".,;:!。，；：！？"
-  no-trailing-spaces: false         # MD009
+  no-trailing-spaces: true          # MD009
   ol-prefix:                        # MD029
     style: "one"
   reference-links-images: false     # MD052
