@@ -38,9 +38,10 @@ build do
   command ['./runConfigureICU',
            'Linux/gcc',
            "--prefix=#{install_dir}/embedded",
-           '--with-data-packaging=files',
+           '--with-data-packaging=archive',
            '--enable-shared',
-           '--without-samples'].join(' '), env: env, cwd: cwd
+           '--disable-layoutex',
+           '--disable-samples'].join(' '), env: env, cwd: cwd
 
   make "-j #{workers}", env: env, cwd: cwd
   make 'install', env: env, cwd: cwd

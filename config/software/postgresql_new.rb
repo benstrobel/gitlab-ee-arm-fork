@@ -26,6 +26,7 @@ skip_transitive_dependency_licensing true
 dependency 'zlib'
 dependency 'openssl' unless Build::Check.use_system_ssl?
 dependency 'libedit'
+dependency 'libicu'
 dependency 'ncurses'
 dependency 'libossp-uuid'
 dependency 'config_guess'
