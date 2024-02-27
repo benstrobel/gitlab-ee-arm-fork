@@ -389,7 +389,7 @@ bash 'generate dhparams.pem' do
 
   code <<~EOS
   set -e
-  mkdir -p "$(dirname #{dhparam_file})"
+  mkdir -p "#{File.dirname(dhparam_file)}"
 
   echo "Generating #{dhparam_file}..."
   #{dhparam_cmd.join ' '}
