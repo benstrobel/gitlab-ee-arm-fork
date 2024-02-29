@@ -34,6 +34,8 @@ default:
     - gitlab-org
 
 variables:
+  DOCKERHUB_USERNAME: 'foo'
+  DOCKERHUB_PASSWORD: 'bar'
   # BUILDER_IMAGE_REGISTRY is set to
   # `dev.gitlab.org:5005/cookbooks/gitlab-omnibus-builder` in the project
   # settings of omnibus-gitlab mirror in dev.gitlab.org so that builds there
