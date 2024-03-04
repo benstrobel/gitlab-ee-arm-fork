@@ -35,6 +35,22 @@ build do
   env['LD_RPATH'] = "#{install_dir}/embedded/lib"
   cwd = "#{Omnibus::Config.source_dir}/libicu/icu4c/source"
 
+  block 'use a custom compiler for OSs with older gcc' do
+    if ohai['platform'] == 'centos' && ohai['platform_version'].start_with?('7.')
+      env['CC'] = "/opt/rh/devtoolset-8/root/usr/bin/gcc"
+      env['CXX'] = "/opt/rh/devtoolset-8/root/usr/bin/g++"
+    elsif ohai['platform'] == 'suse' && ohai['platform_version'].start_with?('12.')
+      env['CC'] = "/usr/bin/gcc-5"
+      env['CXX'] = "/usr/bin/g++-5"
+    elsif ohai['platform'] == 'opensuseleap' && ohai['platform_version'].start_with?('15.')
+      env['CC'] = "/usr/bin/gcc-8"
+      env['CXX'] = "/usr/bin/g++-8"
+    elsif ohai['platform'] == 'amazon' && ohai['platform_version'] == '2'
+      env['CC'] = "/usr/bin/gcc10-gcc"
+      env['CXX'] = "/usr/bin/gcc10-g++"
+    end
+  end
+
   command ['./runConfigureICU',
            'Linux/gcc',
            "--prefix=#{install_dir}/embedded",
