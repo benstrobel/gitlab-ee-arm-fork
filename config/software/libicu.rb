@@ -35,6 +35,14 @@ build do
   env['LD_RPATH'] = "#{install_dir}/embedded/lib"
   cwd = "#{Omnibus::Config.source_dir}/libicu/icu4c/source"
 
+  # defaults for Linux/gcc platform from runConfigureICU
+  env['CC'] = 'gcc'
+  env['CXX'] = 'g++'
+  env['RELEASE_CFLAGS'] = '-O3'
+  env['RELEASE_CXXFLAGS'] = '-O3'
+  env['DEBUG_CFLAGS'] = '-g'
+  env['DEBUG_CXXFLAGS'] = '-g'
+
   block 'use a custom compiler for OSs with older gcc' do
     if ohai['platform'] == 'centos' && ohai['platform_version'].start_with?('7.')
       env['CC'] = "/opt/rh/devtoolset-8/root/usr/bin/gcc"
@@ -51,8 +59,7 @@ build do
     end
   end
 
-  command ['./runConfigureICU',
-           'Linux/gcc',
+  command ['./configure',
            "--prefix=#{install_dir}/embedded",
            '--with-data-packaging=archive',
            '--enable-shared',
