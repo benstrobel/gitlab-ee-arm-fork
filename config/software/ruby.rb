@@ -110,7 +110,7 @@ build do
   #    per-thread. This is asked to be upstreamed as part of https://github.com/ruby/ruby/pull/3978
   # 2. Backport Ruby upstream patch to fix seg faults in libxml2/Nokogiri: https://bugs.ruby-lang.org/issues/19580
   #    This has been merged for Ruby 3.2.3 but not yet backported: https://github.com/ruby/ruby/pull/7663
-  patches = if version.satisfies?('>= 3.2.3')
+  patches = if version.satisfies?('>= 3.2')
               %w[thread-memory-allocations]
             else
               %w[thread-memory-allocations fix-ruby-xfree-for-libxml2]
