@@ -18,15 +18,17 @@ is required. Examples include:
 - Using a small instance on a cloud provider for cost savings.
 - Using resource-constrained devices like the Raspberry PI.
 
-With some adjustments, GitLab can run comfortably on much lower specifications than described in
+With some adjustments, GitLab can run on much lower specifications than described in
 [minimum requirements](https://docs.gitlab.com/ee/install/requirements.html) or the
 [reference architectures](https://docs.gitlab.com/ee/administration/reference_architectures/).
+
+WARNING:
+Running GitLab in a memory-constrained configuration is not intended for production environments.
 
 The following sections contain advice that will allow GitLab to run in environments
 that do not meet the minimum requirements. While most GitLab parts should be
 functional with these settings in place, you may experience unexpected degradation
-of both product functionality and performance. You should be able to run GitLab
-with up to 5 developers with individual Git projects no larger than 100MB.
+of both product functionality and performance.
 
 ## Minimum requirements for constrained environments
 
