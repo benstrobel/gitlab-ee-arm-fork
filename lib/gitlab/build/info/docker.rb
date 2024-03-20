@@ -13,20 +13,24 @@ module Build
 
         def release_file_contents
           repo = Gitlab::Util.get_env('PACKAGECLOUD_REPO') # Target repository
+          download_urls = {}.tap do |urls|
+            if /dev.gitlab.org/.match?(Build::Info::CI.api_v4_url) || Build::Check.is_nightly?
+              urls[:amd64] = Build::Info::CI.package_download_url
+              urls[:arm64] = Build::Info::CI.package_download_url(arch: 'arm64')
+            else
+              urls[:amd64] = Build::Info::CI.triggered_package_download_url
+              urls[:arm64] = Build::Info::CI.triggered_package_download_url(arch: 'arm64')
+            end
+          end
 
-          download_url = if /dev.gitlab.org/.match?(Build::Info::CI.api_v4_url) || Build::Check.is_nightly?
-                           Build::Info::CI.package_download_url
-                         else
-                           Build::Info::CI.triggered_package_download_url
-                         end
-
-          raise "Unable to identify package download URL." unless download_url
+          raise "Unable to identify package download URLs." if download_urls.empty?
 
           contents = []
           contents << "PACKAGECLOUD_REPO=#{repo.chomp}\n" if repo && !repo.empty?
           contents << "RELEASE_PACKAGE=#{Build::Info::Package.name}\n"
           contents << "RELEASE_VERSION=#{Build::Info::Package.release_version}\n"
-          contents << "DOWNLOAD_URL=#{download_url}\n"
+          contents << "DOWNLOAD_URL_amd64=#{download_urls[:amd64]}\n"
+          contents << "DOWNLOAD_URL_arm64=#{download_urls[:arm64]}\n"
           contents << "CI_JOB_TOKEN=#{Build::Info::CI.job_token}\n"
           contents.join
         end
