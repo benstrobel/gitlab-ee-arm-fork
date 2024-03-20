@@ -47,9 +47,15 @@ module Build
           URI("#{api_v4_url}/projects/#{project_id}/jobs/#{target_job_id}/artifacts/#{file_path}")
         end
 
-        def triggered_package_download_url(fips: Build::Check.use_system_ssl?)
-          folder = fips ? 'ubuntu-focal_fips' : 'ubuntu-jammy'
-          job_name = fips ? 'Trigger:package:fips' : 'Trigger:package'
+        def triggered_package_download_url(fips: Build::Check.use_system_ssl?, arch: 'amd64')
+          job_name, folder = if fips
+                               ['Trigger:package:fips', 'ubuntu-focal_fips']
+                             elsif arch == 'amd64'
+                               ['Trigger:package', 'ubuntu-focal']
+                             elsif arch == 'arm64'
+                               ['Trigger:package:arm64', 'ubuntu-focal_aarch64']
+                             end
+
           package_path = "pkg/#{folder}/gitlab.deb"
 
           artifact_url(job_name, package_path)

@@ -532,6 +532,13 @@ Trigger:package:
     BASE_OS: "ubuntu_22.04"
     PACKAGE_DIRECTORY: "pkg/ubuntu-jammy"
 
+Trigger:package:arm64:
+  extends: .trigger-package-common
+  variables:
+    BASE_OS: "ubuntu_22.04_arm64"
+    PACKAGE_DIRECTORY: "pkg/ubuntu-jammy_aarch64"
+  tags: !reference [.distribution-arm64-tags]
+
 Trigger:package:fips:
   extends:
     - .trigger-package-common
