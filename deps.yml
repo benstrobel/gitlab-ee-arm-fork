@@ -44,20 +44,24 @@ dependencies:
         - filename: config/software/alertmanager.rb
           pattern: "Gitlab::Version.new\\('alertmanager', '(\\S+)'\\)"
           tag_prefix: 'v'
-      # chef-gem
+      # chef
       https://github.com/chef/chef.git:
         replace_in_files:
         - filename: config/software/chef-gem.rb
           pattern: "default_version '(\\S+)'"
           tag_prefix: 'v'
-          range: '<= 17.x'
-            # ohai
+          range: '<= 18.x'
+        - filename: config/software/chef-bin.rb
+          pattern: "default_version '(\\S+)'"
+          tag_prefix: 'v'
+          range: '<= 18.x'
+      # ohai
       https://github.com/chef/ohai.git:
         replace_in_files:
         - filename: config/software/ohai.rb
           pattern: "default_version '(\\S+)'"
           tag_prefix: 'v'
-          range: '<= 17.x'
+          range: '<= 18.x'
       # mixlib-log
       https://github.com/chef/mixlib-log.git:
         replace_in_files:
@@ -121,7 +125,7 @@ dependencies:
       # openssl
       https://github.com/openssl/openssl.git:
         replace_in_files:
-        - filename: config/software/openssl.rb
+        - filename: config/software/openssl_1.rb
           pattern: "Gitlab::Version.new\\('openssl', 'OpenSSL_1_1_(\\S+)'\\)"
           tag_prefix: 'OpenSSL_1_1_'
           semver: false

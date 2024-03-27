@@ -307,9 +307,10 @@ The following settings are affected in the `postgresql` block:
 - `md5_auth_cidr_addresses`: A list of CIDR address blocks that are allowed to
   connect to the server, after authentication with a password.
 - `trust_auth_cidr_addresses`: A list of CIDR address blocks that are allowed
-  to connect to the server, without authentication of any kind. _Be very careful
-  with this setting._ It's suggested that this be limited to the loopback
-  address of `127.0.0.1/24` or even `127.0.0.1/32`.
+  to connect to the server, without authentication of any kind. You should
+  only set this setting to allow connections from nodes that need to connect,
+  such as GitLab Rails or Sidekiq. This includes local connections when deployed
+  on the same node or from components such as Postgres Exporter (`127.0.0.1/32`).
 - `sql_user`: Controls the expected username for MD5 authentication. This
   defaults to `gitlab`, and isn't a required setting.
 - `sql_user_password`: Sets the password that PostgreSQL will accept for MD5
@@ -604,7 +605,7 @@ update this setting in `/etc/gitlab/gitlab.rb`:
 gitlab_rails['databases']['ci']['enable'] = false
 ```
 
-In a multi-node environment, this setting should be updated on all Rails and Sidekiq nodes. 
+In a multi-node environment, this setting should be updated on all Rails and Sidekiq nodes.
 
 ## Using a non-packaged PostgreSQL database management server
 
@@ -799,16 +800,16 @@ Before proceeding with the upgrade, note the following:
   [default version in the compatibility table](https://docs.gitlab.com/ee/administration/package_information/postgresql_versions.html)
   determines which client binaries (such as the PostgreSQL backup/restore binaries) are active.
 
-The following example demonstrates upgrading from a database host running PostgreSQL 12 to another database host running PostgreSQL 13 and incurs downtime:
+The following example demonstrates upgrading from a database host running PostgreSQL 13 to another database host running PostgreSQL 14 and incurs downtime:
 
-1. Spin up a new PostgreSQL 13 database server that's set up according to the [database requirements](https://docs.gitlab.com/ee/install/requirements.html#database).
+1. Spin up a new PostgreSQL 14 database server that's set up according to the [database requirements](https://docs.gitlab.com/ee/install/requirements.html#database).
 
 1. Ensure that the compatible versions of `pg_dump` and `pg_restore` are being
    used on the GitLab Rails instance. To amend GitLab configuration, edit
    `/etc/gitlab/gitlab.rb` and specify the value of `postgresql['version']`:
 
     ```ruby
-    postgresql['version'] = 13
+    postgresql['version'] = 14
     ```
 
 1. Reconfigure GitLab:
@@ -834,10 +835,10 @@ when your installation is using PgBouncer.
    sudo gitlab-backup create SKIP=repositories,uploads,builds,artifacts,lfs,pages,registry
    ```
 
-1. Shutdown the PostgreSQL 12 database host.
+1. Shutdown the PostgreSQL 13 database host.
 
 1. Edit `/etc/gitlab/gitlab.rb` and update the `gitlab_rails['db_host']` setting
-   to point to the PostgreSQL database 13 host.
+   to point to the PostgreSQL database 14 host.
 
 1. Reconfigure GitLab:
 
@@ -865,7 +866,7 @@ when your installation is using PgBouncer.
 
 1. After upgrading PostgreSQL to a new major release, recreate the table statistics to ensure efficient query plans are picked and
    to reduce database server CPU load.
-   
+
    If the upgrade was "in-place" using `pg_upgrade`, run the following query on the PostgreSQL database console:
 
    ```SQL
@@ -909,12 +910,8 @@ gitlab_rails['initial_shared_runners_registration_token'] = 'token'
 
 ### Pin the packaged PostgreSQL version (fresh installs only)
 
-NOTE:
-GitLab 14.1 and onward shipped with both Postgres 12 and Postgres 13.
-GitLab 14.0 only ships with PostgreSQL 12. GitLab 13.3 and onward shipped both Postgres 11 and Postgres 12.
-GitLab 13.0 through 13.2 only shipped with PostgreSQL 11.
-
-The Linux package installation initializes PostgreSQL with the [default version](https://docs.gitlab.com/ee/administration/package_information/postgresql_versions.html).
+The Linux package ships with [different PostgreSQL versions](https://docs.gitlab.com/ee/administration/package_information/postgresql_versions.html)
+and initializes the default version if not specified otherwise.
 
 To initialize PostgreSQL with a non-default version, you can set `postgresql['version']` to the major version one of
 the [packaged PostgreSQL versions](https://docs.gitlab.com/ee/administration/package_information/postgresql_versions.html) prior to the initial reconfigure.
@@ -931,57 +928,6 @@ sure that any folders that relate to PostgreSQL are deleted and that there are n
 ## Provide sensitive data configuration to GitLab Rails without plain text storage
 
 For more information, see the example in [configuration documentation](../settings/configuration.md#provide-the-postgresql-user-password-to-gitlab-rails).
-
-### Troubleshooting
-
-#### Set `default_transaction_isolation` into `read committed`
-
-If you see errors similar to the following in your `production/sidekiq` log:
-
-```plaintext
-ActiveRecord::StatementInvalid PG::TRSerializationFailure: ERROR:  could not serialize access due to concurrent update
-```
-
-Chances are your database's `default_transaction_isolation` configuration is not
-in line with the GitLab application requirement. You can check this configuration by
-connecting to your PostgreSQL database and run `SHOW default_transaction_isolation;`.
-GitLab application expects `read committed` to be configured.
-
-This `default_transaction_isolation` configuration is set in your
-`postgresql.conf` file. You will need to restart/reload the database once you
-changed the configuration. This configuration comes by default in the packaged
-PostgreSQL server included with the Linux package.
-
-### Could not load library `plpgsql.so`
-
-You might see errors similar to the following while running Database migrations
-or in the PostgreSQL/Patroni logs:
-
-```plaintext
-ERROR:  could not load library "/opt/gitlab/embedded/postgresql/12/lib/plpgsql.so": /opt/gitlab/embedded/postgresql/12/lib/plpgsql.so: undefined symbol: EnsurePortalSnapshotExists
-```
-
-This error is caused due to not restarting PostgreSQL after the underlying
-version changed. To fix this error:
-
-1. Run one of the following commands:
-
-   ```shell
-   # For PostgreSQL
-   sudo gitlab-ctl restart postgresql
-
-   # For Patroni
-   sudo gitlab-ctl restart patroni
-
-   # For Geo PostgreSQL
-   sudo gitlab-ctl restart geo-postgresql
-   ```
-
-1. Reconfigure GitLab:
-
-   ```shell
-   sudo gitlab-ctl reconfigure
-   ```
 
 ## Application Settings for the Database
 
@@ -1291,3 +1237,54 @@ or as a PostgreSQL superuser:
 ```shell
 sudo gitlab-psql -d gitlabhq_production
 ```
+
+## Troubleshooting
+
+### Set `default_transaction_isolation` into `read committed`
+
+If you see errors similar to the following in your `production/sidekiq` log:
+
+```plaintext
+ActiveRecord::StatementInvalid PG::TRSerializationFailure: ERROR:  could not serialize access due to concurrent update
+```
+
+Chances are your database's `default_transaction_isolation` configuration is not
+in line with the GitLab application requirement. You can check this configuration by
+connecting to your PostgreSQL database and run `SHOW default_transaction_isolation;`.
+GitLab application expects `read committed` to be configured.
+
+This `default_transaction_isolation` configuration is set in your
+`postgresql.conf` file. You will need to restart/reload the database once you
+changed the configuration. This configuration comes by default in the packaged
+PostgreSQL server included with the Linux package.
+
+### Could not load library `plpgsql.so`
+
+You might see errors similar to the following while running Database migrations
+or in the PostgreSQL/Patroni logs:
+
+```plaintext
+ERROR:  could not load library "/opt/gitlab/embedded/postgresql/12/lib/plpgsql.so": /opt/gitlab/embedded/postgresql/12/lib/plpgsql.so: undefined symbol: EnsurePortalSnapshotExists
+```
+
+This error is caused due to not restarting PostgreSQL after the underlying
+version changed. To fix this error:
+
+1. Run one of the following commands:
+
+   ```shell
+   # For PostgreSQL
+   sudo gitlab-ctl restart postgresql
+
+   # For Patroni
+   sudo gitlab-ctl restart patroni
+
+   # For Geo PostgreSQL
+   sudo gitlab-ctl restart geo-postgresql
+   ```
+
+1. Reconfigure GitLab:
+
+   ```shell
+   sudo gitlab-ctl reconfigure
+   ```

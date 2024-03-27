@@ -32,6 +32,8 @@ cgroups_mountpoint = node.dig('gitaly', 'configuration', 'cgroups', 'mountpoint'
 cgroups_hierarchy_root = node.dig('gitaly', 'configuration', 'cgroups', 'hierarchy_root')
 use_wrapper = node['gitaly']['use_wrapper']
 
+include_recipe 'gitaly::git_data_dirs'
+
 directory working_dir do
   owner account_helper.gitlab_user
   mode '0700'
@@ -103,7 +105,7 @@ template "Create Gitaly config.toml" do
             url: gitlab_url,
             relative_url_root: gitlab_relative_path,
             'http-settings': node.dig('gitlab', 'gitlab_shell', 'http_settings')
-          }.compact,
+          }.merge(node.dig('gitaly', 'configuration', 'gitlab') || {}).compact,
 
           # These options below were historically hard coded values in the template. They
           # are set here to retain the behavior of them not being overridable by the user.

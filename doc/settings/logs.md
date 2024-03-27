@@ -77,7 +77,7 @@ The [runit-managed](../architecture/index.md#runit) services in Linux package in
   GitLab last wrote to that file.
 - `zmore` and `zgrep` allow viewing and searching through both compressed or uncompressed logs.
 
-Read the [svlogd documentation](http://smarden.org/runit/svlogd.8.html) for more information
+Read the [svlogd documentation](https://smarden.org/runit/svlogd.8.html) for more information
 about the files it generates.
 
 You can modify svlogd settings via `/etc/gitlab/gitlab.rb` with the following settings:
@@ -169,6 +169,25 @@ To manually trigger GitLab log rotation with `logrotate`, use the following comm
 ```shell
 /opt/gitlab/embedded/sbin/logrotate -fv -s /var/opt/gitlab/logrotate/logrotate.status /var/opt/gitlab/logrotate/logrotate.conf
 ```
+
+### Increase how often logrotate is triggered
+
+The logrotate script triggers every 50 minutes and waits for 10 minutes before attempting to rotate the logs.
+
+To modify these values:
+
+1. Edit `/etc/gitlab/gitlab.rb`:
+
+   ```ruby
+   logrotate['pre_sleep'] = 600   # sleep 10 minutes before rotating after start-up
+   logrotate['post_sleep'] = 3000 # wait 50 minutes after rotating
+   ```
+
+1. Reconfigure GitLab:
+
+   ```shell
+   sudo gitlab-ctl reconfigure
+   ```
 
 ## UDP log forwarding
 
