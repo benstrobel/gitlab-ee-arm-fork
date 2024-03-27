@@ -72,6 +72,7 @@
     - !reference [.default_rules, rules]
     - if: '$PIPELINE_TYPE =~ /_(NIGHTLY|BRANCH)_BUILD_PIPELINE$/'
     - if: '$PIPELINE_TYPE =~ /TRIGGERED_(CE|EE)_PIPELINE/'
+    - if: '$PIPELINE_TYPE == "TRIGGER_CACHE_UPDATE_PIPELINE"'
 
 .fips_branch_template: &fips_branch_build
   extends: .branch_template
@@ -286,11 +287,6 @@ Ubuntu-22.04-branch:
   extends: .branch_template
   needs:
     - !reference [.package_build_required_jobs]
-  rules:
-    - !reference [.default_rules, rules]
-    - if: '$PIPELINE_TYPE =~ /_(NIGHTLY|BRANCH)_BUILD_PIPELINE$/'
-    - if: '$PIPELINE_TYPE =~ /TRIGGERED_(CE|EE)_PIPELINE/'
-    - if: '$PIPELINE_TYPE == "TRIGGER_CACHE_UPDATE_PIPELINE"'
 
 Debian-10-branch:
   image: "${BUILDER_IMAGE_REGISTRY}/debian_10:${BUILDER_IMAGE_REVISION}"
@@ -321,6 +317,7 @@ Ubuntu-22.04-arm64-branch:
   rules:
     - !reference [.default_rules, rules]
     - if: '$PIPELINE_TYPE =~ /_(NIGHTLY|BRANCH)_BUILD_PIPELINE$/'
+    - if: '$PIPELINE_TYPE == "TRIGGER_CACHE_UPDATE_PIPELINE"'
     - if: '$PIPELINE_TYPE =~ /TRIGGERED_(CE|EE)_PIPELINE/'
       when: manual
       allow_failure: true
@@ -390,6 +387,7 @@ Ubuntu-20.04-fips-branch:
   rules:
     - !reference [.default_rules, rules]
     - if: '$PIPELINE_TYPE == "EE_NIGHTLY_BUILD_PIPELINE"'
+    - if: '$PIPELINE_TYPE == "TRIGGER_CACHE_UPDATE_PIPELINE"'
     - if: '$PIPELINE_TYPE == "EE_BRANCH_BUILD_PIPELINE"'
       when: manual
       allow_failure: true
