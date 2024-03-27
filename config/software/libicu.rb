@@ -59,7 +59,8 @@ build do
     end
   end
 
-  command ['./configure',
+  command ['./runConfigureICU',
+           'Linux',
            "--prefix=#{install_dir}/embedded",
            '--with-data-packaging=archive',
            '--enable-shared',
