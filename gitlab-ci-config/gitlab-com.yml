@@ -676,27 +676,16 @@ pages:
   rules:
     - if: '$PIPELINE_TYPE == "LICENSE_PAGE_UPDATE_PIPELINE"'
 
-.build-package-on-all-os-vars:
-  extends: .base-trigger-job-variables
-  SKIP_JOB_REGEX: '/Ubuntu-22.04|Ubuntu-20.04-fips|Docker|QA/'
-  PIPELINE_TYPE: "${EDITION}_BRANCH_BUILD_PIPELINE"
-  CACHE_EDITION: ${EDITION}
-  ee: ${ee}
-
 build-package-on-all-os:
+  image: 'alpine:latest'
   stage: package
-  needs:
-    - job: generate-facts
-      artifacts: true
-  variables:
-  trigger:
-    include: '.gitlab-ci.yml'
-    strategy: depend
+  before_script: []
+  script:
+    - echo "This is a dummy script"
   rules:
     # Triggers from GitLab Rails/Gitaly/GitLab Pages pipeline which forced building on all OS automatically
     - if: '$PIPELINE_TYPE =~ /TRIGGERED_(CE|EE)_PIPELINE/ && $BUILD_ON_ALL_OS == "true"'
       when: always
-      variables: !reference [.build-package-on-all-os-vars]
     # MR pipelines from omnibus-gitlab that change files which require building on all OS automatically
     - if: '$PIPELINE_TYPE =~ /TRIGGERED_(CE|EE)_PIPELINE/ && $CI_PIPELINE_SOURCE != "pipeline"'
       changes:
@@ -705,11 +694,9 @@ build-package-on-all-os:
        - config/software/**
        - config/patches/**
       when: always
-      variables: !reference [.build-package-on-all-os-vars]
     # Covering the remaining scenarios - provide the job to be manually run by developers, if required
     # (i) MR pipelines from omnibus-gitlab that doesn't change files which require building on all OS
     # (ii) Triggers from GitLab Rails/Gitaly/GitLab Pages pipeline which didn't force building on all OS
     - if: '$PIPELINE_TYPE =~ /TRIGGERED_(CE|EE)_PIPELINE/'
       when: manual
       allow_failure: true
-      variables: !reference [.build-package-on-all-os-vars]
