@@ -15,13 +15,13 @@
     - if: '$SKIP_RELEASE == "true"'
       when: never
 
-.package-artifacts:
+.package-artifacts: &package-artifacts
   when: always
   expire_in: 1 day
   paths:
     - pkg/
 
-.package-artifacts-release: &package-artifacts-release
+.package-artifacts-release:
   <<: *package-artifacts
   expire_in: 7 days
 
