@@ -1005,10 +1005,50 @@ RSpec.describe 'gitaly' do
     end
   end
 
+  context 'with custom gitlab values' do
+    before do
+      stub_gitlab_rb(
+        gitaly: {
+          configuration: {
+            gitlab: {
+              url: 'http://localhost:9999',
+              relative_url_root: '/gitlab-ee'
+            }
+          }
+        }
+      )
+    end
+
+    it 'creates config file with the custom gitlab values set' do
+      expect(chef_run).to render_file(config_path)
+        .with_content(%r{\[gitlab\]\s+url = "http://localhost:9999"\s+relative_url_root = "/gitlab-ee"})
+    end
+  end
+
   include_examples "consul service discovery", "gitaly", "gitaly"
 end
 
 RSpec.describe 'gitaly::git_data_dirs' do
+  let(:chef_run) { ChefSpec::SoloRunner.converge('gitlab::default') }
+
+  before do
+    allow(Gitlab).to receive(:[]).and_call_original
+
+    stub_gitlab_rb(gitlab_rails: {
+                     enable: false,
+                   }, gitaly: {
+                     enable: true,
+                   }, git_data_dirs: {
+                     'default' => {
+                       'path' => '/tmp/git-data'
+                     }
+                   })
+  end
+
+  include_examples "git data directory", "/tmp/git-data"
+end
+
+RSpec.describe 'git_data_dirs configuration' do
   let(:chef_run) { ChefSpec::SoloRunner.converge('gitlab::default') }
 
   before do

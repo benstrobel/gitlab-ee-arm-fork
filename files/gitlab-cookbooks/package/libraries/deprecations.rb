@@ -355,6 +355,12 @@ module Gitlab
             deprecation: '16.9',
             removal: '17.0',
             note: "Starting with GitLab 17.0, `sidekiq['max_concurrency']` will be removed. Please follow https://docs.gitlab.com/ee/administration/sidekiq/extra_sidekiq_processes.html#manage-thread-counts-explicitly to use `sidekiq['concurrency']` instead."
+          },
+          {
+            config_keys: %w(gitlab omnibus_gitconfig),
+            deprecation: '16.10',
+            removal: '17.0',
+            note: "`omnibus_gitconfig` will be removed in GitLab 17.0. For details and migration instructions, please see: https://docs.gitlab.com/ee/update/versions/gitlab_16_changes.html#gitlabomnibus_gitconfig-deprecation"
           }
         ]
 
@@ -544,7 +550,12 @@ module Gitlab
         # Getting settings from gitlab.rb that are in deprecations list and
         # has been removed in incoming or a previous version.
         current_deprecations = list(existing_config).select { |deprecation| version >= Gem::Version.new(deprecation[type]) }
-        current_deprecations.select { |deprecation| !existing_config.dig(*deprecation[:config_keys]).nil? }
+
+        # If the value of the configuration is `nil` or an empty hash (in case
+        # of root configurations where ConfigMash logic in SettingsDSL will set
+        # an empty Hash as the default value), then the configuration is a
+        # valid deprecation that user has to be warned about.
+        current_deprecations.select { |deprecation| !(existing_config.dig(*deprecation[:config_keys]).nil? || (existing_config.dig(*deprecation[:config_keys]).is_a?(Hash) && existing_config.dig(*deprecation[:config_keys])&.empty?)) }
       end
 
       def check_config(incoming_version, existing_config, type = :removal)

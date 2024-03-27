@@ -4,7 +4,13 @@ class SELinuxHelper
   class << self
     include ShellOutHelper
 
-    def commands(node)
+    def use_unified_policy?(node)
+      return false if node['package']['selinux_policy_version'].nil?
+
+      true
+    end
+
+    def commands(node, dry_run: false)
       ssh_dir = File.join(node['gitlab']['user']['home'], ".ssh")
       authorized_keys = node['gitlab']['gitlab_shell']['auth_file']
       gitlab_shell_var_dir = node['gitlab']['gitlab_shell']['dir']
@@ -13,12 +19,14 @@ class SELinuxHelper
       gitlab_rails_etc_dir = File.join(gitlab_rails_dir, "etc")
       gitlab_shell_secret_file = File.join(gitlab_rails_etc_dir, 'gitlab_shell_secret')
       gitlab_workhorse_sockets_directory = node['gitlab']['gitlab_workhorse']['sockets_directory']
+      restorecon_flags = "-v"
+      restorecon_flags << " -n" if dry_run
 
       # If SELinux is enabled, make sure that OpenSSH thinks the .ssh directory and authorized_keys file of the
       # git_user is valid.
       selinux_code = []
       selinux_code << "semanage fcontext -a -t gitlab_shell_t '#{ssh_dir}(/.*)?'"
-      selinux_code << "restorecon -R -v '#{ssh_dir}'" if File.exist?(ssh_dir)
+      selinux_code << "restorecon -R #{restorecon_flags} '#{ssh_dir}'" if File.exist?(ssh_dir)
       [
         authorized_keys,
         gitlab_shell_config_file,
@@ -28,7 +36,7 @@ class SELinuxHelper
         selinux_code << "semanage fcontext -a -t gitlab_shell_t '#{file}'"
         next unless File.exist?(file)
 
-        selinux_code << "restorecon -v '#{file}'"
+        selinux_code << "restorecon #{restorecon_flags} '#{file}'"
       end
 
       selinux_code.join("\n")
