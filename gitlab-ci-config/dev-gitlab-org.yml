@@ -21,8 +21,8 @@
   paths:
     - pkg/
 
-.package-artifacts-release:
-  extends: .package-artifacts
+.package-artifacts-release: &package-artifacts-release
+  <<: *package-artifacts
   expire_in: 7 days
 
 .cache-paths:
