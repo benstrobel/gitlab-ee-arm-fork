@@ -38,10 +38,6 @@ build do
   # defaults for Linux/gcc platform from runConfigureICU
   env['CC'] = 'gcc'
   env['CXX'] = 'g++'
-  env['RELEASE_CFLAGS'] = '-O3'
-  env['RELEASE_CXXFLAGS'] = '-O3'
-  env['DEBUG_CFLAGS'] = '-g'
-  env['DEBUG_CXXFLAGS'] = '-g'
 
   block 'use a custom compiler for OSs with older gcc' do
     if ohai['platform'] == 'centos' && ohai['platform_version'].start_with?('7.')
