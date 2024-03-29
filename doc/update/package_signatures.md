@@ -90,7 +90,7 @@ There are mild differences between Yum and Dnf, but the underlying configuration
 
    ::Tabs
 
-   :::TabTitle GitLab repository
+   :::TabTitle GitLab
 
    ```shell
     for pubring in /var/cache/dnf/gitlab_gitlab-?e-*/pubring
@@ -99,7 +99,7 @@ There are mild differences between Yum and Dnf, but the underlying configuration
     done
     ```
 
-   :::TabTitle GitLab Runner repository
+   :::TabTitle GitLab Runner
 
    ```shell
    for pubring in /var/cache/dnf/*gitlab*/pubring
