@@ -43,10 +43,7 @@ build do
     if ohai['platform'] == 'centos' && ohai['platform_version'].start_with?('7.')
       env['CC'] = "/opt/rh/devtoolset-8/root/usr/bin/gcc"
       env['CXX'] = "/opt/rh/devtoolset-8/root/usr/bin/g++"
-    elsif ohai['platform'] == 'suse' && ohai['platform_version'].start_with?('12.')
-      env['CC'] = "/usr/bin/gcc-5"
-      env['CXX'] = "/usr/bin/g++-5"
-    elsif ohai['platform'] == 'opensuseleap' && ohai['platform_version'].start_with?('15.')
+    elsif ohai['platform'] == 'suse' && ohai['platform_version'].start_with?('12.', '15.')
       env['CC'] = "/usr/bin/gcc-8"
       env['CXX'] = "/usr/bin/g++-8"
     elsif ohai['platform'] == 'amazon' && ohai['platform_version'] == '2'
