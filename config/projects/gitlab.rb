@@ -149,7 +149,6 @@ dependency 'gitlab-cookbooks'
 dependency 'chef-acme'
 dependency 'gitlab-ctl'
 dependency 'gitlab-psql'
-dependency 'gitlab-backup-cli'
 dependency 'gitlab-redis-cli'
 dependency 'gitlab-healthcheck'
 
