@@ -28,4 +28,8 @@ build do
       source: 'gitlab_backup_cli_wrapper.erb',
       mode: 0755,
       vars: { install_dir: install_dir }
+
+  block do
+    `find /opt/gitlab > /tmp/files_after_backup_cli`
+  end
 end

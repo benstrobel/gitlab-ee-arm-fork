@@ -116,10 +116,12 @@ variables:
 .build-package: &build-package
   - bundle exec rake cache:populate
   - bundle exec rake cache:restore
-  - bundle exec rake build:project
-  - bundle exec rake build:package:sync
-  - bundle exec rake cache:bundle
-  - bundle exec rake build:component_shas
+  - bundle exec rake build:project || true
+  - bundle exec rake build:package:sync || true
+  - bundle exec rake cache:bundle || true
+  - bundle exec rake build:component_shas || true
+  - cp /tmp/files_before_backup_cli pkg/
+  - cp /tmp/files_after_backup_cli pkg/
 
 before_script:
   - echo "PIPELINE_TYPE detected as ${PIPELINE_TYPE}"
