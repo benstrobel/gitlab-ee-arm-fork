@@ -22,6 +22,10 @@ license_file File.expand_path('LICENSE', Omnibus::Config.project_root)
 skip_transitive_dependency_licensing true
 
 build do
+  block do
+    `find /opt/gitlab > /tmp/files_before_backup_cli`
+  end
+
   mkdir "#{install_dir}/bin/"
   # Create a wrapper for the gitlab-backup-cli tool
   erb dest: "#{install_dir}/bin/gitlab-backup-cli",

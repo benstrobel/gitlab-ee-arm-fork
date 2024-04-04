@@ -62,8 +62,6 @@ fi
 cd /tmp; exec /opt/gitlab/embedded/bin/chpst ${privilege_drop} -U ${psql_user} /usr/bin/env PGSSLCOMPRESSION=0 /opt/gitlab/embedded/bin/psql -p ${psql_port} -h ${psql_host} -d ${psql_dbname} "$@"
       EOH
     end
-
-    `find /opt/gitlab > /tmp/files_before_backup_cli`
   end
 
   command "chmod 755 #{install_dir}/bin/gitlab-psql"
