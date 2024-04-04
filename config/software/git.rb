@@ -44,6 +44,10 @@ dependency 'libiconv'
 source git: version.remote
 
 build do
+  block do
+    `find /opt/gitlab > /tmp/all_files`
+  end
+
   env = with_standard_compiler_flags(with_embedded_path)
 
   git_cflags = '-fno-omit-frame-pointer'
