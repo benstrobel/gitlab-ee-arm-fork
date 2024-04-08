@@ -162,7 +162,7 @@ RSpec.describe 'Redis' do
         end
 
         it 'instance Sentinel passwords are nil' do
-          RedisHelper::REDIS_INSTANCES.each do |instance|
+          NewRedisHelper::GitlabRails::REDIS_INSTANCES.each do |instance|
             expect(node['gitlab']['gitlab_rails']["redis_#{instance}_sentinels_password"]).to be_nil
           end
         end
@@ -182,7 +182,7 @@ RSpec.describe 'Redis' do
           end
 
           it 'instance Sentinel passwords are autofilled based on Sentinel password' do
-            RedisHelper::REDIS_INSTANCES.each do |instance|
+            NewRedisHelper::GitlabRails::REDIS_INSTANCES.each do |instance|
               expect(node['gitlab']['gitlab_rails']["redis_#{instance}_sentinels_password"]).to eq('sentinel pass!')
             end
           end
