@@ -55,6 +55,30 @@ module NewRedisHelper
       uri
     end
 
+    def has_sentinels?
+      node_attr['redis_sentinels'] && !node_attr['redis_sentinels'].empty?
+    end
+
+    def redis_server_over_tcp?
+      redis['port']&.positive? || redis['tls_port']&.positive?
+    end
+
+    def connect_to_redis_over_tcp?
+      gitlab_rb_attr['redis_host']
+    end
+
+    def redis_replica?
+      redis['master'] == false
+    end
+
+    def redis_replica_role?
+      Gitlab['redis_replica_role']['enable']
+    end
+
+    def sentinel_daemon_enabled?
+      Services.enabled?('sentinel')
+    end
+
     private
 
     def node_access_keys
@@ -73,22 +97,6 @@ module NewRedisHelper
 
     def redis
       @node['redis']
-    end
-
-    def redis_server_over_tcp?
-      redis['port']&.positive? || redis['tls_port']&.positive?
-    end
-
-    def connect_to_redis_over_tcp?
-      gitlab_rb_attr['redis_host']
-    end
-
-    def redis_replica?
-      redis['master'] == false
-    end
-
-    def sentinel_daemon_enabled?
-      Services.enabled?('sentinel')
     end
 
     def master_name
@@ -133,10 +141,6 @@ module NewRedisHelper
 
     def redis_database
       node_attr['redis_database']
-    end
-
-    def has_sentinels?
-      node_attr['redis_sentinels'] && !node_attr['redis_sentinels'].empty?
     end
 
     def sentinel_urls
