@@ -1,3 +1,6 @@
+Forked from https://gitlab.com/gitlab-org/omnibus-gitlab and adjusted as described by comments of Hannes Tiltmann and Mike Lockhart:
+https://gitlab.com/gitlab-org/omnibus-gitlab/-/issues/5673#note_1364332357
+
 # Omnibus GitLab
 
 ## Description
