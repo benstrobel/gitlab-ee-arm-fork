@@ -19,7 +19,7 @@ account_helper = AccountHelper.new(node)
 omnibus_helper = OmnibusHelper.new(node)
 consul_helper = ConsulHelper.new(node)
 mailroom_helper = MailroomHelper.new(node)
-redis_helper = RedisHelper.new(node)
+redis_helper = RedisHelper::GitlabRails.new(node)
 logfiles_helper = LogfilesHelper.new(node)
 logging_settings = logfiles_helper.logging_settings('gitlab-rails')
 
@@ -189,7 +189,7 @@ templatesymlink "Create a clickhouse.yml and create a symlink to Rails root" do
   sensitive true
 end
 
-redis_url = redis_helper.redis_url
+redis_url = redis_helper.redis_params[:url]
 redis_sentinels = node['gitlab']['gitlab_rails']['redis_sentinels']
 redis_sentinels_password = node['gitlab']['gitlab_rails']['redis_sentinels_password']
 redis_enable_client = node['gitlab']['gitlab_rails']['redis_enable_client']
@@ -200,6 +200,9 @@ redis_tls_client_cert_file = node['gitlab']['gitlab_rails']['redis_tls_client_ce
 redis_tls_client_key_file = node['gitlab']['gitlab_rails']['redis_tls_client_key_file']
 redis_encrypted_settings_file = node['gitlab']['gitlab_rails']['redis_encrypted_settings_file']
 redis_extra_config_command = node['gitlab']['gitlab_rails']['redis_extra_config_command']
+redis_connect_timeout = node['gitlab']['gitlab_rails']['redis_connect_timeout']
+redis_read_timeout = node['gitlab']['gitlab_rails']['redis_read_timeout']
+redis_write_timeout = node['gitlab']['gitlab_rails']['redis_write_timeout']
 
 templatesymlink "Create a secrets.yml and create a symlink to Rails root" do
   link_from File.join(gitlab_rails_source_dir, "config/secrets.yml")
@@ -238,7 +241,10 @@ templatesymlink "Create a resque.yml and create a symlink to Rails root" do
     redis_tls_client_cert_file: redis_tls_client_cert_file,
     redis_tls_client_key_file: redis_tls_client_key_file,
     redis_encrypted_settings_file: redis_encrypted_settings_file,
-    redis_extra_config_command: redis_extra_config_command
+    redis_extra_config_command: redis_extra_config_command,
+    redis_connect_timeout: redis_connect_timeout,
+    redis_read_timeout: redis_read_timeout,
+    redis_write_timeout: redis_write_timeout
   )
   dependent_services.each { |svc| notifies :restart, svc }
   sensitive true
@@ -272,12 +278,18 @@ templatesymlink "Create a cable.yml and create a symlink to Rails root" do
   owner "root"
   group "root"
   mode "0644"
-  variables(redis_url: url, redis_sentinels: sentinels, redis_sentinels_password: sentinels_password, redis_enable_client: redis_enable_client)
+  variables(
+    redis_url: url,
+    redis_sentinels: sentinels,
+    redis_sentinels_password: sentinels_password,
+    redis_enable_client: redis_enable_client,
+    redis_extra_config_command: redis_extra_config_command
+  )
   dependent_services.each { |svc| notifies :restart, svc }
   sensitive true
 end
 
-RedisHelper::REDIS_INSTANCES.each do |instance|
+RedisHelper::GitlabRails::REDIS_INSTANCES.each do |instance|
   filename = "redis.#{instance}.yml"
   url = node['gitlab']['gitlab_rails']["redis_#{instance}_instance"]
   sentinels = node['gitlab']['gitlab_rails']["redis_#{instance}_sentinels"]
@@ -324,6 +336,18 @@ RedisHelper::REDIS_INSTANCES.each do |instance|
     action :delete if url.nil? && clusters.empty?
     sensitive true
   end
+end
+
+templatesymlink "Create a session_store.yml and create a symlink to Rails root" do
+  link_from File.join(gitlab_rails_source_dir, "config/session_store.yml")
+  link_to File.join(gitlab_rails_etc_dir, "session_store.yml")
+  source "session_store.yml.erb"
+  owner "root"
+  group gitlab_group
+  mode "0640"
+  variables node['gitlab']['gitlab_rails'].to_hash
+  dependent_services.each { |svc| notifies :restart, svc }
+  sensitive true
 end
 
 templatesymlink "Create a smtp_settings.rb and create a symlink to Rails root" do

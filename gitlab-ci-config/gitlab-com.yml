@@ -17,7 +17,7 @@
       - knapsack/
   artifacts: !reference [.knapsack-artifacts]
 
-.knapsack: &prepare_knapsack
+.knapsack:
   extends: .knapsack-state
   stage: prepare
   before_script: []
@@ -34,7 +34,7 @@
   needs:
     - rubocop
 
-.install-gems: &install-gems
+.install-gems:
   - gem install bundler:${BUNDLER_VERSION}
   - bundle config build.ffi --disable-system-libffi
   - bundle config set --local path 'gems'
@@ -42,7 +42,7 @@
   - bundle install -j $(nproc)
   - bundle binstubs --all
 
-.spec_template: &spec_template
+.spec_template:
   extends: .gems-cache-os-dependent
   stage: tests
   before_script:
@@ -171,16 +171,18 @@
     GITLAB_AUTH_TOKEN: $DANGER_GITLAB_API_TOKEN
     ALLURE_MERGE_REQUEST_IID: $CI_MERGE_REQUEST_IID
   inherit:
-   variables: false
+   variables:
+     - QA_TESTS_UPSTREAM_PROJECT
+     - QA_TESTS_REF
   trigger:
     strategy: depend
     forward:
       yaml_variables: true
       pipeline_variables: true
     include:
-      - project: gitlab-org/gitlab
-        ref: master
-        file: .gitlab/ci/package-and-test/main.gitlab-ci.yml
+      - project: ${QA_TESTS_UPSTREAM_PROJECT}
+        ref: ${QA_TESTS_REF}
+        file: .gitlab/ci/test-on-omnibus/main.gitlab-ci.yml
 
 #####################
 # Cache update jobs #
@@ -235,9 +237,9 @@ rubocop:
     - if: '$PIPELINE_TYPE =~ /_MR_PIPELINE$/'
   needs: []
 
-# Perform documentation linting on Markdown files
-docs-lint markdown:
-  image: registry.gitlab.com/gitlab-org/gitlab-docs/lint-markdown:alpine-3.19-vale-3.0.7-markdownlint-0.39.0-markdownlint2-0.12.1
+# Perform content linting on documentation Markdown files
+docs-lint content:
+  image: registry.gitlab.com/gitlab-org/gitlab-docs/lint-markdown:alpine-3.20-vale-3.7.1-markdownlint2-0.13.0-lychee-0.15.1
   stage: check
   cache: {}
   needs: []
@@ -245,6 +247,19 @@ docs-lint markdown:
   script:
     # Lint prose
     - vale --minAlertLevel error doc
+  rules:
+    - if: '$PIPELINE_TYPE =~ /_TEST_PIPELINE$/'
+    - if: '$PIPELINE_TYPE =~ /_MR_PIPELINE$/'
+    - if: '$PIPELINE_TYPE == "DOCS_PIPELINE"'
+
+# Perform linting on documentation Markdown files
+docs-lint markdown:
+  image: registry.gitlab.com/gitlab-org/gitlab-docs/lint-markdown:alpine-3.20-vale-3.7.1-markdownlint2-0.13.0-lychee-0.15.1
+  stage: check
+  cache: {}
+  needs: []
+  before_script: []
+  script:
     # Lint Markdown
     - markdownlint-cli2 'doc/**/*.md'
   rules:
@@ -252,25 +267,16 @@ docs-lint markdown:
     - if: '$PIPELINE_TYPE =~ /_MR_PIPELINE$/'
     - if: '$PIPELINE_TYPE == "DOCS_PIPELINE"'
 
-# Perform link checks on published HTML files
+# Perform link checking on documentation Markdown files
 docs-lint links:
-  image: registry.gitlab.com/gitlab-org/gitlab-docs/lint-html:alpine-3.19-ruby-3.2.3-a5032206
+  image: registry.gitlab.com/gitlab-org/gitlab-docs/lint-markdown:alpine-3.20-vale-3.7.1-markdownlint2-0.13.0-lychee-0.15.1
   stage: check
   cache: {}
   needs: []
   before_script: []
   script:
-    # Put documentation in location expected by nanoc and configured in nanoc.yaml. For more information, see:
-    # https://gitlab.com/gitlab-org/gitlab-docs/-/blob/eee6c4c03621ff13743828ad74a8f0e8b96dfe7c/nanoc.yaml#L43
-    - mkdir /tmp/omnibus-gitlab
-    - mv doc/ /tmp/omnibus-gitlab
-    - cd /tmp/gitlab-docs
-    # Build HTML from Markdown
-    - make compile
-    # Check the internal links and anchors (in parallel)
-    # Links from the home page aren't checked because they aren't rendered here. For information, see:
-    # https://gitlab.com/gitlab-org/gitlab-docs/-/blob/eee6c4c03621ff13743828ad74a8f0e8b96dfe7c/content/index.erb#L6
-    - "parallel time bundle exec nanoc check ::: internal_links internal_anchors"
+    # Check Markdown links
+    - lychee --offline --include-fragments doc
   rules:
     - if: '$PIPELINE_TYPE =~ /_TEST_PIPELINE$/'
     - if: '$PIPELINE_TYPE =~ /_MR_PIPELINE$/'
@@ -324,12 +330,11 @@ review-docs-cleanup:
     - ./trigger-build.rb docs cleanup
 
 include:
-  - project: 'gitlab-org/quality/pipeline-common'
-    file:
-      - '/ci/danger-review.yml'
+  - component: ${CI_SERVER_FQDN}/gitlab-org/components/danger-review/danger-review@1.4.0
+    inputs:
+      job_stage: "check"
 
 danger-review:
-  stage: check
   variables:
     BUNDLE_WITH: "danger"
   rules:
@@ -343,9 +348,9 @@ Debian 10 knapsack: !reference [.knapsack]
 Debian 11 knapsack: !reference [.knapsack]
 Debian 12 knapsack: !reference [.knapsack]
 OpenSUSE 15.5 knapsack: !reference [.knapsack]
-Ubuntu 18.04 knapsack: !reference [.knapsack]
 Ubuntu 20.04 knapsack: !reference [.knapsack]
 Ubuntu 22.04 knapsack: !reference [.knapsack]
+Ubuntu 24.04 knapsack: !reference [.knapsack]
 AmazonLinux 2 knapsack: !reference [.knapsack]
 AmazonLinux 2023 knapsack: !reference [.knapsack]
 
@@ -364,12 +369,6 @@ build library specs:
         coverage_format: cobertura
         path: coverage/coverage.xml
 
-Ubuntu 18.04 specs :
-  image: "${PUBLIC_BUILDER_IMAGE_REGISTRY}/ubuntu_18.04-ruby:${BUILDER_IMAGE_REVISION}"
-  extends: .chef_spec_template
-  parallel: 6
-  needs:
-  - Ubuntu 18.04 knapsack
 Ubuntu 20.04 specs :
   image: "${PUBLIC_BUILDER_IMAGE_REGISTRY}/ubuntu_20.04-ruby:${BUILDER_IMAGE_REVISION}"
   extends: .chef_spec_template
@@ -382,6 +381,12 @@ Ubuntu 22.04 specs:
   parallel: 6
   needs:
   - Ubuntu 22.04 knapsack
+Ubuntu 24.04 specs:
+  image: "${PUBLIC_BUILDER_IMAGE_REGISTRY}/ubuntu_24.04-ruby:${BUILDER_IMAGE_REVISION}"
+  extends: .chef_spec_template
+  parallel: 6
+  needs:
+  - Ubuntu 24.04 knapsack
 Debian 10 specs :
   image: "${PUBLIC_BUILDER_IMAGE_REGISTRY}/debian_10-ruby:${BUILDER_IMAGE_REVISION}"
   extends: .chef_spec_template
@@ -473,7 +478,7 @@ qa-subset-test:
     - .qa-template
   stage: qa
   variables:
-    QA_OMNIBUS_MR_TESTS: "only-smoke-reliable"
+    QA_OMNIBUS_MR_TESTS: "only-smoke"
     QA_RUN_TYPE: ${CI_JOB_NAME}
     QA_SUITES: "QA::Scenario::Test::Integration::GitalyCluster,QA::Scenario::Test::Integration::InstanceSAML,QA::Scenario::Test::Integration::LDAPNoServer,QA::Scenario::Test::Integration::LDAPNoTLS,QA::Scenario::Test::Integration::LDAPTLS,QA::Scenario::Test::Integration::Mattermost,QA::Scenario::Test::Integration::Mtls,QA::Scenario::Test::Integration::ObjectStorageGcs,QA::Scenario::Test::Integration::RegistryTLS,QA::Scenario::Test::Integration::RegistryWithCDN,QA::Scenario::Test::Integration::SMTP,QA::Scenario::Test::Integration::Registry,QA::Scenario::Test::Instance::ObjectStorage,QA::Scenario::Test::Instance::RepositoryStorage,QA::Scenario::Test::Instance::GitlabPages,QA::Scenario::Test::Instance::Metrics,QA::EE::Scenario::Test::Integration::GroupSAML,QA::Scenario::Test::Instance::Smoke"
   rules:
@@ -506,7 +511,7 @@ qa-remaining-test-manual:
   stage: qa
   variables:
     QA_RUN_TYPE: ${CI_JOB_NAME}
-    QA_OMNIBUS_MR_TESTS: "except-smoke-reliable"
+    QA_OMNIBUS_MR_TESTS: "except-smoke"
     QA_SUITES: "QA::EE::Scenario::Test::Integration::Elasticsearch,QA::Scenario::Test::Integration::Import,QA::Scenario::Test::Integration::Integrations,QA::Scenario::Test::Integration::OAuth,QA::Scenario::Test::Integration::Jira,QA::Scenario::Test::Integration::ServicePingDisabled,QA::Scenario::Test::Instance::LargeSetup,QA::Scenario::Test::Instance::CloudActivation"
   rules:
     - if: '$SKIP_QA_TEST == "true"'
@@ -563,6 +568,8 @@ RAT:
       allow_failure: true
     - if: '$PIPELINE_TYPE == "EE_NIGHTLY_BUILD_PIPELINE"'
       allow_failure: true
+      variables:
+        NIGHTLY: 'true'
   needs:
     - job: Ubuntu-22.04-branch
       artifacts: false
@@ -579,6 +586,16 @@ RAT:FIPS:
       artifacts: false
     - job: generate-facts
       artifacts: true
+
+RAT:ref_arch_envs:
+  extends: RAT
+  parallel:
+    matrix:
+      - REFERENCE_ARCHITECTURE: [1k, 2k, 3k, 10k]
+  rules:
+    - if: '$PIPELINE_TYPE == "TRIGGERED_EE_PIPELINE"'
+      when: manual
+      allow_failure: true
 
 GET:Geo:
   stage: qa
@@ -604,14 +621,14 @@ GET:Geo:
       artifacts: true
 
 dependency_scanning:
-  image: "registry.gitlab.com/gitlab-org/security-products/gitlab-depscan:2.4"
+  image: "registry.gitlab.com/gitlab-org/security-products/gitlab-depscan:3.0.0"
   stage: validate
   variables:
     REPORT_PATH: ./
-    NVD_DB_UPDATE: "true"
   before_script: []
   script:
-    - /gitlab-depscan.sh build_facts/version-manifest.json
+    - git clone --depth 1 https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.com/gitlab-org/secure/vulnerability-research/advisories/nvd-mirror-json-data-v2.git /opt/nvd-mirror-json-data-v2
+    - /gitlab-depscan.sh build_facts/version-manifest.json "" /opt/nvd-mirror-json-data-v2
   rules:
     - if: '$PIPELINE_TYPE == "DEPENDENCY_SCANNING_PIPELINE"'
     - if: '$PIPELINE_TYPE == "GITLAB_MR_PIPELINE"'
@@ -635,6 +652,22 @@ dependency_update:
     - $HOME/bin/deps ci
   rules:
     - if: '$PIPELINE_TYPE == "DEPS_IO_VERSION_CHECK_PIPELINE"'
+
+validate_renovate_checksum:
+  image: docker.io/bash:5.2-alpine3.20
+  stage: prepare
+  before_script:
+    - apk add git
+  script:
+    - ./scripts/renovate/checksums/update_all.sh
+    - mismatches="$(git status --porcelain)"
+    - if [ -n "$mismatches" ]; then
+        echo "Checksum mismatch detected";
+        echo "$mismatches";
+        exit 1;
+      fi
+  rules:
+    - if: '$PIPELINE_TYPE == "GITLAB_MR_PIPELINE"'
 
 validate_packer_changes:
   before_script: []

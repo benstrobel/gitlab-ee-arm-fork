@@ -78,7 +78,6 @@ module Gitlab
     attribute('postgres_exporter',  priority: 30)
     attribute('pgbouncer_exporter', priority: 30)
     attribute('gitlab_exporter',    priority: 30).use { GitlabExporter }
-    attribute('grafana')
   end
 
   ## Attributes under node['gitlab']
@@ -124,5 +123,6 @@ module Gitlab
     attribute('high_availability')
     attribute('web_server')
     attribute('prometheus_monitoring')
+    attribute('gitlab_backup_cli')
   end
 end

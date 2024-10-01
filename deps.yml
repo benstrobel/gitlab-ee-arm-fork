@@ -29,8 +29,8 @@ dependencies:
       # acme-client
       https://github.com/unixcharles/acme-client.git:
         replace_in_files:
-        - filename: config/software/acme-client.rb
-          pattern: "default_version '(\\S+)'"
+        - filename: config/templates/omnibus-gitlab-gems/Gemfile
+          pattern: "gem 'acme-client', '(\\S+)'"
           tag_prefix: 'v'
       # chef-acme
       https://github.com/schubergphilis/chef-acme.git:
@@ -47,31 +47,31 @@ dependencies:
       # chef
       https://github.com/chef/chef.git:
         replace_in_files:
-        - filename: config/software/chef-gem.rb
-          pattern: "default_version '(\\S+)'"
+        - filename: config/templates/omnibus-gitlab-gems/Gemfile
+          pattern: "gem 'chef', '(\\S+)'"
           tag_prefix: 'v'
           range: '<= 18.x'
-        - filename: config/software/chef-bin.rb
-          pattern: "default_version '(\\S+)'"
+        - filename: config/templates/omnibus-gitlab-gems/Gemfile
+          pattern: "gem 'chef-bin', '(\\S+)'"
           tag_prefix: 'v'
           range: '<= 18.x'
       # ohai
       https://github.com/chef/ohai.git:
         replace_in_files:
-        - filename: config/software/ohai.rb
-          pattern: "default_version '(\\S+)'"
+        - filename: config/templates/omnibus-gitlab-gems/Gemfile
+          pattern: "gem 'ohai', '(\\S+)'"
           tag_prefix: 'v'
           range: '<= 18.x'
       # mixlib-log
       https://github.com/chef/mixlib-log.git:
         replace_in_files:
-        - filename: config/software/mixlib-log.rb
-          pattern: "default_version '(\\S+)'"
+        - filename: config/templates/omnibus-gitlab-gems/Gemfile
+          pattern: "gem 'mixlib-log', '(\\S+)'"
       # chef-zero
       https://github.com/chef/chef-zero:
         replace_in_files:
-        - filename: config/software/chef-zero.rb
-          pattern: "default_version '(\\S+)'"
+        - filename: config/templates/omnibus-gitlab-gems/Gemfile
+          pattern: "gem 'chef-zero', '(\\S+)'"
       # compat_resource
       https://github.com/chef-cookbooks/compat_resource.git:
         replace_in_files:
@@ -82,10 +82,10 @@ dependencies:
         replace_in_files:
         - filename: config/software/consul.rb
           pattern: "version = Gitlab::Version.new\\('consul', 'v(\\S+)'\\)"
-          range: '< 1.17.0'
+          range: '< 1.19.0'
         - filename: files/gitlab-ctl-commands-ee/lib/consul_download.rb
           pattern: "DEFAULT_VERSION = '(\\S+)'"
-          range: '< 1.17.0'
+          range: '< 1.19.0'
         - filename: files/gitlab-cookbooks/consul/libraries/consul_helper.rb
           pattern: "SUPPORTED_MINOR = '(\\S+)'"
           tag_filter:
@@ -132,25 +132,13 @@ dependencies:
       # remote-syslog
       https://github.com/papertrail/remote_syslog.git:
         replace_in_files:
-        - filename: config/software/remote-syslog.rb
-          pattern: "default_version '(\\S+)'"
-      # rubygems
-      https://github.com/rubygems/rubygems.git:
-        replace_in_files:
-        - filename: config/software/rubygems.rb
-          pattern: "default_version '(\\S+)'"
-          range: '<= 3.x'
+        - filename: config/templates/omnibus-gitlab-gems/Gemfile
+          pattern: "gem 'remote_syslog', '(\\S+)'"
       # zlib
       https://github.com/madler/zlib.git:
         replace_in_files:
         - filename: config/software/zlib.rb
           pattern: "Gitlab::Version.new\\('zlib', 'v(\\S+)'\\)"
-          tag_prefix: 'v'
-      # prometheus
-      https://gitlab.com/gitlab-org/build/omnibus-mirror/prometheus.git:
-        replace_in_files:
-        - filename: config/software/prometheus.rb
-          pattern: "Gitlab::Version.new\\('prometheus', '(\\S+)'\\)"
           tag_prefix: 'v'
       # gitlab-exporter
       https://gitlab.com/gitlab-org/gitlab-exporter.git:
@@ -168,12 +156,6 @@ dependencies:
         replace_in_files:
         - filename: config/software/postgres-exporter.rb
           pattern: "Gitlab::Version.new\\('postgres-exporter', '(\\S+)'\\)"
-          tag_prefix: 'v'
-      # pgbouncer-exporter
-      https://gitlab.com/gitlab-org/build/omnibus-mirror/pgbouncer_exporter.git:
-        replace_in_files:
-        - filename: config/software/pgbouncer-exporter.rb
-          pattern: "Gitlab::Version.new\\('pgbouncer-exporter', '(\\S+)'\\)"
           tag_prefix: 'v'
       # redis-exporter
       https://gitlab.com/gitlab-org/build/omnibus-mirror/redis_exporter.git:
@@ -193,36 +175,12 @@ dependencies:
         - filename: config/software/libtiff.rb
           pattern: "Gitlab::Version.new\\('libtiff', 'v(\\S+)'\\)"
           tag_prefix: 'v'
-      # gitlab-registry
-      https://gitlab.com/gitlab-org/container-registry.git:
-        replace_in_files:
-        - filename: config/software/registry.rb
-          pattern: "Gitlab::Version.new\\('registry', '(\\S+)'\\)"
-          tag_filter:
-            matching: 'v(\S+)-gitlab'
-            sort_as: '$1'
-      # pgbouncer
-      https://github.com/pgbouncer/pgbouncer.git:
-        replace_in_files:
-        - filename: config/software/pgbouncer.rb
-          pattern: "Gitlab::Version.new\\('pgbouncer', '(\\S+)'\\)"
-          tag_filter:
-            matching: 'pgbouncer_(\d+)_(\d+)_(\d+)'
-            sort_as: '$1.$2.$3'
       # redis
       https://github.com/redis/redis.git:
         replace_in_files:
         - filename: config/software/redis.rb
           pattern: "Gitlab::Version.new\\('redis', '(\\S+)'\\)"
           range: '< 7.2.0'
-       # exiftool
-      https://github.com/exiftool/exiftool.git:
-        replace_in_files:
-        - filename: config/software/exiftool.rb
-          pattern: "Gitlab::Version.new\\('exiftool', '(\\S+)'\\)"
-          tag_filter:
-            matching: '(\d+).(\d+)'
-            sort_as: '$1.$2.0'
       # curl
       https://github.com/curl/curl.git:
         replace_in_files:
@@ -239,12 +197,6 @@ dependencies:
           tag_filter:
             matching: 'pcre2-(\d+).(\d+)$'
             sort_as: '$1.$2.0'
-      # git-filter-repo
-      https://github.com/newren/git-filter-repo.git:
-        replace_in_files:
-        - filename: config/software/git-filter-repo.rb
-          pattern: "Gitlab::Version.new\\('git-filter-repo', 'v(\\S+)'\\)"
-          tag_prefix: 'v'
       # deps that need updated filtering to work https://github.com/dropseed/deps-git/issues/2
       # krb5
       # https://github.com/krb5/krb5.git:

@@ -68,22 +68,26 @@ end
 
 # perl is required for exiftool and openssh certificate hashing
 
-runtime_dependency 'perl'
-
 if rhel?
   case OhaiHelper.get_centos_version
   when '6', '7'
     runtime_dependency 'policycoreutils-python'
+    runtime_dependency 'perl'
   when '8', '9'
     runtime_dependency 'policycoreutils-python-utils'
+    runtime_dependency 'perl-interpreter'
   end
 elsif amazon?
   case OhaiHelper.get_amazon_version
   when '2'
     runtime_dependency 'policycoreutils-python'
+    runtime_dependency 'perl'
   when '2023'
     runtime_dependency 'policycoreutils-python-utils'
+    runtime_dependency 'perl-interpreter'
   end
+else
+  runtime_dependency 'perl'
 end
 
 # Arm targets need libatomic
@@ -107,16 +111,12 @@ if Build::Check.use_system_ssl?
 end
 
 dependency 'cacerts'
-dependency 'faraday-cage'
+dependency 'omnibus-gitlab-gems'
 dependency 'gitlab-selinux' if SELinuxDistroHelper.selinux_supported?
 dependency 'redis'
 dependency 'nginx'
-dependency 'mixlib-log'
-dependency 'chef-zero'
-dependency 'ohai'
 dependency 'chef-gem'
-dependency 'chef-bin'
-dependency 'remote-syslog'
+dependency 'inspec-gem'
 dependency 'logrotate'
 dependency 'runit'
 dependency 'go-crond'

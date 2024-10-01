@@ -333,6 +333,7 @@ By default, the Linux package installations expect the following users and group
 | `gitlab-consul`      | Only when using GitLab Consul           | GitLab Consul user/group                                              | `/var/opt/gitlab/consul`     | `/bin/sh`     |
 | `registry`           | Only when using GitLab Registry         | GitLab Registry user/group                                            | `/var/opt/gitlab/registry`   | `/bin/sh`     |
 | `mattermost`         | Only when using GitLab Mattermost       | GitLab Mattermost user/group                                          | `/var/opt/gitlab/mattermost` | `/bin/sh`     |
+| `gitlab-backup`      | Only when using `gitlab-backup-cli`     | GitLab Backup Cli User                                                | `/var/opt/gitlab/backups`    | `/bin/sh`     |
 
 To disable user and group accounts management:
 
@@ -487,7 +488,7 @@ Enabling this setting prevents the creation of the following directories:
 
 | Default location                                       | Permissions   | Ownership        | Purpose                            |
 |--------------------------------------------------------|---------------|------------------|------------------------------------|
-| `/var/opt/gitlab/git-data`                             | `0700`        | `git:git`        | Holds repositories directory       |
+| `/var/opt/gitlab/git-data`                             | `2770`        | `git:git`        | Holds repositories directory       |
 | `/var/opt/gitlab/git-data/repositories`                | `2770`        | `git:git`        | Holds Git repositories             |
 | `/var/opt/gitlab/gitlab-rails/shared`                  | `0751`        | `git:gitlab-www` | Holds large object directories     |
 | `/var/opt/gitlab/gitlab-rails/shared/artifacts`        | `0700`        | `git:git`        | Holds CI artifacts                 |
@@ -644,7 +645,7 @@ To configure Sentry:
 
 1. Create a project in Sentry.
 1. Find the
-   [Data Source Name (DSN)](https://docs.sentry.io/product/sentry-basics/concepts/dsn-explainer/)
+   [Data Source Name (DSN)](https://docs.sentry.io/concepts/key-terms/dsn-explainer/)
    of the project you created.
 1. Edit `/etc/gitlab/gitlab.rb`:
 
@@ -655,11 +656,11 @@ To configure Sentry:
    gitlab_rails['sentry_environment'] = 'production'
    ```
 
-   The [Sentry environment](https://docs.sentry.io/product/sentry-basics/concepts/environments/)
+   The [Sentry environment](https://docs.sentry.io/concepts/key-terms/environments/)
    can be used to track errors and issues across several deployed GitLab
    environments, for example, lab, development, staging, and production.
 
-1. Optional. To set custom [Sentry tags](https://docs.sentry.io/product/sentry-basics/concepts/enrich-data/)
+1. Optional. To set custom [Sentry tags](https://docs.sentry.io/concepts/key-terms/enrich-data/)
    on every event sent from a particular server, the `GITLAB_SENTRY_EXTRA_TAGS`
    an environment variable can be set. This variable is a JSON-encoded hash representing any
    tags that should be passed to Sentry for all exceptions from that server.
@@ -709,9 +710,8 @@ cross-site scripting (XSS) attacks. See
 [the Mozilla documentation on CSP](https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP) for more
 details.
 
-GitLab 12.2 added support for
-[CSP and nonce-source with inline JavaScript](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/script-src).
-It is [not configured by default yet](https://gitlab.com/gitlab-org/gitlab/-/issues/30720).
+[CSP and nonce-source with inline JavaScript](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/script-src) is available on GitLab.com.
+It is [not configured by default](https://gitlab.com/gitlab-org/gitlab/-/issues/30720) on self-managed.
 
 NOTE:
 Improperly configuring the CSP rules could prevent GitLab from working
@@ -746,8 +746,7 @@ To add a CSP:
    }
    ```
 
-   [In GitLab 14.9 and later](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/80303), secure default values
-   are used for directives that aren't explicitly configured.
+   Secure default values are used for directives that aren't explicitly configured.
 
    To unset a CSP directive, set a value of `false`.
 
@@ -760,7 +759,7 @@ To add a CSP:
 ## Set initial root password on installation
 
 The initial password for the administrator user `root` can be set at installation time. For more information, see
-[Set up the initial password](../installation/index.md#set-up-the-initial-password).
+[Set up the initial password](../installation/index.md#set-up-the-initial-account).
 
 ## Set allowed hosts to prevent host header attacks
 
@@ -788,6 +787,24 @@ If using a custom external proxy such as Apache, it may be necessary to add the 
 gitlab_rails['allowed_hosts'] = ['gitlab.example.com', '127.0.0.1', 'localhost']
 ```
 
+## Session cookie configuration
+
+To change the prefix of the generated web session cookie values:
+
+1. Edit `/etc/gitlab/gitlab.rb`:
+
+   ```ruby
+   gitlab_rails['session_store_session_cookie_token_prefix'] = 'custom_prefix_'
+   ```
+
+1. Reconfigure GitLab:
+
+   ```shell
+   sudo gitlab-ctl reconfigure
+   ```
+
+The default value is an empty string `""`.
+
 ## Provide sensitive configuration to components without plain text storage
 
 Some components expose an `extra_config_command` option in `gitlab.rb`. This allows an external script to provide secrets
@@ -797,11 +814,12 @@ The available options are:
 
 | `gitlab.rb` setting                          | Responsibility                                                                                                                                                   |
 | -------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `gitlab_rails['redis_extra_config_command']` | Provides extra configuration to the Redis configuration files used by GitLab Rails application. (`resque.yml`, `redis.yml`, `redis.<redis_instance>.yml` files) |
-| `gitlab_rails['db_extra_config_command']`    | Provides extra configuration to the DB configuration file used by GitLab Rails application. (`database.yml`)                                                    |
-| `gitlab_kas['extra_config_command']`         | Provides extra configuration to GitLab agent server for Kubernetes (KAS).                                                                                       |
-| `gitlab_workhorse['extra_config_command']`   | Provides extra configuration to GitLab Workhorse.|
-| `gitlab_exporter['extra_config_command']`    | Provides extra configuration to GitLab Exporter. |
+| `redis['extra_config_command']`              | Provides extra configuration to the Redis server configuration file.                                                                                             |
+| `gitlab_rails['redis_extra_config_command']` | Provides extra configuration to the Redis configuration files used by GitLab Rails application. (`resque.yml`, `redis.yml`, `redis.<redis_instance>.yml` files)  |
+| `gitlab_rails['db_extra_config_command']`    | Provides extra configuration to the DB configuration file used by GitLab Rails application. (`database.yml`)                                                     |
+| `gitlab_kas['extra_config_command']`         | Provides extra configuration to GitLab agent server for Kubernetes (KAS).                                                                                        |
+| `gitlab_workhorse['extra_config_command']`   | Provides extra configuration to GitLab Workhorse.                                                                                                                |
+| `gitlab_exporter['extra_config_command']`    | Provides extra configuration to GitLab Exporter.                                                                                                                 |
 
 The value assigned to any of these options should be an absolute path to an executable script
 that writes the sensitive configuration in the required format to STDOUT. The
@@ -811,11 +829,16 @@ components:
 1. Replace values set by user and default configuration files with those emitted
    by the script.
 
-### Provide Redis password to client components
+### Provide Redis password to Redis server and client components
 
-As an example, you can use the script and `gitlab.rb` snippet below to
-specify the password of a Redis server to the components that need to connect to
-Redis.
+As an example, you can use the script and `gitlab.rb` snippet below to specify
+the password to Redis server and components that need to connect to Redis.
+
+NOTE:
+When specifying password to Redis server, this method only saves the user from
+having the plaintext password in `gitlab.rb` file. The password will end up in
+plaintext in the Redis server configuration file present at
+`/var/opt/gitlab/redis/redis.conf`.
 
 1. Save the script below as `/opt/generate-redis-conf`
 
@@ -829,6 +852,11 @@ Redis.
      REDIS_PASSWORD = `echo "toomanysecrets"`.strip # Change the command inside backticks to fetch Redis password
 
      class << self
+       def server
+         puts "requirepass '#{REDIS_PASSWORD}'"
+         puts "masterauth '#{REDIS_PASSWORD}'"
+       end
+
        def rails
          puts YAML.dump({
            'password' => REDIS_PASSWORD
@@ -866,8 +894,8 @@ Redis.
    end
 
    def print_error_and_exit
-     $stdout.puts "Usage: redis_credentials <COMPONENT>"
-     $stderr.puts "Supported components are: rails, kas, workhorse, gitlab_exporter"
+     $stdout.puts "Usage: generate-redis-conf <COMPONENT>"
+     $stderr.puts "Supported components are: server, rails, kas, workhorse, gitlab_exporter"
 
      exit 1
    end
@@ -891,6 +919,8 @@ Redis.
 1. Add the snippet below to `/etc/gitlab/gitlab.rb`:
 
    ```ruby
+   redis['extra_config_command'] = '/opt/generate-redis-conf server'
+
    gitlab_rails['redis_extra_config_command'] = '/opt/generate-redis-conf rails'
    gitlab_workhorse['extra_config_command'] = '/opt/generate-redis-conf workhorse'
    gitlab_kas['extra_config_command'] = '/opt/generate-redis-conf kas'
@@ -950,7 +980,7 @@ password that GitLab Rails should use to connect to the PostgreSQL server.
   - Insert custom NGINX settings into the GitLab server block
   - Insert custom settings into the NGINX configuration
   - Enable `nginx_status`
-- [Use a non-packaged web-server](nginx.md#using-a-non-bundled-web-server)
+- [Use a non-packaged web-server](nginx.md#use-a-non-bundled-web-server)
 - [Use a non-packaged PostgreSQL database management server](database.md)
 - [Use a non-packaged Redis instance](redis.md)
 - [Add `ENV` vars to the GitLab runtime environment](environment-variables.md)

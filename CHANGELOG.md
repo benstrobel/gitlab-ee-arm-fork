@@ -3,6 +3,445 @@
 The latest version of this file can be found at the master branch of the
 omnibus-gitlab repository.
 
+## 17.4.1 (2024-09-24)
+
+### Security (1 change)
+
+- [Mattermost Security Updates August 27, 2024](gitlab-org/security/omnibus-gitlab@9d9aa6535e6ee536058a0b88e763987b29511376) ([merge request](gitlab-org/security/omnibus-gitlab!452))
+
+## 17.4.0 (2024-09-18)
+
+### Added (1 change)
+
+- [Allow setting of log_connections / log_disconnections logging config in postgres](gitlab-org/omnibus-gitlab@81b523322de505e0db78ac9e414bbb091c0a6569) by @yushao.sqpc ([merge request](gitlab-org/omnibus-gitlab!7834))
+
+### Fixed (3 changes)
+
+- [Add other necessary paths in update-permissions](gitlab-org/omnibus-gitlab@498f6c0765224ff003f6c76a7460f6769c4d42a1) by @taoyouh ([merge request](gitlab-org/omnibus-gitlab!5408))
+- [Make Ruby 3.1 and 3.2 work with OpenSSL 3 in FIPS mode](gitlab-org/omnibus-gitlab@3c8c29201be5ffd2f36442134b5c4cd265419203) ([merge request](gitlab-org/omnibus-gitlab!7906))
+- [Raise default PostgreSQL shared buffers minimum to 256 MB](gitlab-org/omnibus-gitlab@20505e8b83c3f6ee25c4ceacc09156fce38901cb) ([merge request](gitlab-org/omnibus-gitlab!7860))
+
+### Changed (13 changes)
+
+- [Update dependency exiftool/exiftool to v12.96](gitlab-org/omnibus-gitlab@d94e84091823823882b74e136ee36e005ab60318) ([merge request](gitlab-org/omnibus-gitlab!7915))
+- [Bump libicu from 57.1 to 63.1](gitlab-org/omnibus-gitlab@bb9fb02b247079a9ec2961d742ba54fe19078af4) ([merge request](gitlab-org/omnibus-gitlab!7908))
+- [Enable nginx with application_role](gitlab-org/omnibus-gitlab@e4fa9e190b66a3d607b56c08efa71c2fe8f18590) ([merge request](gitlab-org/omnibus-gitlab!7858))
+- [Bump exiftool to version 12.93](gitlab-org/omnibus-gitlab@84ae4206b53103760319fc01404af2c911eb4a09) ([merge request](gitlab-org/omnibus-gitlab!7873))
+- [Bump pgbouncer to 1.23.1](gitlab-org/omnibus-gitlab@31a84b4e8b2218eca419cbb20a3fbc5f8055ab3b) by @gitlab-dependency-update-bot ([merge request](gitlab-org/omnibus-gitlab!7837))
+- [Update dependency prometheus/prometheus to v2.54.1](gitlab-org/omnibus-gitlab@d9a080f626d31df5c7579ac98e8feae0e8daf723) ([merge request](gitlab-org/omnibus-gitlab!7888))
+- [Bump Mattermost to version 9.11.0](gitlab-org/omnibus-gitlab@c05c82a123b90989f24c0966b144f355ab14d012) by @mvitale1989 ([merge request](gitlab-org/omnibus-gitlab!7865))
+- [Update dependency registry to v4.8.0-gitlab](gitlab-org/omnibus-gitlab@f48afbd727e126c5f147ea4a72d71b177b04deeb) ([merge request](gitlab-org/omnibus-gitlab!7883))
+- [Update dependency pgbouncer_exporter to v0.9.0](gitlab-org/omnibus-gitlab@535b40a83d746d1a91c2121a7960b3673ee063de) ([merge request](gitlab-org/omnibus-gitlab!7838))
+- [Update chef](gitlab-org/omnibus-gitlab@2b665a33e79be1c9f4611e798924a7370cca79e7) ([merge request](gitlab-org/omnibus-gitlab!7866))
+- [Update dependency git-filter-repo to v2.45.0](gitlab-org/omnibus-gitlab@5f704a5382daf94247a9cc7330d8be06eb6332dd) ([merge request](gitlab-org/omnibus-gitlab!7864))
+- [Update Prometheus from 2.53.1 to 2.54.0](gitlab-org/omnibus-gitlab@9c48128f1f50577807e6a4bb71a94020db2d056c) ([merge request](gitlab-org/omnibus-gitlab!7844))
+- [Update dependency rubygems to v3.5.17](gitlab-org/omnibus-gitlab@a2d9595397acb07fca2596c85d600ab12fa56f68) ([merge request](gitlab-org/omnibus-gitlab!7836))
+
+### Deprecated (2 changes)
+
+- [Add debian 10 (Buster) os deprecated OS list](gitlab-org/omnibus-gitlab@6c3021a418e1162401860957fe8fcfd2ab805f2c) ([merge request](gitlab-org/omnibus-gitlab!7854))
+- [Deprecate gitlab_shell['migration'] setting](gitlab-org/omnibus-gitlab@de6c84f6c764776a0596f1dab993e9003efc6390) ([merge request](gitlab-org/omnibus-gitlab!7787))
+
+### Security (1 change)
+
+- [Bump mattermost to version 9.10.1](gitlab-org/omnibus-gitlab@8941963db56a46083c3478cf2ac3ca28c08f8b34) ([merge request](gitlab-org/omnibus-gitlab!7851))
+
+### Other (1 change)
+
+- [Replace perl with perl-interpreter for RHEL >= 8](gitlab-org/omnibus-gitlab@5aeb6c93311b493c5ad79de1bf2a9ccac590a487) by @vtardiveau ([merge request](gitlab-org/omnibus-gitlab!7796))
+
+## 17.3.3 (2024-09-16)
+
+No changes.
+
+## 17.3.2 (2024-09-11)
+
+No changes.
+
+## 17.3.1 (2024-08-20)
+
+### Fixed (1 change)
+
+- [Raise default PostgreSQL shared buffers minimum to 256 MB](gitlab-org/security/omnibus-gitlab@b84f187f1de7d7329a7f028df4a3adaf18ace742)
+
+### Deprecated (1 change)
+
+- [Add debian 10 (Buster) os deprecated OS list](gitlab-org/security/omnibus-gitlab@bab929ec49f87c3d2690f9d46ad1281284a4124f)
+
+### Security (1 change)
+
+- [Mattermost 2024-07 Security Update](gitlab-org/security/omnibus-gitlab@01514b0807e290d792b19264a7d1f95b7d3392e7) ([merge request](gitlab-org/security/omnibus-gitlab!447))
+
+## 17.3.0 (2024-08-14)
+
+### Added (1 change)
+
+- [Add rate_limit_bypass_cidrs parameter for Pages](gitlab-org/omnibus-gitlab@0c311178488533a9f7621eb5cdfbd5e7a031b231) ([merge request](gitlab-org/omnibus-gitlab!7820))
+
+### Changed (10 changes)
+
+- [Bump exiftool to version 12.92](gitlab-org/omnibus-gitlab@000389a90b5334746ecbaa9710f30779876b61ec) ([merge request](gitlab-org/omnibus-gitlab!7813))
+- [Update curl from 8.8.0 to 8.9.0](gitlab-org/omnibus-gitlab@02c415c10315ee26175472a4e6c6c1ddc6d4aa63) ([merge request](gitlab-org/omnibus-gitlab!7812))
+- [Update dependency registry to v4.7.0-gitlab](gitlab-org/omnibus-gitlab@4a9f41e6108fecdcbc7e4cd90451da60bc7afd96) ([merge request](gitlab-org/omnibus-gitlab!7826))
+- [Bump Mattermost to version 9.10.0](gitlab-org/omnibus-gitlab@bd0bc0399c9def9b708429538db391c3c078a151) by @mvitale1989 ([merge request](gitlab-org/omnibus-gitlab!7798))
+- [Clean up YAML anchors in CI config](gitlab-org/omnibus-gitlab@beb08cc4d7de76dc49827b73eddfb3c7e9f32e37) ([merge request](gitlab-org/omnibus-gitlab!7400))
+- [Update dependency libxml2 to v2.13.3](gitlab-org/omnibus-gitlab@645b7adb516adb05443a06c5a28c8bbbfe6b7780) ([merge request](gitlab-org/omnibus-gitlab!7811))
+- [Update exiftool from 12.87 to 12.89](gitlab-org/omnibus-gitlab@32c3026628b6eed8306c511ff53e823b80887d91) ([merge request](gitlab-org/omnibus-gitlab!7789))
+- [Update gitlab-org/build/omnibus-mirror/redis_exporter from 1.61.0 to 1.62.0](gitlab-org/omnibus-gitlab@f9579c7fe9d01cc74de867e34242193c6f5af54c) ([merge request](gitlab-org/omnibus-gitlab!7799))
+- [Update gitlab-org/build/omnibus-mirror/node_exporter from 1.8.1 to 1.8.2](gitlab-org/omnibus-gitlab@6bf6d71a74bac14b9e8576205ee2a1ade2c60cf0) ([merge request](gitlab-org/omnibus-gitlab!7790))
+- [Update dependency libxml2 to v2.13.2](gitlab-org/omnibus-gitlab@f9e32b45a092e1798f15687054ffb04ea08bdf22) ([merge request](gitlab-org/omnibus-gitlab!7772))
+
+## 17.2.7 (2024-09-16)
+
+No changes.
+
+## 17.2.6 (2024-09-13)
+
+No changes.
+
+## 17.2.5 (2024-09-11)
+
+No changes.
+
+## 17.2.4 (2024-08-21)
+
+No changes.
+
+## 17.2.3 (2024-08-20)
+
+### Security (1 change)
+
+- [Mattermost 2024-07 Security Update](gitlab-org/security/omnibus-gitlab@109c3fb3f783030013a426cf1ccd1be41f272c12) ([merge request](gitlab-org/security/omnibus-gitlab!446))
+
+## 17.2.2 (2024-08-06)
+
+No changes.
+
+## 17.2.1 (2024-07-24)
+
+No changes.
+
+## 17.2.0 (2024-07-17)
+
+### Added (6 changes)
+
+- [Add support for configuring Redis client timeouts](gitlab-org/omnibus-gitlab@c9ae8f7debedc1e476975da43f26b98f4d8f8a9f) ([merge request](gitlab-org/omnibus-gitlab!7749))
+- [Add restart-except command to gitlab-ctl](gitlab-org/omnibus-gitlab@4b65b13a599f343f6410ac16b7fae377a6b755b5) ([merge request](gitlab-org/omnibus-gitlab!7769))
+- [Support Pure-SSH LFS protocol in gitlab-shell](gitlab-org/omnibus-gitlab@cec387b24301d07254d04b17222ad2d03f545bbb) ([merge request](gitlab-org/omnibus-gitlab!7740))
+- [Pages NGINX configuration for namespace in path](gitlab-org/omnibus-gitlab@dcc7d66cef4e08d2a0819c165f6c11de663a2152) ([merge request](gitlab-org/omnibus-gitlab!7733))
+- [Add gitlab-backup user](gitlab-org/omnibus-gitlab@da7efdf5b7065ea0ca5536bebd83263470e7e10a) ([merge request](gitlab-org/omnibus-gitlab!7664))
+- [Add public_key_algorithms option for gitlab-sshd](gitlab-org/omnibus-gitlab@411a749784fd2be573757962d01f6383c41cb5d6) by @bufferoverflow ([merge request](gitlab-org/omnibus-gitlab!7660))
+
+### Fixed (4 changes)
+
+- [Fix Redis password handling with reserved characters](gitlab-org/omnibus-gitlab@990f8b58cd8fac9a12f83b3bd21e2e287ac60d55) ([merge request](gitlab-org/omnibus-gitlab!7742))
+- [Propagate AWS_DEFAULT_REGION to Docker environment](gitlab-org/omnibus-gitlab@4568dcc677ab9645b29ec6ed443e94d6e5d388ef) ([merge request](gitlab-org/omnibus-gitlab!7741))
+- [Attempt to retry twice to determine Redis server version](gitlab-org/omnibus-gitlab@63179771a3edb60934803caf486f4ed2a4c714af) ([merge request](gitlab-org/omnibus-gitlab!7738))
+- [Force ffi gem to use Ruby platform gem](gitlab-org/omnibus-gitlab@bdf7221985c60390a90a1cd0295bb29c007b55b0) ([merge request](gitlab-org/omnibus-gitlab!7730))
+
+### Changed (11 changes)
+
+- [Update gitlab-org/build/omnibus-mirror/prometheus from 2.53.0 to 2.53.1](gitlab-org/omnibus-gitlab@4e9d1f7f454d2324c9ff2ac2380642a257323357) ([merge request](gitlab-org/omnibus-gitlab!7782))
+- [Bump acme-client to version 2.0.18](gitlab-org/omnibus-gitlab@451caaf2f5761bc84986d2b0700f538192323070) ([merge request](gitlab-org/omnibus-gitlab!7723))
+- [Update prometheus from 2.52.1 to 2.53.0](gitlab-org/omnibus-gitlab@07681a79e7d060f3e8a0efcdbb462a325c137be9) ([merge request](gitlab-org/omnibus-gitlab!7731))
+- [Update dependency registry to v4.6.0-gitlab](gitlab-org/omnibus-gitlab@98243907b3458fafda6706850da7be6d673f5c02) ([merge request](gitlab-org/omnibus-gitlab!7746))
+- [Bump mattermost to version 9.9.0](gitlab-org/omnibus-gitlab@6b4f510f8d408e3222d9121e6fd3c118555c70f2) by @mvitale1989 ([merge request](gitlab-org/omnibus-gitlab!7729))
+- [Update dependency libxml2 to v2.13.1](gitlab-org/omnibus-gitlab@a5de4367a20748c9c7407805df12bd4c49d08262) ([merge request](gitlab-org/omnibus-gitlab!7735))
+- [Update redis_exporter from 1.59.0 to 1.61.0](gitlab-org/omnibus-gitlab@1b9ad5ef0c7ab935e40bc08a6af6de8e1a848d2e) ([merge request](gitlab-org/omnibus-gitlab!7658))
+- [Update curl from 8.6.0 to 8.8.0](gitlab-org/omnibus-gitlab@f23e1b577b2abe433cde78303d01f09d8f90b67d) by @ghost1 ([merge request](gitlab-org/omnibus-gitlab!7542))
+- [Bump exiftool to version 12.87](gitlab-org/omnibus-gitlab@86ab581d12b0551de0d50c3fa6fabe27c19d1587) ([merge request](gitlab-org/omnibus-gitlab!7686))
+- [Bump container registry to 4.5.0](gitlab-org/omnibus-gitlab@0d661c9c18c8eb55612e2036e2b0f6b280422e71) by @gitlab-dependency-update-bot ([merge request](gitlab-org/omnibus-gitlab!7647))
+- [Disable request buffering for new SSH endpoints](gitlab-org/omnibus-gitlab@f836d021aa3d187becae5aba18548e99750fd6de) ([merge request](gitlab-org/omnibus-gitlab!7713))
+
+## 17.1.8 (2024-09-16)
+
+No changes.
+
+## 17.1.7 (2024-09-11)
+
+No changes.
+
+## 17.1.6 (2024-08-21)
+
+No changes.
+
+## 17.1.5 (2024-08-20)
+
+### Security (1 change)
+
+- [Mattermost 2024-07 Security Update](gitlab-org/security/omnibus-gitlab@a4d7ec686bce6e939e18982c8de2723c723f2a42) ([merge request](gitlab-org/security/omnibus-gitlab!441))
+
+## 17.1.4 (2024-08-06)
+
+No changes.
+
+## 17.1.3 (2024-07-24)
+
+No changes.
+
+## 17.1.2 (2024-07-09)
+
+### Fixed (2 changes)
+
+- [Fix Redis password handling with reserved characters](gitlab-org/security/omnibus-gitlab@1b64825adbabddcd445b3dd09638471b6a63f1a7)
+- [Force ffi gem to use Ruby platform gem](gitlab-org/security/omnibus-gitlab@8a0e3a7c79c702f6959ef240d894d6fb1c7fd7d7)
+
+## 17.1.1 (2024-06-25)
+
+No changes.
+
+## 17.1.0 (2024-06-19)
+
+### Added (5 changes)
+
+- [Add new config option custom_html_header_tags](gitlab-org/omnibus-gitlab@98d454b5e45a268bb3548234ce165ece7596604c) by @bufferoverflow ([merge request](gitlab-org/omnibus-gitlab!7652))
+- [Add client_cert_key_pairs, ca_certs parameters in gitlab.rb for Pages](gitlab-org/omnibus-gitlab@ee6266203265c8524b69fe8d2ff126de477c3ed6) ([merge request](gitlab-org/omnibus-gitlab!7583))
+- [Support specifying extra Redis server configuration through command](gitlab-org/omnibus-gitlab@e5a4eb2549341e7091bffcc8e583ddaab6cb7430) ([merge request](gitlab-org/omnibus-gitlab!7627))
+- [Add ability to prefix session cookies](gitlab-org/omnibus-gitlab@bc9ae02f9fc62b23a484b71f63fd5f700f84031a) ([merge request](gitlab-org/omnibus-gitlab!7605))
+- [Add maxretries config for registry notifications](gitlab-org/omnibus-gitlab@a602a6229cfc489694c1c7b99e8f1f662ac8f664) ([merge request](gitlab-org/omnibus-gitlab!7550))
+
+### Fixed (6 changes)
+
+- [Patch inspec gem to work with future parser gems](gitlab-org/omnibus-gitlab@2d376d451f419c7f21dc8512811b625945d293d7) ([merge request](gitlab-org/omnibus-gitlab!7612))
+- [Fix nil error when access_control disabled & namespace_in_path enabled](gitlab-org/omnibus-gitlab@3a32d9eaeb0d41a93dbe5b734465f2c1f242f973) ([merge request](gitlab-org/omnibus-gitlab!7617))
+- [Fix stable version tag identification for 16.1.x releases](gitlab-org/omnibus-gitlab@050fe6e6fb0b0c49a66f1df7f5f3101361570403) ([merge request](gitlab-org/omnibus-gitlab!7692))
+- [Fix proxy_redirect when listen_port is specified for GitLab Pages](gitlab-org/omnibus-gitlab@40a17e803513e51ac33adee0d0542dd95afd6c18) ([merge request](gitlab-org/omnibus-gitlab!7604))
+- [redis: Fix handling of passwords with a space](gitlab-org/omnibus-gitlab@7ea2c4c89995fe42200af9b78732b6f75c945ee8) ([merge request](gitlab-org/omnibus-gitlab!7601))
+- [Override default timeout when running decomposition migration](gitlab-org/omnibus-gitlab@4b58cb8c6f4ffeee1d035246fdd7b1d882fd7cec) ([merge request](gitlab-org/omnibus-gitlab!7606))
+
+### Changed (14 changes)
+
+- [Update consul from 1.16.6 to 1.18.2](gitlab-org/omnibus-gitlab@de75ba383f77500fd13abb514dabe5bfd2d637f3) ([merge request](gitlab-org/omnibus-gitlab!7667))
+- [Bump gitlab-exporter to version 15.0.0](gitlab-org/omnibus-gitlab@ac542a099a44b76b99143226ad70e404a18d3f6f) ([merge request](gitlab-org/omnibus-gitlab!7651))
+- [Update PCRE2Project/pcre2 from pcre2-10.43 to pcre2-10.44](gitlab-org/omnibus-gitlab@4fc6c150da3d243636176e856baf15826bf52e6a) ([merge request](gitlab-org/omnibus-gitlab!7687))
+- [Bump prometheus version to 2.52.1](gitlab-org/omnibus-gitlab@c6fbc7e4c00e236d61726344d35b382f1a280d83) ([merge request](gitlab-org/omnibus-gitlab!7624))
+- [Bump rubygems to 3.5.11](gitlab-org/omnibus-gitlab@373a238e76dbf4f93210986360d427e89c5999b4) ([merge request](gitlab-org/omnibus-gitlab!7650))
+- [Bump node_exporter version to 1.8.1](gitlab-org/omnibus-gitlab@8414a5f0e933c5da7371f4da884636d7493441ce) ([merge request](gitlab-org/omnibus-gitlab!7623))
+- [Detect potential previous pg-upgrade failures](gitlab-org/omnibus-gitlab@dd72152881efdac07039e62723236325b097cab1) ([merge request](gitlab-org/omnibus-gitlab!7587))
+- [Update exiftool/exiftool from 12.84 to 12.85](gitlab-org/omnibus-gitlab@48f0d27835c3d0395724d8aef6c9cae43bb7bf00) ([merge request](gitlab-org/omnibus-gitlab!7625))
+- [feat: enable consul dns port override](gitlab-org/omnibus-gitlab@411cc30d95765c190d865c2a9013aa1264608ab7) by @yushao.sqpc ([merge request](gitlab-org/omnibus-gitlab!7576))
+- [Update libxml2 from 2.12.3 to 2.12.7](gitlab-org/omnibus-gitlab@508b76fe9b0a4d46dcf61408b5c1ccaec0bbedc7) ([merge request](gitlab-org/omnibus-gitlab!7613))
+- [Enable PostgreSQL slow logs by default](gitlab-org/omnibus-gitlab@1fdb776bc9356965cf8547d4fa90104f46b44f98) ([merge request](gitlab-org/omnibus-gitlab!7608))
+- [Bump gitlab-exporter to version 14.5.0](gitlab-org/omnibus-gitlab@b7442832bbea8e05ea8532e5b573681175ebf2b3) ([merge request](gitlab-org/omnibus-gitlab!7581))
+- [Bump rubygems to version 3.5.10](gitlab-org/omnibus-gitlab@0d31fc3067e8d4ebb1553999684f520995abe341) ([merge request](gitlab-org/omnibus-gitlab!7582))
+- [Drop Cinc EOL warning](gitlab-org/omnibus-gitlab@40b4a31d2af211003dd27582af793bdafe0687e3) ([merge request](gitlab-org/omnibus-gitlab!7599))
+
+### Deprecated (1 change)
+
+- [Add deprecation notice for threshold params](gitlab-org/omnibus-gitlab@0c81a8060408c1363fda0e9a5eb74021c1271b25) ([merge request](gitlab-org/omnibus-gitlab!7550))
+
+### Removed (1 change)
+
+- [Remove Grafana attribute and deprecation messages](gitlab-org/omnibus-gitlab@2bb9ea5d315ddc05cc2d96527fbb7667f0247aab) ([merge request](gitlab-org/omnibus-gitlab!7603))
+
+### Security (1 change)
+
+- [Mattermost 2024-04 security update](gitlab-org/omnibus-gitlab@7cdbc9b3cfd34a1008544eb02ac87fbb64c5db16)
+
+### Other (1 change)
+
+- [Bump Mattermost to version 9.8.0](gitlab-org/omnibus-gitlab@a68aad1971f3be597e4e1d32562f5db467a1b1ef) by @akis.maziotis ([merge request](gitlab-org/omnibus-gitlab!7622))
+
+## 17.0.8 (2024-09-16)
+
+No changes.
+
+## 17.0.7 (2024-09-10)
+
+No changes.
+
+## 17.0.6 (2024-08-06)
+
+No changes.
+
+## 17.0.5 (2024-07-24)
+
+No changes.
+
+## 17.0.4 (2024-07-09)
+
+### Fixed (1 change)
+
+- [Fix Redis password handling with reserved characters](gitlab-org/security/omnibus-gitlab@b70160bd9c9a3b8a9bc3ea94ea44dbd3f174c8b3)
+
+## 17.0.3 (2024-06-25)
+
+### Fixed (1 change)
+
+- [Fix stable version tag identification for 16.1.x releases](gitlab-org/security/omnibus-gitlab@b4c4c01c83ce863b87475da68fe6f31f62b1df90)
+
+## 17.0.2 (2024-06-11)
+
+No changes.
+
+## 17.0.1 (2024-05-21)
+
+### Security (1 change)
+
+- [Mattermost 2024-04 security update](gitlab-org/security/omnibus-gitlab@d6853f8ce1627d7ba21b065c17995a107b9876db) ([merge request](gitlab-org/security/omnibus-gitlab!433))
+
+## 17.0.0 (2024-05-15)
+
+### Fixed (6 changes)
+
+- [redis: Fix password auth with UNIX domain sockets](gitlab-org/omnibus-gitlab@656fb39a8c15e91c0da6649ab565656b7bd5c4cc) ([merge request](gitlab-org/omnibus-gitlab!7573))
+- [Fix reconfigure failure if Redis node has Rails Sentinel config](gitlab-org/omnibus-gitlab@1c579dae4db66d440e6cc9be3c21cd6cf5bf3cae) ([merge request](gitlab-org/omnibus-gitlab!7567))
+- [Fix missing arguments when PostgreSQL upgrade times out](gitlab-org/omnibus-gitlab@39fa902e774c623cb26728bea4c7b0a01a18cace) ([merge request](gitlab-org/omnibus-gitlab!7558))
+- [Update default pages auth-redirect-uri when namespace-in-path is enabled](gitlab-org/omnibus-gitlab@1f597136de444d437b1d6ed614fd928dd04c06dc) ([merge request](gitlab-org/omnibus-gitlab!7548))
+- [Support custom auth_redirect_uri when namespace_in_path is enabled](gitlab-org/omnibus-gitlab@5bc1b0d5ad081361c284d927521451c004af141e) ([merge request](gitlab-org/omnibus-gitlab!7516))
+- [Avoid "undefined local" error (follow-up to 0faf786f)](gitlab-org/omnibus-gitlab@0eaa7e61d4df1fc30724be037774f66b0effcd0d) ([merge request](gitlab-org/omnibus-gitlab!7532))
+
+### Changed (12 changes)
+
+- [Prevent Gitaly storages from using the same path](gitlab-org/omnibus-gitlab@57396c7abae914e2217a024a940fd48b14ca0ed6) ([merge request](gitlab-org/omnibus-gitlab!7564))
+- [Upgrade to Ruby 3.1.5 and add support for Ruby 3.2.5](gitlab-org/omnibus-gitlab@ab12454b3ec15bd38e8e0d6f7e147a31434ce70a) ([merge request](gitlab-org/omnibus-gitlab!7591))
+- [Use bundler to install Omnibus gems](gitlab-org/omnibus-gitlab@38bd8dffecfc3215a79ddcfcce597048c10e8c05) ([merge request](gitlab-org/omnibus-gitlab!7362))
+- [Update gitlab-org/container-registry from v3.93.0-gitlab to v4.0.0-gitlab](gitlab-org/omnibus-gitlab@242873ad43143d6baf43a8c6adea255d6f9b2c8d) ([merge request](gitlab-org/omnibus-gitlab!7580))
+- [Update exiftool from 12.82 to 12.83](gitlab-org/omnibus-gitlab@f4fe427b0e016fdc1d3b4ab6bdfeb135aabd740e) by @ghost1 ([merge request](gitlab-org/omnibus-gitlab!7560))
+- [Update gitlab-org/build/omnibus-mirror/redis_exporter from 1.58.0 to 1.59.0](gitlab-org/omnibus-gitlab@8a1167a3723830fed9ff25d6ed6dde68bb50d67e) by @ghost1 ([merge request](gitlab-org/omnibus-gitlab!7561))
+- [Bump rubygems to version 3.5.9](gitlab-org/omnibus-gitlab@acc5d2b53746b235fad4be2d8826f6315ffff3ad) ([merge request](gitlab-org/omnibus-gitlab!7541))
+- [Enforce upgrade stop at 16.11](gitlab-org/omnibus-gitlab@0c8e92a9367648b210d79cc2cb64663d32e12256) ([merge request](gitlab-org/omnibus-gitlab!7575))
+- [Update gitlab-org/build/omnibus-mirror/node_exporter from 1.7.0 to 1.8.0](gitlab-org/omnibus-gitlab@a7d0064fd617b0dcf5f540270818a500f8951455) ([merge request](gitlab-org/omnibus-gitlab!7569))
+- [Update gitlab-org/container-registry from v3.92.0-gitlab to v3.93.0-gitlab](gitlab-org/omnibus-gitlab@ea5a0327d452fd3e776ef261e7c6f1f84c25ac1b) ([merge request](gitlab-org/omnibus-gitlab!7568))
+- [Update BUILDER_IMAGE_REVISION to v5.12.0](gitlab-org/omnibus-gitlab@03c505786cd276d9fbb5b1cc0862b73401844d44) ([merge request](gitlab-org/omnibus-gitlab!7565))
+- [Enable KAS in FIPS mode](gitlab-org/omnibus-gitlab@10d69a4d348d5979a6eddce62a8a5a65fc70fe1d) ([merge request](gitlab-org/omnibus-gitlab!7528))
+
+### Removed (3 changes)
+
+- [Remove PostgreSQL 13](gitlab-org/omnibus-gitlab@92f7cf5b6cd6d332975b39be77043c2a38afb4af) ([merge request](gitlab-org/omnibus-gitlab!7546))
+- [Remove deprecated min_concurrency and max_concurrency for Sidekiq](gitlab-org/omnibus-gitlab@cfa756435e01e653dac55e06f55fe20a1867afa6) ([merge request](gitlab-org/omnibus-gitlab!7549))
+- [Remove queue_selector and negate options from Sidekiq](gitlab-org/omnibus-gitlab@cae9ce603e4460ef8af8a7e4e845510014ed70d0) ([merge request](gitlab-org/omnibus-gitlab!7540))
+
+### Other (1 change)
+
+- [Update Mattermost to 9.7.1](gitlab-org/omnibus-gitlab@87ecb13f6b2d34d04c42a5ce879977e1dce81a12) by @akis.maziotis ([merge request](gitlab-org/omnibus-gitlab!7551))
+
+## 16.11.10 (2024-09-16)
+
+No changes.
+
+## 16.11.9 (2024-09-10)
+
+No changes.
+
+## 16.11.8 (2024-08-05)
+
+No changes.
+
+## 16.11.7 (2024-07-23)
+
+No changes.
+
+## 16.11.6 (2024-07-09)
+
+No changes.
+
+## 16.11.5 (2024-06-25)
+
+### Fixed (1 change)
+
+- [Fix stable version tag identification for 16.1.x releases](gitlab-org/security/omnibus-gitlab@0a4a4884fc221e2ff6191e0331a24852717b60ab)
+
+## 16.11.4 (2024-06-11)
+
+No changes.
+
+## 16.11.3 (2024-05-21)
+
+### Changed (1 change)
+
+- [Use bundler to install Omnibus gems](gitlab-org/security/omnibus-gitlab@9fe621284a37b5e153b71c4ccaba4a1efe94a76f)
+
+### Security (1 change)
+
+- [Mattermost 2024-04 security update](gitlab-org/security/omnibus-gitlab@47c0bac5146e4d41b7aedb000f5212917be8d720) ([merge request](gitlab-org/security/omnibus-gitlab!426))
+
+## 16.11.2 (2024-05-07)
+
+### Fixed (1 change)
+
+- [Fix reconfigure failure if Redis node has Rails Sentinel config](gitlab-org/security/omnibus-gitlab@c097bfaf41a5081a4d22d99247c5dda5a8f7924e)
+
+## 16.11.1 (2024-04-24)
+
+### Fixed (1 change)
+
+- [Fix missing arguments when PostgreSQL upgrade times out](gitlab-org/security/omnibus-gitlab@cb3aa3360928fab97f3b58869d5e71623095c5ca)
+
+## 16.11.0 (2024-04-17)
+
+### Added (5 changes)
+
+- [Support optional grpc log level config for KAS](gitlab-org/omnibus-gitlab@eacda21e3088c3991ca173a3feac5bb3c565d038) ([merge request](gitlab-org/omnibus-gitlab!7518))
+- [Support TLS for kas->kas communication in Omnibus](gitlab-org/omnibus-gitlab@b55ca1fb9fe17e26f971606e7befb9cc7a734225) ([merge request](gitlab-org/omnibus-gitlab!7453))
+- [Unified Backups: Add gitlab-backup-cli to Omnibus](gitlab-org/omnibus-gitlab@e19a65e32e2fdf95b4e2f4ac0bb23e31ef2475fa) ([merge request](gitlab-org/omnibus-gitlab!7328))
+- [Accept multiple bind addresses in Redis config](gitlab-org/omnibus-gitlab@faca982898e37e0af4cf646dadcb4f62ef7c8696) ([merge request](gitlab-org/omnibus-gitlab!7500))
+- [Enable easy SELinux context fixes](gitlab-org/omnibus-gitlab@9ef2e1868734bd41742f40b152137efb809967b3) ([merge request](gitlab-org/omnibus-gitlab!7486))
+
+### Fixed (2 changes)
+
+- [Fix patroni no longer working with update to ydiff 1.3](gitlab-org/omnibus-gitlab@a17b4c868b7dfd30bbb875dba59075b2d5c7064b) ([merge request](gitlab-org/omnibus-gitlab!7535))
+- [Create git_data_dirs even if gitlab_rails is disabled](gitlab-org/omnibus-gitlab@4beb352443b15a554a0b87c5a9c686c81f16f11f) ([merge request](gitlab-org/omnibus-gitlab!7459))
+
+### Changed (14 changes)
+
+- [Update container-registry from to v3.92.0-gitlab](gitlab-org/omnibus-gitlab@28e54f0367e80502989a62e41158fcd0dcae4ac4) ([merge request](gitlab-org/omnibus-gitlab!7508))
+- [Bump gitlab-exporter to version 14.4.0](gitlab-org/omnibus-gitlab@6f9dbc473d6cf0a1a0728f0a9ccfa401d4983855) ([merge request](gitlab-org/omnibus-gitlab!7531))
+- [Update prometheus from 2.51.0 to 2.51.2](gitlab-org/omnibus-gitlab@293d8f88f5232af1441e28664daa0af160dca825) ([merge request](gitlab-org/omnibus-gitlab!7505))
+- [Update pgbouncer_exporter to 0.8.0](gitlab-org/omnibus-gitlab@832832e17d3eccf5c2505952304471345b47558f) ([merge request](gitlab-org/omnibus-gitlab!7522))
+- [Bump Mattermost to release 9.6.1](gitlab-org/omnibus-gitlab@a136bbd80cd0ab4b39bc9e17a659991acf6a264c) by @mvitale1989 ([merge request](gitlab-org/omnibus-gitlab!7504))
+- [Bump builder image to 5.10.0](gitlab-org/omnibus-gitlab@1cdddc9dd4179cdfc6349dc6cf1decdec8ca15a3) ([merge request](gitlab-org/omnibus-gitlab!7533))
+- [Bump rubygems to version 3.5.7](gitlab-org/omnibus-gitlab@ebe3efc3325133d0748bf31369970342576108fd) ([merge request](gitlab-org/omnibus-gitlab!7494))
+- [Allow routing rules to contain shard information](gitlab-org/omnibus-gitlab@f185f8373c76046307be8a9f94eb8ff139428c7d) ([merge request](gitlab-org/omnibus-gitlab!7512))
+- [Bump exiftool to version 12.82](gitlab-org/omnibus-gitlab@dac03774f73bf13b7ac23b8dccf144a07d7357a2) ([merge request](gitlab-org/omnibus-gitlab!7507))
+- [Update prometheus from 2.50.1 to 2.51.0](gitlab-org/omnibus-gitlab@b8d33138ac1ce487467ed90b6de9a7b8f59d0a05) ([merge request](gitlab-org/omnibus-gitlab!7491))
+- [Fix typo in Python 3 builds for Amazon Linux 2023](gitlab-org/omnibus-gitlab@3f63c96e1154f999457696bb6570665510b6b87a) ([merge request](gitlab-org/omnibus-gitlab!7496))
+- [Auto upgrade single node installs to PostgreSQL 14](gitlab-org/omnibus-gitlab@a340a0c3ba31b1844334e35a56913570c6d9c7af) ([merge request](gitlab-org/omnibus-gitlab!7490))
+- [Update exiftool/exiftool from 12.78 to 12.80](gitlab-org/omnibus-gitlab@ed10b69ae3362c564465fb1d1b4820e4e4db8c6a) ([merge request](gitlab-org/omnibus-gitlab!7487))
+- [Update exiftool/exiftool from 12.78 to 12.79](gitlab-org/omnibus-gitlab@605cfe1755a49f3bf0e892a5cfead8b8929e31c0) ([merge request](gitlab-org/omnibus-gitlab!7487))
+
+### Security (1 change)
+
+- [Use February 2024 PostgreSQL patches](gitlab-org/omnibus-gitlab@bc78ec9e2d91882439c574bc18eaddd08f17f8d1)
+
+## 16.10.9 (2024-07-23)
+
+No changes.
+
+## 16.10.8 (2024-06-25)
+
+### Fixed (1 change)
+
+- [Fix stable version tag identification for 16.1.x releases](gitlab-org/omnibus-gitlab@142bf6601c2fd16bc9f0c45b28d2dc0d12d90f8e) ([merge request](gitlab-org/omnibus-gitlab!7703))
+
+## 16.10.7 (2024-06-11)
+
+No changes.
+
+## 16.10.6 (2024-05-21)
+
+### Changed (1 change)
+
+- [Use bundler to install Omnibus gems](gitlab-org/security/omnibus-gitlab@ab098ceaf78a7467e9aa7fc853449a2bbfef20c0)
+
+### Security (1 change)
+
+- [Mattermost 2024-04 security update](gitlab-org/security/omnibus-gitlab@0185f82b5f76a1b8bf0742b5c3636de3dcf4d999) ([merge request](gitlab-org/security/omnibus-gitlab!427))
+
+## 16.10.5 (2024-05-07)
+
+No changes.
+
+## 16.10.4 (2024-04-24)
+
+No changes.
+
+## 16.10.3 (2024-04-12)
+
+### Fixed (1 change)
+
+- [Fix patroni no longer working with update to ydiff 1.3](gitlab-org/omnibus-gitlab@8d5980d40ac8c33465f134283eeb7bdf89c18f33) ([merge request](gitlab-org/omnibus-gitlab!7538))
+
 ## 16.10.2 (2024-04-09)
 
 No changes.
@@ -66,6 +505,40 @@ No changes.
 ### Other (1 change)
 
 - [Update Patroni to 3.0.1](gitlab-org/omnibus-gitlab@faba9e7605768373c4747fa7062ab36c7be74205) ([merge request](gitlab-org/omnibus-gitlab!6898))
+
+## 16.9.10 (2024-07-23)
+
+No changes.
+
+## 16.9.9 (2024-06-25)
+
+### Fixed (1 change)
+
+- [Fix stable version tag identification for 16.1.x releases](gitlab-org/omnibus-gitlab@8215e3264d77bef11f7aeabefcd5f10ddf68eb44) ([merge request](gitlab-org/omnibus-gitlab!7702))
+
+### Changed (1 change)
+
+- [Use bundler to install Omnibus gems](gitlab-org/omnibus-gitlab@f69987a94c8e109a94acf0aa1d61cd0ba1de88fa) ([merge request](gitlab-org/omnibus-gitlab!7584))
+
+## 16.9.8 (2024-05-09)
+
+### Fixed (1 change)
+
+- [Pin parser dependency in chef-bin](gitlab-org/omnibus-gitlab@a93949f0278b9c10b239274cfa07f6db93c5fa27) ([merge request](gitlab-org/omnibus-gitlab!7593))
+
+## 16.9.7 (2024-05-07)
+
+No changes.
+
+## 16.9.6 (2024-04-24)
+
+No changes.
+
+## 16.9.5 (2024-04-12)
+
+### Fixed (1 change)
+
+- [Fix patroni no longer working with update to ydiff 1.3](gitlab-org/omnibus-gitlab@75f31c334f3b767744c870b6a6608649eeca0cbf) ([merge request](gitlab-org/omnibus-gitlab!7537))
 
 ## 16.9.4 (2024-04-09)
 
@@ -131,6 +604,22 @@ No changes.
 - [Update PostgreSQL 13 and 14](gitlab-org/omnibus-gitlab@8d6a65a402e0aa6fc7f826c424cb778f3e0d8b79)
 - [Update libxml2 from 2.10.4 to 2.12.3](gitlab-org/omnibus-gitlab@18f0dcced0f8597992b87bb0b01ae5d9f782842f)
 
+## 16.8.9 (2024-07-23)
+
+No changes.
+
+## 16.8.8 (2024-06-25)
+
+### Changed (1 change)
+
+- [Use bundler to install Omnibus gems](gitlab-org/omnibus-gitlab@823559c2c4a9295d26ebc4c261c540753a6fb5d2) ([merge request](gitlab-org/omnibus-gitlab!7671))
+
+## 16.8.7 (2024-04-12)
+
+### Fixed (1 change)
+
+- [Fix patroni no longer working with update to ydiff 1.3](gitlab-org/omnibus-gitlab@3d60627f653244fdbccb5ac4468d8925da6c833a) ([merge request](gitlab-org/omnibus-gitlab!7536))
+
 ## 16.8.6 (2024-04-09)
 
 No changes.
@@ -195,6 +684,21 @@ No changes.
 
 - [Stop building for OpenSUSE 15.4](gitlab-org/omnibus-gitlab@d6d3933486f4b6d86320652882faa0019dc1aae7) ([merge request](gitlab-org/omnibus-gitlab!7331))
 - [Stop sidekiq namespaced probe for gitlab-exporter](gitlab-org/omnibus-gitlab@ff1df765a218a7b29ad6c4a9ccd6b091a2a10bfe) ([merge request](gitlab-org/omnibus-gitlab!7237))
+
+## 16.7.9 (2024-07-23)
+
+No changes.
+
+## 16.7.8 (2024-06-25)
+
+### Fixed (2 changes)
+
+- [Fix stable version tag identification for 16.1.x releases](gitlab-org/omnibus-gitlab@305d3c3310e13a4765d7e2c9a216a5987036cada) ([merge request](gitlab-org/omnibus-gitlab!7700))
+- [Fix patroni no longer working with update to ydiff 1.3](gitlab-org/omnibus-gitlab@a84fe3c0149e3287e50003fb75b754b8fc7cf167) ([merge request](gitlab-org/omnibus-gitlab!7634))
+
+### Changed (1 change)
+
+- [Use bundler to install Omnibus gems](gitlab-org/omnibus-gitlab@c8eb85d029abecdee5e0299703ce4e0b9a8ac980) ([merge request](gitlab-org/omnibus-gitlab!7674))
 
 ## 16.7.7 (2024-03-06)
 
@@ -277,6 +781,21 @@ No changes.
 - [Mattermost Security Update](gitlab-org/omnibus-gitlab@feda92ec4fb2024eb397a1e0970ae5b7f407dad6)
 - [Update PostgreSQL 13 and 14](gitlab-org/omnibus-gitlab@cfa09e2d8ee45a4cdebfde8fc334df9f9cd428f2)
 
+## 16.6.9 (2024-07-23)
+
+No changes.
+
+## 16.6.8 (2024-06-25)
+
+### Fixed (2 changes)
+
+- [Fix stable version tag identification for 16.1.x releases](gitlab-org/omnibus-gitlab@bd347c975d3a28497154c0edc5a5866c3b16444f) ([merge request](gitlab-org/omnibus-gitlab!7699))
+- [Fix patroni no longer working with update to ydiff 1.3](gitlab-org/omnibus-gitlab@a052a09e36fd8e4be0a7b94b0d34580003338bf4) ([merge request](gitlab-org/omnibus-gitlab!7635))
+
+### Changed (1 change)
+
+- [Use bundler to install Omnibus gems](gitlab-org/omnibus-gitlab@d32fdce3192f622f8b67a0a731823a28bd1d887c) ([merge request](gitlab-org/omnibus-gitlab!7675))
+
 ## 16.6.7 (2024-02-07)
 
 ### Security (1 change)
@@ -347,6 +866,17 @@ No changes.
 ### Other (1 change)
 
 - [Update Mattermost to 9.1.0](gitlab-org/omnibus-gitlab@3cedfa24af36c0f7d6d149ddd0956f5bce20d0e7) by @akis.maziotis ([merge request](gitlab-org/omnibus-gitlab!7206))
+
+## 16.5.9 (2024-07-23)
+
+### Fixed (2 changes)
+
+- [Fix stable version tag identification for 16.1.x releases](gitlab-org/omnibus-gitlab@b13b695bf21f3a2cc434feb9f5ecf59b739aeedf) ([merge request](gitlab-org/omnibus-gitlab!7698))
+- [Fix patroni no longer working with update to ydiff 1.3](gitlab-org/omnibus-gitlab@b4905d7d108cfe2f2d99867014c54a5b199eb670) ([merge request](gitlab-org/omnibus-gitlab!7636))
+
+### Changed (1 change)
+
+- [Use bundler to install Omnibus gems](gitlab-org/omnibus-gitlab@04753f5bd5fde0078bc16d1b20203b00d56fa086) ([merge request](gitlab-org/omnibus-gitlab!7677))
 
 ## 16.5.8 (2024-01-24)
 
@@ -436,6 +966,17 @@ No changes.
 
 - [Update Mattermost to 9.0.0](gitlab-org/omnibus-gitlab@fddabad069dad759b6f0937d66e88295530c28b0) by @akis.maziotis ([merge request](gitlab-org/omnibus-gitlab!7168))
 
+## 16.4.6 (2024-07-23)
+
+### Fixed (2 changes)
+
+- [Fix stable version tag identification for 16.1.x releases](gitlab-org/omnibus-gitlab@ca22dcc284fc8d37ba67ef27d9802bea3aae3b52) ([merge request](gitlab-org/omnibus-gitlab!7697))
+- [Fix patroni no longer working with update to ydiff 1.3](gitlab-org/omnibus-gitlab@32f7253299eb5cc59631970af73eb5dcf0a5bed3) ([merge request](gitlab-org/omnibus-gitlab!7637))
+
+### Changed (1 change)
+
+- [Use bundler to install Omnibus gems](gitlab-org/omnibus-gitlab@d44f2b6d83a70bed05c4805fffb9b62652dd44cc) ([merge request](gitlab-org/omnibus-gitlab!7678))
+
 ## 16.4.5 (2024-01-11)
 
 No changes.
@@ -509,6 +1050,17 @@ No changes.
 ### Other (1 change)
 
 - [Enable dual namespace polling for sidekiq probe in gitlab-exporter](gitlab-org/omnibus-gitlab@6ddfb82c93158bdc25e3546625688e99cb400584) ([merge request](gitlab-org/omnibus-gitlab!7141))
+
+## 16.3.8 (2024-07-23)
+
+### Fixed (2 changes)
+
+- [Fix stable version tag identification for 16.1.x releases](gitlab-org/omnibus-gitlab@34bac52e253a700be2493667aa3bef779c261237) ([merge request](gitlab-org/omnibus-gitlab!7696))
+- [Fix patroni no longer working with update to ydiff 1.3](gitlab-org/omnibus-gitlab@940715ce3b58133889a3392364f45dc9b84e561f) ([merge request](gitlab-org/omnibus-gitlab!7638))
+
+### Changed (1 change)
+
+- [Use bundler to install Omnibus gems](gitlab-org/omnibus-gitlab@19c7f02acf3668351cc8c91cdd9071c18063e582) ([merge request](gitlab-org/omnibus-gitlab!7679))
 
 ## 16.3.7 (2024-01-11)
 
@@ -585,6 +1137,18 @@ No changes.
 ### Other (1 change)
 
 - [Enable cache to configure for Redis Cluster](gitlab-org/omnibus-gitlab@8c0aa6b59ad8be8b62e1a720cb370aadb29add05) ([merge request](gitlab-org/omnibus-gitlab!7079))
+
+## 16.2.10 (2024-07-23)
+
+### Fixed (3 changes)
+
+- [Ensure the consul home directory has execute flags set](gitlab-org/omnibus-gitlab@d74131805885ae7cc7205cb3f2dc303e60d9a299) by @twk3 ([merge request](gitlab-org/omnibus-gitlab!7779))
+- [Fix stable version tag identification for 16.1.x releases](gitlab-org/omnibus-gitlab@308c0701fbb03a8673f6a8103c904cf75f4c739f) ([merge request](gitlab-org/omnibus-gitlab!7695))
+- [Fix patroni no longer working with update to ydiff 1.3](gitlab-org/omnibus-gitlab@80bd2f3cb2448573af9be5821fa4bdce7315c201) ([merge request](gitlab-org/omnibus-gitlab!7639))
+
+### Changed (1 change)
+
+- [Use bundler to install Omnibus gems](gitlab-org/omnibus-gitlab@7c365398d1f5be28d6ebb9cc86605d9893b108c4) ([merge request](gitlab-org/omnibus-gitlab!7680))
 
 ## 16.2.9 (2024-01-11)
 
@@ -672,6 +1236,18 @@ No changes.
 
 - [Remove GITLAB_METRICS_EXPORTER_VERSION file](gitlab-org/omnibus-gitlab@5afc28844d0abb8b18e3a4b0fea2dec283b757e2) ([merge request](gitlab-org/omnibus-gitlab!7030))
 
+## 16.1.7 (2024-07-23)
+
+### Fixed (3 changes)
+
+- [Ensure the consul home directory has execute flags set](gitlab-org/omnibus-gitlab@967e025a572ef80265d77306b6b15e46694c3abe) by @twk3 ([merge request](gitlab-org/omnibus-gitlab!7778))
+- [Fix stable version tag identification for 16.1.x releases](gitlab-org/omnibus-gitlab@4daa2b20f346299412d803df50a82f80be097fbc) ([merge request](gitlab-org/omnibus-gitlab!7694))
+- [Fix patroni no longer working with update to ydiff 1.3](gitlab-org/omnibus-gitlab@cf64194b8a95232c4e464a726eb92b98c1fb048d) ([merge request](gitlab-org/omnibus-gitlab!7640))
+
+### Changed (1 change)
+
+- [Use bundler to install Omnibus gems](gitlab-org/omnibus-gitlab@af69600f390f166214afe16643a903e8baffb26f) ([merge request](gitlab-org/omnibus-gitlab!7681))
+
 ## 16.1.6 (2024-01-11)
 
 No changes.
@@ -750,6 +1326,18 @@ No changes.
 ### Other (1 change)
 
 - [Update Mattermost to 7.10.2](gitlab-org/omnibus-gitlab@fd50c589d70fb6b32ea5ad9f169ea7209e550e2d) by @akis.maziotis ([merge request](gitlab-org/omnibus-gitlab!6905))
+
+## 16.0.9 (2024-07-23)
+
+### Fixed (3 changes)
+
+- [Ensure the consul home directory has execute flags set](gitlab-org/omnibus-gitlab@383227cd156680440216ee7419a87e08fd96420c) by @twk3 ([merge request](gitlab-org/omnibus-gitlab!7777))
+- [Fix stable version tag identification for 16.1.x releases](gitlab-org/omnibus-gitlab@97af00dbaeb380d118b2fa42b0447eb19e7ea78e) ([merge request](gitlab-org/omnibus-gitlab!7693))
+- [Fix patroni no longer working with update to ydiff 1.3](gitlab-org/omnibus-gitlab@ca031744f94ab79eac37b2c2f682763ee7ddf918) ([merge request](gitlab-org/omnibus-gitlab!7641))
+
+### Changed (1 change)
+
+- [Use bundler to install Omnibus gems](gitlab-org/omnibus-gitlab@63cde1d1da7f9f16c4f7417f403fbffcf0c7ae29) ([merge request](gitlab-org/omnibus-gitlab!7682))
 
 ## 16.0.8 (2023-08-01)
 

@@ -27,6 +27,8 @@ module License
       'domelementtype',     # BSD-2-Clause Licensed - https://github.com/fb55/domelementtype/blob/master/LICENSE
       'domhandler',         # BSD-2-Clause Licensed - https://github.com/fb55/domhandler/blob/master/LICENSE
       'domutils',           # BSD-2-Clause Licensed - https://github.com/fb55/domutils/blob/master/LICENSE
+      "eventmachine-tail",  # BSD-3-Clause Licensed - https://code.google.com/archive/p/semicomplete
+      'inspec-core',        # Apache Licensed (gem published from Cinc): https://github.com/inspec/inspec/blob/v6.6.0/LICENSE
       'net-protocol',       # BSD-2-Clause Licensed - https://github.com/ruby/net-protocol/blob/master/LICENSE.txt
       'fsevents',           # MIT Licensed - https://github.com/strongloop/fsevents/blob/master/LICENSE
       'indexof',            # MIT Licensed - https://github.com/component/indexof/blob/master/LICENSE
@@ -35,8 +37,12 @@ module License
       'exiftool',           # License similar to Perl, which is under either GPL v1 or Artistic license - https://www.sno.phy.queensu.ca/~phil/exiftool/#license
       'github.com/cloudflare/tableflip', # BSD-3-Clause Licensed - https://github.com/cloudflare/tableflip/blob/master/LICENSE
       'gitlab.com/gitlab-org/golang-archive-zip', # BSD-3-Clause Licensed - https://gitlab.com/gitlab-org/golang-archive-zip/-/blob/c8e752e2d582090de40338553ef00ef08b89c905/LICENSE
-      'spam-classifier', # GitLab project and we can distribute the obfuscated binaries
-      'elkjs',           # EPL 2.0 - https://github.com/kieler/elkjs/blob/master/LICENSE.md
+      'spam-classifier',    # GitLab project and we can distribute the obfuscated binaries
+      'syslog_protocol',    # MIT Licensed - https://github.com/eric/syslog_protocol?tab=readme-ov-file#todo
+      'elkjs',              # EPL 2.0 - https://github.com/kieler/elkjs/blob/master/LICENSE.md
+      'consul',             # BSL - consul - https://gitlab.com/gitlab-com/Product/-/issues/12681#note_1620313057
+      './troubleshoot',     # BSL - consul/troubleshoot module
+      './envoyextensions',  # BSL - consul/envoyextensions module
     ]
     # readline is GPL licensed and its use was not mere aggregation. Hence it is
     # denylisted.

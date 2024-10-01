@@ -169,6 +169,44 @@ RSpec.describe 'gitlab::gitlab-pages' do
           chef_run
         end
       end
+
+      context 'when namespace in path is enabled' do
+        before do
+          stub_gitlab_rb(
+            pages_external_url: 'https://pages.example.com',
+            gitlab_pages: {
+              access_control: true,
+              namespace_in_path: true,
+            }
+          )
+        end
+
+        it 'renders pages config file with default auth-redirect-uri' do
+          expect(chef_run).to render_file("/var/opt/gitlab/gitlab-pages/gitlab-pages-config").with_content { |content|
+            expect(content).to match(%r{auth-redirect-uri=https://pages.example.com/projects/auth})
+            expect(content).to match(%r{namespace-in-path=true})
+          }
+        end
+      end
+
+      context 'with custom port and namespace in path is enabled' do
+        before do
+          stub_gitlab_rb(
+            pages_external_url: 'https://pages.example.com:8443',
+            gitlab_pages: {
+              access_control: true,
+              namespace_in_path: true,
+            }
+          )
+        end
+
+        it 'renders pages config file with default auth-redirect-uri' do
+          expect(chef_run).to render_file("/var/opt/gitlab/gitlab-pages/gitlab-pages-config").with_content { |content|
+            expect(content).to match(%r{auth-redirect-uri=https://pages.example.com:8443/projects/auth})
+            expect(content).to match(%r{namespace-in-path=true})
+          }
+        end
+      end
     end
 
     context 'with custom port' do
@@ -247,6 +285,7 @@ RSpec.describe 'gitlab::gitlab-pages' do
             rate_limit_tls_source_ip_burst: 51,
             rate_limit_tls_domain: 1001,
             rate_limit_tls_domain_burst: 10001,
+            rate_limit_subnets_allow_list: ["10.1.1.0/24", "10.1.2.0/24"],
             server_read_timeout: "1m",
             server_read_header_timeout: "2m",
             server_write_timeout: "3m",
@@ -256,6 +295,9 @@ RSpec.describe 'gitlab::gitlab-pages' do
             redirects_max_rule_count: 2000,
             enable_disk: true,
             namespace_in_path: true,
+            client_cert: "/path/to/client.crt",
+            client_key: "/path/to/client.key",
+            client_ca_certs: "/path/to/ca.crt",
             env: {
               GITLAB_CONTINUOUS_PROFILING: "stackdriver?service=gitlab-pages",
             },
@@ -322,6 +364,7 @@ RSpec.describe 'gitlab::gitlab-pages' do
             rate-limit-tls-source-ip-burst=51
             rate-limit-tls-domain=1001
             rate-limit-tls-domain-burst=10001
+            rate-limit-subnets-allow-list=10.1.1.0/24,10.1.2.0/24
             server-read-timeout=1m
             server-read-header-timeout=2m
             server-write-timeout=3m
@@ -331,6 +374,9 @@ RSpec.describe 'gitlab::gitlab-pages' do
             redirects-max-rule-count=2000
             header=X-XSS-Protection: 1; mode=block;;X-Content-Type-Options: nosniff;;Test: Header
             namespace-in-path=true
+            client-cert=/path/to/client.crt
+            client-key=/path/to/client.key
+            client-ca-certs=/path/to/ca.crt
         EOS
 
         expect(chef_run).to render_file("/var/opt/gitlab/pages/gitlab-pages-config").with_content(expected_content)

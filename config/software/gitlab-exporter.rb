@@ -15,7 +15,7 @@
 #
 
 name 'gitlab-exporter'
-default_version '14.3.0'
+default_version '15.0.0'
 license 'MIT'
 license_file 'LICENSE'
 
@@ -23,7 +23,7 @@ skip_transitive_dependency_licensing true
 
 dependency 'ruby'
 dependency 'rubygems'
-dependency 'postgresql_new'
+dependency 'postgresql'
 
 build do
   patch source: 'add-license-file.patch'

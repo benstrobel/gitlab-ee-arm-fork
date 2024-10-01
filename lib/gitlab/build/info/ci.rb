@@ -38,6 +38,10 @@ module Build
           Gitlab::Util.get_env('CI_COMMIT_REF_SLUG')
         end
 
+        def mr_target_branch_name
+          Gitlab::Util.get_env('CI_MERGE_REQUEST_TARGET_BRANCH_NAME')
+        end
+
         def artifact_url(job_name, file_path)
           client = Gitlab::APIClient.new
           target_job_id = client.get_job_id(job_name)
@@ -56,13 +60,13 @@ module Build
             # In EL world, amd64 is called x86_64
             arch = 'x86_64' if arch == 'amd64'
             folder = 'el-8'
-            package_file_name = "#{Info::Package.name}-#{Info::Package.release_version.gsub('+', '%2B')}.el8.#{arch}.rpm"
+            package_file_name = "#{Info::Package.name(fips: fips)}-#{Info::Package.release_version(fips: fips).gsub('+', '%2B')}.el8.#{arch}.rpm"
           when /Ubuntu-20.04/
             folder = 'ubuntu-focal'
-            package_file_name = "#{Info::Package.name}_#{Info::Package.release_version.gsub('+', '%2B')}_#{arch}.deb"
+            package_file_name = "#{Info::Package.name(fips: fips)}_#{Info::Package.release_version(fips: fips).gsub('+', '%2B')}_#{arch}.deb"
           when /Ubuntu-22.04/
             folder = 'ubuntu-jammy'
-            package_file_name = "#{Info::Package.name}_#{Info::Package.release_version.gsub('+', '%2B')}_#{arch}.deb"
+            package_file_name = "#{Info::Package.name(fips: fips)}_#{Info::Package.release_version(fips: fips).gsub('+', '%2B')}_#{arch}.deb"
           end
 
           if arch == 'arm64'
@@ -70,7 +74,10 @@ module Build
             folder = "#{folder}_aarch64"
           end
 
-          job_name = "#{job_name}-fips" if fips
+          if fips
+            job_name = "#{job_name}-fips"
+            folder = "#{folder}_fips"
+          end
 
           job_name = "#{job_name}-branch" unless Build::Info::CI.tag_name
 

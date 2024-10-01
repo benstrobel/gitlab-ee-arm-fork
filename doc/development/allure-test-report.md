@@ -26,13 +26,13 @@ The tests in the pipeline are currently triggered manually by
 
 ### Trigger:ce/ee-package job
 
-These jobs can be triggered manually once the `generate-facts` job is completed. On triggering these jobs, a child pipeline is created.
+These jobs can be triggered manually after the `generate-facts` job is completed. On triggering these jobs, a child pipeline is created.
 
 The child pipeline, called `TRIGGERED_CE/EE_PIPELINE` is generated in the Omnibus-GitLab repository
 
 ## TRIGGERED_CE/EE_PIPELINE child pipeline
 
-This child pipeline consists of a job called `qa-subset-test` which uses the `package-and-test/main.gitlab-ci.yml` file of the main GitLab project.
+This child pipeline consists of a job called `qa-subset-test` which uses the `test-on-omnibus/main.gitlab-ci.yml` file of the main GitLab project.
 
 ### qa-subset-test job
 
@@ -52,7 +52,7 @@ The environment variables used in `qa-subset-test` are the same that are used in
 
 ## QA-SUBSET-TEST child pipeline
 
-This pipeline runs a subset of all the orchestrated tests using GitLab QA project which in turn uses allure gem to generate report source files for each test that is executed and stores the files in a common folder. Certain orchestrated jobs like `instance`, `decomposition-single-db`, `decomposition-multiple-db` and `praefect` run only smoke and reliable tests which initially used to run the entire suite.
+This pipeline runs a subset of all the orchestrated tests using GitLab QA project which in turn uses allure gem to generate report source files for each test that is executed and stores the files in a common folder. Certain orchestrated jobs like `instance`, `decomposition-single-db`, `decomposition-multiple-db` and `praefect` run only smoke tests which initially used to run the entire suite.
 
 ### e2e-test-report job
 
@@ -86,11 +86,11 @@ subgraph QA flow in omnibus pipeline
 
     subgraph Trigger:CE/EE-job Child Pipeline
         A1["`**_trigger-qa_** stage <br> **_qa-subset-test_** job`"]
-        A3(["`_package-and-test/main.gitlab-ci.yml_ <br> from _gitlab-org/gitlab_`"])
+        A3(["`_test-on-omnibus/main.gitlab-ci.yml_ <br> from _gitlab-org/gitlab_`"])
     end
 
     subgraph qa-subset-test Child Pipeline
-        A2["`from <br> **_package-and-test/main.gitlab-ci.yml_** in **_gitlab-org/gitlab_**`"]
+        A2["`from <br> **_test-on-omnibus/main.gitlab-ci.yml_** in **_gitlab-org/gitlab_**`"]
         B1["`**_report_** stage <br> **_e2e-test-report_** job`"]
         B2(["`_.generate-allure-report-base_ job from<br> _quality/pipeline-common_`"])
         C1["`**_allure-report-publisher_** gem`"]

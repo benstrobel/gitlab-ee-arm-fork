@@ -48,6 +48,7 @@ managed by the Linux package reachable via TCP:
    ```ruby
    redis['port'] = 6379
    redis['bind'] = '127.0.0.1'
+   redis['password'] = 'redis-password-goes-here'
    ```
 
 1. Save the file and reconfigure GitLab for the changes to take effect:
@@ -120,7 +121,7 @@ redis['announce_ip_from_hostname'] = true
 ## Setting the Redis Cache instance as an LRU
 
 Using multiple Redis instances allows you to configure Redis as a
-[Least Recently Used cache](https://redis.io/docs/manual/eviction/). Note you should only
+[Least Recently Used cache](https://redis.io/docs/latest/operate/rs/databases/memory-performance/eviction-policy/). Note you should only
 do this for the Redis cache, rate-limiting, and repository cache instances; the Redis queues, shared
 state instances, and tracechunks instances should never be configured as an LRU,
 since they contain data (e.g. Sidekiq jobs) that is expected to be persistent.
@@ -160,7 +161,7 @@ You can configure Redis to run behind SSL.
 NOTE:
 Some `redis-cli` binaries are not built with support for directly connecting to a Redis server over TLS.
 If your `redis-cli` doesn't support the `--tls` flag, you will have to use something like
-[`stunnel`](https://redis.com/blog/stunnel-secure-redis-ssl/) to connect to the
+[`stunnel`](https://redis.io/blog/stunnel-secure-redis-ssl/) to connect to the
 Redis server using `redis-cli` for any debugging purposes.
 
 ### Make GitLab client connect to Redis server over SSL
@@ -231,9 +232,21 @@ redis['io_threads'] = 4
 redis['io_threads_do_reads'] = true
 ```
 
+### Client Timeouts
+
+By default, the [Ruby client for Redis](https://github.com/redis-rb/redis-client?tab=readme-ov-file#configuration)
+uses a 1-second default for the connect, read, and write timeouts. You may need to tune these values to account for local network latency.
+For example, if you see `Connection timed out - user specified timeout` errors, you may need to raise `connect_timeout`:
+
+```ruby
+gitlab_rails['redis_connect_timeout'] = 3
+gitlab_rails['redis_read_timeout'] = 1
+gitlab_rails['redis_write_timeout'] = 1
+```
+
 ## Provide sensitive configuration to Redis clients without plain text storage
 
-For more information, see the example in [configuration documentation](../settings/configuration.md#provide-redis-password-to-client-components).
+For more information, see the example in [configuration documentation](../settings/configuration.md#provide-redis-password-to-redis-server-and-client-components).
 
 ## Troubleshooting
 

@@ -52,9 +52,9 @@ already using the `signed-by` support within Debian package source lists.
 
 1. Determine if you're using `apt-key` or `signed-by` functionality:
 
-    ```shell
-    grep 'deb \[signed-by=' /etc/apt/sources.list.d/gitlab_gitlab-?e.list
-    ```
+   ```shell
+   grep 'deb \[signed-by=' /etc/apt/sources.list.d/gitlab_gitlab-?e.list
+   ```
 
     - If this `grep` returns any lines, you're using `signed-by` functionality. This takes
       precedence over any `apt-key` usage.
@@ -62,25 +62,25 @@ already using the `signed-by` support within Debian package source lists.
 
 1. For `signed-by`, the following script (run as root) updates the public keys for GitLab repositories:
 
-    ```shell
-    awk '/deb \[signed-by=/{
-          pubkey = $2;
-          sub(/\[signed-by=/, "", pubkey);
-          sub(/\]$/, "", pubkey);
-          print pubkey
-        }' /etc/apt/sources.list.d/gitlab_gitlab-?e.list | \
-      while read line; do
-        curl -s "https://packages.gitlab.com/gpg.key" | gpg --dearmor > $line
-      done
-    ```
+   ```shell
+   awk '/deb \[signed-by=/{
+         pubkey = $2;
+         sub(/\[signed-by=/, "", pubkey);
+         sub(/\]$/, "", pubkey);
+         print pubkey
+       }' /etc/apt/sources.list.d/gitlab_gitlab-?e.list | \
+     while read line; do
+       curl -s "https://packages.gitlab.com/gpg.key" | gpg --dearmor > $line
+     done
+   ```
 
 1. For `apt-key`, the following script (run as root) updates the public keys for GitLab repositories:
 
-    ```shell
-    apt-key del 3F01618A51312F3F
-    curl -s "https://packages.gitlab.com/gpg.key" | apt-key add -
-    apt-key list 3F01618A51312F3F
-    ```
+   ```shell
+   apt-key del 3F01618A51312F3F
+   curl -s "https://packages.gitlab.com/gpg.key" | apt-key add -
+   apt-key list 3F01618A51312F3F
+   ```
 
 For RPM based distributions:
 
@@ -88,18 +88,18 @@ There are mild differences between Yum and Dnf, but the underlying configuration
 
 1. Remove any existing key from the repository keyrings:
 
-    ```shell
-    for pubring in /var/cache/dnf/gitlab_gitlab-?e-*/pubring
-    do
-      gpg --homedir $pubring --delete-key F6403F6544A38863DAA0B6E03F01618A51312F3F
-    done
-    ```
+   ```shell
+   for pubring in /var/cache/dnf/*gitlab*/pubring
+   do
+     gpg --homedir $pubring --delete-key F6403F6544A38863DAA0B6E03F01618A51312F3F
+   done
+   ```
 
 1. Update the repository data/cache, which asks you to confirm keys:
 
-    ```shell
-    dnf check-update
-    ```
+   ```shell
+   dnf check-update
+   ```
 
 #### Fetching new keys before 2020-04-06
 
@@ -121,7 +121,7 @@ To fetch the latest repository signing key, users can run the `curl` command
 used to add GitLab repository, as mentioned in the [install page](https://about.gitlab.com/install/),
 again. It will fetch the new key and add it to the user's keyring.
 
-Or, users can manually fetch and add the new key using the following commands
+Or, users can manually fetch and add the new key using the following commands:
 
 ```shell
 # Download the new key
@@ -134,6 +134,10 @@ sudo apt-key add /tmp/omnibus_gitlab_gpg.key
 # CentOS/OpenSUSE/SLES
 sudo rpm --import /tmp/omnibus_gitlab_gpg.key
 ```
+
+NOTE:
+Make sure that the new key has the necessary permissions to be properly recognized by your OS, which should be `644`. You can set the permissions by running
+the following command: `chmod 644 <keyfile>`.
 
 ### Previous keys
 

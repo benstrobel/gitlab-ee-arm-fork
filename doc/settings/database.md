@@ -140,9 +140,9 @@ After you have these files, enable SSL:
 
 1. Add the following to `/etc/gitlab/gitlab.rb`:
 
-    ```ruby
-    gitlab_rails['db_sslmode'] = 'require'
-    ```
+   ```ruby
+   gitlab_rails['db_sslmode'] = 'require'
+   ```
 
 1. [Reconfigure GitLab](https://docs.gitlab.com/ee/administration/restart_gitlab.html#omnibus-gitlab-reconfigure) to apply the configuration changes.
 
@@ -178,22 +178,14 @@ After you have these files, enable SSL:
 
 To determine whether SSL is being used by clients, you can run:
 
-In [GitLab 14.2 and later](https://gitlab.com/gitlab-org/gitlab/-/issues/341210):
-
 ```shell
 sudo gitlab-rails dbconsole --database main
-```
-
-In GitLab 14.1 and earlier:
-
-```shell
-sudo gitlab-rails dbconsole
 ```
 
 At startup, you should see a banner as the following:
 
 ```plaintext
-psql (9.6.5)
+psql (13.14)
 SSL connection (protocol: TLSv1.2, cipher: ECDHE-RSA-AES256-GCM-SHA384, bits: 256, compression: on)
 Type "help" for help.
 ```
@@ -314,8 +306,7 @@ The following settings are affected in the `postgresql` block:
 - `sql_user`: Controls the expected username for MD5 authentication. This
   defaults to `gitlab`, and isn't a required setting.
 - `sql_user_password`: Sets the password that PostgreSQL will accept for MD5
-  authentication. Replace `securesqlpassword` in the following example with an
-  acceptable password.
+  authentication.
 
 1. Edit `/etc/gitlab/gitlab.rb`:
 
@@ -328,6 +319,7 @@ The following settings are affected in the `postgresql` block:
 
    ##! SQL_USER_PASSWORD_HASH can be generated using the command `gitlab-ctl pg-password-md5 'gitlab'`,
    ##! where 'gitlab' (single-quoted to avoid shell interpolation) is the name of the SQL user that connects to GitLab.
+   ##! You will be prompted for a password which other clients will use to authenticate with database, such as `securesqlpassword` in the below section.
    postgresql['sql_user_password'] = "SQL_USER_PASSWORD_HASH"
 
    # force ssl on all connections defined in trust_auth_cidr_addresses and md5_auth_cidr_addresses
@@ -388,6 +380,12 @@ directly restarting the service with `gitlab-ctl restart postgresql`.
 Some included scripts of the Linux package (such as `gitlab-psql`) expect the
 connections to PostgreSQL to be handled over the UNIX socket, and may not function
 properly. You can enable TCP/IP without disabling UNIX sockets.
+
+To test access from other clients, you can run:
+
+```shell
+sudo gitlab-rails dbconsole --database main
+```
 
 ### Enabling PostgreSQL WAL (Write Ahead Log) Archiving
 
@@ -480,7 +478,7 @@ To upgrade the PostgreSQL version, be sure that:
     (or update your database path).
   - Check the space available using `sudo df -h`. If the partition where the
     database resides doesn't have enough space, pass the argument `--tmp-dir $DIR`
-    to the command. GitLab 13.3 and above include an available disk space check and aborts
+    to the command. The upgrade task includes an available disk space check and aborts
     the upgrade if the requirements aren't met.
 
 After you confirm that the above checklist is satisfied, you can proceed with
@@ -531,6 +529,18 @@ You can run `ANALYZE` manually if the query above returned any rows:
 
 ```shell
 sudo gitlab-psql -c 'SET statement_timeout = 0; ANALYZE VERBOSE;'
+```
+
+The execution time of the `ANALYZE` command can vary significantly depending on your database size. To monitor the progress of this operation,
+you can periodically run the following query in another console session. The `tables_remaining` column should gradually reach `0`:
+
+```shell
+sudo gitlab-psql -c "
+SELECT
+    COUNT(*) AS total_tables,
+    SUM(CASE WHEN last_analyze IS NULL OR last_analyze < (NOW() - INTERVAL '2 hours') THEN 1 ELSE 0 END) AS tables_remaining
+FROM pg_stat_user_tables;
+"
 ```
 
 _After you have verified that your GitLab instance is running correctly_, you
@@ -597,16 +607,6 @@ sudo gitlab-rake gitlab:db:decomposition:connection_status
 ```
 
 If the task indicates that `max_connections` is high enough, then you can proceed with the upgrade.
-
-If, for any reason, you wish to remain on single connection, and you are upgrading
-from GitLab 15.11 or earlier to GitLab 16.0, or switch back to single database connection
-update this setting in `/etc/gitlab/gitlab.rb`:
-
-```ruby
-gitlab_rails['databases']['ci']['enable'] = false
-```
-
-In a multi-node environment, this setting should be updated on all Rails and Sidekiq nodes.
 
 ## Using a non-packaged PostgreSQL database management server
 
@@ -809,9 +809,9 @@ The following example demonstrates upgrading from a database host running Postgr
    used on the GitLab Rails instance. To amend GitLab configuration, edit
    `/etc/gitlab/gitlab.rb` and specify the value of `postgresql['version']`:
 
-    ```ruby
-    postgresql['version'] = 14
-    ```
+   ```ruby
+   postgresql['version'] = 14
+   ```
 
 1. Reconfigure GitLab:
 
@@ -874,10 +874,20 @@ when your installation is using PgBouncer.
    SET statement_timeout = 0; ANALYZE VERBOSE;
    ```
 
+   The execution time of the `ANALYZE` command can vary significantly depending on your database size. To monitor the progress of this operation,
+   you can periodically run the following query in another PostgreSQL database console. The `tables_remaining` column should gradually reach `0`:
+
+   ```SQL
+   SELECT
+     COUNT(*) AS total_tables,
+     SUM(CASE WHEN last_analyze IS NULL OR last_analyze < (NOW() - INTERVAL '2 hours') THEN 1 ELSE 0 END) AS tables_remaining
+   FROM pg_stat_user_tables;
+   ```
+
    If the upgrade used `pg_dump` and `pg_restore`, run the following query on the PostgreSQL database console:
 
    ```SQL
-   SET statement_timeout = 0; VACUUM ANALYZE VERBOSE;
+   SET statement_timeout = 0; VACUUM VERBOSE ANALYZE;
    ```
 
 ### Seed the database (fresh installs only)
@@ -1009,8 +1019,6 @@ parameters noted in the table below and then run `gitlab-ctl reconfigure`.
 
 ## Automatic database reindexing
 
-> - [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/249662) in GitLab 13.5.
-
 WARNING:
 This is an experimental feature that isn't enabled by default.
 
@@ -1066,10 +1074,10 @@ Follow the steps below to upgrade the database nodes:
 1. Secondary nodes must be upgraded before the primary node.
    1. On the secondary nodes, edit `/etc/gitlab/gitlab.rb` to include the following:
 
-   ```shell
-   # Replace X with the number of DB nodes + 1
-   postgresql['max_replication_slots'] = X
-    ```
+      ```shell
+      # Replace X with the number of DB nodes + 1
+      postgresql['max_replication_slots'] = X
+      ```
 
    1. Run `gitlab-ctl reconfigure` to update the configuration.
    1. Run `sudo gitlab-ctl restart postgresql` to get PostgreSQL restarted with the new configuration.
@@ -1084,10 +1092,10 @@ Follow the steps below to upgrade the database nodes:
 1. Once all secondary nodes are upgraded, run `pg-upgrade` on the primary node.
    1. On the primary node, edit `/etc/gitlab/gitlab.rb` to include the following:
 
-   ```shell
-   # Replace X with the number of DB nodes + 1
-   postgresql['max_replication_slots'] = X
-    ```
+      ```shell
+      # Replace X with the number of DB nodes + 1
+      postgresql['max_replication_slots'] = X
+      ```
 
    1. Run `gitlab-ctl reconfigure` to update the configuration.
    1. Run `sudo gitlab-ctl restart postgresql` to get PostgreSQL restarted with the new configuration.
@@ -1116,7 +1124,6 @@ If you encounter the following error when recreating the secondary nodes with `g
 ```shell
 pg_basebackup: could not create temporary replication slot "pg_basebackup_12345": ERROR:  all replication slots are in use
 HINT:  Free one or increase max_replication_slots.
-
 ```
 
 ### Upgrading a Geo instance
@@ -1140,23 +1147,6 @@ bandwidth. For example, at a transfer speed of 30 Mbps, and a database size of
 [PostgreSQL documentation](https://www.postgresql.org/docs/11/pgupgrade.html)
 for more.
 
-#### Disabling automatic PostgreSQL upgrades
-
-From GitLab 12.1 through GitLab 12.9, GitLab package upgrades try to upgrade
-PostgreSQL to version 10.x. In GitLab 12.10 and later, upgrades of PostgreSQL
-don't happen in an unattended manner when using Geo.
-
-Before upgrading to GitLab 12.1 through GitLab 12.9, we strongly recommend
-disabling unattended upgrades of PostgreSQL and manually upgrading PostgreSQL
-separately from upgrading the GitLab package to avoid any unintended downtime.
-
-You can disable unattended upgrades of PostgreSQL by running the following on
-all nodes running `postgresql` or `geo-postgresql`:
-
-```shell
-sudo touch /etc/gitlab/disable-postgresql-upgrade
-```
-
 #### How to upgrade PostgreSQL when using Geo
 
 To upgrade PostgreSQL, you will need the name of the replication slot, and the
@@ -1169,10 +1159,15 @@ replication user's password.
    sudo gitlab-psql -qt -c 'select slot_name from pg_replication_slots'
    ```
 
-   If you can't find your `slot_name` here, or there is no output returned, your Geo secondaries may not be healthy. In that case, make sure the [secondaries are healthy and replication is working](https://docs.gitlab.com/ee/administration/geo/replication/troubleshooting.html#check-the-health-of-the-secondary-node).
+   If you can't find your `slot_name` here, or there is no output returned, your Geo secondaries may not be healthy. In that case, make sure the [secondaries are healthy and replication is working](https://docs.gitlab.com/ee/administration/geo/replication/troubleshooting/common.html#health-check-rake-task).
+
+   Even if the query is empty, you can try to reinitialize the secondary database with the `slot_name` found on the [Geo sites admin area](https://docs.gitlab.com/ee/administration/geo_sites.html).
 
 1. Gather the replication user's password. It was set while setting up Geo in
    [Step 1. Configure the primary site](https://docs.gitlab.com/ee/administration/geo/setup/database.html#step-1-configure-the-primary-site).
+
+1. Optional. [Pause replication on each **secondary** site](https://docs.gitlab.com/ee/administration/geo/index.html#pausing-and-resuming-replication)
+   to protect their disaster recovery (DR) capability.
 
 1. Manually upgrade PostgreSQL on the Geo primary. Run on the Geo primary's
    database node:
@@ -1206,7 +1201,9 @@ replication user's password.
    `pg_hba.conf` file. This is needed because `replicate-geo-database`
    replicates the primary's file to the secondary.
 
-1. Restart `puma`, `sidekiq`, and `geo-logcursor`.
+1. If you paused replication in step 3,
+   [resume replication on each **secondary**](https://docs.gitlab.com/ee/administration/geo/index.html#pausing-and-resuming-replication).
+   Then, restart `puma`, `sidekiq`, and `geo-logcursor`.
 
    ```shell
    sudo gitlab-ctl hup puma
@@ -1221,22 +1218,8 @@ replication user's password.
 If you need to connect to the PostgreSQL database, you can connect as the
 application user:
 
-In [GitLab 14.2 and later](https://gitlab.com/gitlab-org/gitlab/-/issues/341210):
-
 ```shell
 sudo gitlab-rails dbconsole --database main
-```
-
-In GitLab 14.1 and earlier:
-
-```shell
-sudo gitlab-rails dbconsole
-```
-
-or as a PostgreSQL superuser:
-
-```shell
-sudo gitlab-psql -d gitlabhq_production
 ```
 
 ## Troubleshooting
@@ -1289,3 +1272,13 @@ version changed. To fix this error:
    ```shell
    sudo gitlab-ctl reconfigure
    ```
+
+### Database CPU load very high
+
+If the database CPU load is very high, it could be caused by the [auto cancel redundant pipelines setting](https://docs.gitlab.com/ee/ci/pipelines/settings.html#auto-cancel-redundant-pipelines). For more details, see [issue 435250](https://gitlab.com/gitlab-org/gitlab/-/issues/435250).
+
+To work around this issue:
+
+- You can allocate more CPU resources to the database server.
+- If Sidekiq is overloaded, you might need to [add more Sidekiq processes](https://docs.gitlab.com/ee/administration/sidekiq/extra_sidekiq_processes.html#start-multiple-processes) for the `ci_cancel_redundant_pipelines` queue if your projects have a very large number of pipelines.
+- You can enable the `disable_cancel_redundant_pipelines_service` feature flag to disable this setting instance-wide and see if the CPU load goes down. This disables the feature for all projects, and can lead to increased resource use by pipelines that are no longer being cancelled automatically.

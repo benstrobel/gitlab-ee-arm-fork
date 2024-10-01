@@ -10,6 +10,8 @@ ENV LANG=C.UTF-8
 COPY locale.gen /etc/locale.gen
 
 # Install required packages
+# Note: libatomic1 is only required for arm64, but it is small enough to not
+# bother about the conditional inclusion logic
 RUN apt-get update -q \
     && DEBIAN_FRONTEND=noninteractive apt-get install -yq --no-install-recommends \
       busybox \
@@ -28,7 +30,7 @@ RUN apt-get update -q \
     && rm -rf /var/lib/apt/lists/*
 
 # Use BusyBox
-ENV EDITOR /bin/vi
+ENV EDITOR=/bin/vi
 RUN busybox --install \
     && { \
         echo '#!/bin/sh'; \
@@ -44,6 +46,8 @@ RUN ln -fs /dev/null /run/motd.dynamic
 # Legacy code to be removed on 17.0.  See: https://gitlab.com/gitlab-org/omnibus-gitlab/-/merge_requests/7035
 ENV GITLAB_ALLOW_SHA1_RSA=false
 
+ARG TARGETARCH
+
 # Copy assets
 COPY RELEASE /
 COPY assets/ /assets/
@@ -53,10 +57,10 @@ RUN chmod -R og-w /assets RELEASE ; \
   /assets/setup
 
 # Allow to access embedded tools
-ENV PATH /opt/gitlab/embedded/bin:/opt/gitlab/bin:/assets:$PATH
+ENV PATH=/opt/gitlab/embedded/bin:/opt/gitlab/bin:/assets:$PATH
 
 # Resolve error: TERM environment variable not set.
-ENV TERM xterm
+ENV TERM=xterm
 
 # Expose web & ssh
 EXPOSE 443 80 22

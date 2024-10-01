@@ -71,6 +71,7 @@ default['gitlab_pages']['rate_limit_tls_source_ip'] = nil
 default['gitlab_pages']['rate_limit_tls_source_ip_burst'] = nil
 default['gitlab_pages']['rate_limit_tls_domain'] = nil
 default['gitlab_pages']['rate_limit_tls_domain_burst'] = nil
+default['gitlab_pages']['rate_limit_subnets_allow_list'] = []
 # HTTP Server timeouts
 default['gitlab_pages']['server_read_timeout'] = nil
 default['gitlab_pages']['server_read_header_timeout'] = nil
@@ -84,6 +85,10 @@ default['gitlab_pages']['redirects_max_rule_count'] = nil
 default['gitlab_pages']['register_as_oauth_app'] = true
 # Experimental - Enable namespace in path
 default['gitlab_pages']['namespace_in_path'] = false
+# Mutual TLS used with GitLab API
+default['gitlab_pages']['client_cert'] = nil
+default['gitlab_pages']['client_key'] = nil
+default['gitlab_pages']['client_ca_certs'] = nil
 
 # Temporarily retain support for `node['gitlab-pages'][*]` usage in
 # `/etc/gitlab/gitlab.rb`

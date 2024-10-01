@@ -46,8 +46,6 @@ gitlab_rails['smtp_ca_file'] = '/path/to/your/cacert.pem'
 
 ## SMTP connection pooling
 
-> - [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/230717) in GitLab 13.5.
-
 You can enable SMTP connection pooling with the following setting:
 
 ```ruby
@@ -57,8 +55,6 @@ gitlab_rails['smtp_pool'] = true
 This allows Sidekiq workers to reuse SMTP connections for multiple jobs. The maximum number of connections in the pool follows the [maximum concurrency configuration for Sidekiq](https://docs.gitlab.com/ee/administration/sidekiq/extra_sidekiq_processes.html#concurrency).
 
 ## Using encrypted credentials
-
-> - [Introduced](https://gitlab.com/gitlab-org/omnibus-gitlab/-/issues/6276) in GitLab 14.3.
 
 Instead of storing the SMTP credentials in the configuration files as plain text, you can optionally
 use an encrypted file for the SMTP credentials. To use this feature, you first need to enable
@@ -83,17 +79,17 @@ If initially your SMTP configuration looked like:
 
 1. In `/etc/gitlab/gitlab.rb`:
 
-  ```ruby
-  gitlab_rails['smtp_enable'] = true
-  gitlab_rails['smtp_address'] = "smtp.server"
-  gitlab_rails['smtp_port'] = 465
-  gitlab_rails['smtp_user_name'] = "smtp user"
-  gitlab_rails['smtp_password'] = "smtp password"
-  gitlab_rails['smtp_domain'] = "example.com"
-  gitlab_rails['smtp_authentication'] = "login"
-  gitlab_rails['smtp_enable_starttls_auto'] = true
-  gitlab_rails['smtp_openssl_verify_mode'] = 'peer'
-  ```
+   ```ruby
+   gitlab_rails['smtp_enable'] = true
+   gitlab_rails['smtp_address'] = "smtp.server"
+   gitlab_rails['smtp_port'] = 465
+   gitlab_rails['smtp_user_name'] = "smtp user"
+   gitlab_rails['smtp_password'] = "smtp password"
+   gitlab_rails['smtp_domain'] = "example.com"
+   gitlab_rails['smtp_authentication'] = "login"
+   gitlab_rails['smtp_enable_starttls_auto'] = true
+   gitlab_rails['smtp_openssl_verify_mode'] = 'peer'
+   ```
 
 1. Edit the encrypted secret:
 
@@ -146,7 +142,7 @@ gitlab_rails['smtp_force_ssl'] = false
 NOTE:
 Gmail has [strict sending limits](https://support.google.com/a/answer/166852)
 that can impair functionality as your organization grows. We strongly recommend using a
-transactional service like [SendGrid](https://sendgrid.com/) or [Mailgun](https://www.mailgun.com/)
+transactional service like [SendGrid](https://sendgrid.com/en-us) or [Mailgun](https://www.mailgun.com/)
 for teams using SMTP configuration.
 
 ```ruby
@@ -241,13 +237,13 @@ gitlab_rails['smtp_enable_starttls_auto'] = true
 
 ### SMTP.com
 
-You can use the [SMTP.com](https://www.smtp.com/) email service. [Retrieve your sender login and password](https://kb.smtp.com/article/1043-my-account-1)
+You can use the [SMTP.com](https://www.smtp.com/) email service. [Retrieve your sender login and password](https://knowledge.smtp.com/s/article/My-Account)
 from your account.
 
 To improve delivery by authorizing `SMTP.com` to send emails on behalf of your domain, you should:
 
 - Specify `from` and `reply_to` addresses using your GitLab domain name.
-- [Set up SPF and DKIM for the domain](https://kb.smtp.com/article/1039-email-authentication-spf-dkim-dmarc).
+- [Set up SPF and DKIM for the domain](https://knowledge.smtp.com/s/article/Email-authentication-SPF-DKIM-DMARC).
 
 ```ruby
 gitlab_rails['smtp_enable'] = true
@@ -262,7 +258,7 @@ gitlab_rails['gitlab_email_from'] = 'user@your.gitlab.domain.com'
 gitlab_rails['gitlab_email_reply_to'] = 'user@your.gitlab.domain.com'
 ```
 
-Check the [SMTP.com Knowledge Base](https://kb.smtp.com/) for further assistance.
+Check the [SMTP.com Knowledge Base](https://knowledge.smtp.com/s/) for further assistance.
 
 ### SparkPost
 
@@ -287,6 +283,8 @@ gitlab_rails['smtp_enable_starttls_auto'] = true
 gitlab_rails['smtp_user_name'] = "your.email@domain.com"
 gitlab_rails['smtp_password'] = "your.password"
 gitlab_rails['smtp_domain'] = "domain.com"
+gitlab_rails['gitlab_email_from'] = 'gitlab@domain.com'
+gitlab_rails['gitlab_email_reply_to'] = 'noreply@domain.com'
 ```
 
 ### Zoho Mail
@@ -482,7 +480,7 @@ gitlab_rails['smtp_tls'] = false
 
 ### SendGrid with API Key authentication
 
-If you don't want to supply a username/password, you can use an [API key](https://docs.sendgrid.com/for-developers/sending-email/getting-started-smtp):
+If you don't want to supply a username/password, you can use an [API key](https://www.twilio.com/docs/sendgrid/for-developers/sending-email/getting-started-smtp):
 
 ```ruby
 gitlab_rails['smtp_enable'] = true
@@ -506,7 +504,7 @@ The API Key you created must be entered in `smtp_password`.
 
 ### Brevo
 
-This configuration was tested with the Brevo [SMTP relay service](hhttps://www.brevo.com/free-smtp-server/). To grab the
+This configuration was tested with the Brevo [SMTP relay service](https://www.brevo.com/free-smtp-server/). To grab the
 relevant account credentials via the URLs commented into this example, [log in to your Brevo account](https://login.brevo.com).
 
 For further details, refer to the Brevo [help page](https://help.brevo.com/hc/en-us/articles/209462765-What-is-Brevo-SMTP).
@@ -1109,7 +1107,7 @@ gitlab_rails['gitlab_email_from'] = 'your-user@your-domain.de'
 
 ### AWS Workmail
 
-From the [AWS workmail documentation](https://docs.aws.amazon.com/workmail/latest/userguide/using_IMAP_client.html):
+From the [AWS workmail documentation](https://docs.aws.amazon.com/workmail/latest/userguide/using_IMAP.html):
 
 ```ruby
 gitlab_rails['smtp_enable'] = true
@@ -1202,7 +1200,7 @@ gitlab_rails['smtp_enable_starttls_auto'] = true
 
 ### NIFCLOUD ESS
 
-[SMTP Interface](https://pfs.nifcloud.com/spec/ess/smtp.htm).
+[SMTP Interface](https://docs.nifcloud.com/ess/spec/smtp.htm).
 
 ```ruby
 gitlab_rails['smtp_enable'] = true
@@ -1220,7 +1218,7 @@ gitlab_rails['gitlab_email_from'] = 'username@example.com'
 gitlab_rails['gitlab_email_reply_to'] = 'username@example.com'
 ```
 
-Check the SMTP user name and SMTP user password from the ESS [dashboard](https://pfs.nifcloud.com/help/ess/dashboard.htm).
+Check the SMTP user name and SMTP user password from the ESS [dashboard](https://docs.nifcloud.com/ess/help/dashboard.htm).
 `gitlab_email_from` and `gitlab_email_reply_to` must be ESS authenticated sender email addresses.
 
 ### Sina mail

@@ -15,7 +15,7 @@ can use that access to build packages.
 If you have a merge request (MR) in the `gitlab-org/gitlab` project, you can
 test that MR using a package or a Docker image.
 
-In the CI pipeline corresponding to your MR, run the `e2e:package-and-test` job in
+In the CI pipeline corresponding to your MR, run the `e2e:test-on-omnibus` job in
 the `qa` stage to trigger:
 
 - A downstream pipeline in the `omnibus-gitlab`
@@ -50,7 +50,7 @@ Check the following table for more information:
 | `GITLAB_ELASTICSEARCH_INDEXER_VERSION` | `GITLAB_ELASTICSEARCH_INDEXER_VERSION` | Git reference of the [GitLab Elasticsearch Indexer](https://gitlab.com/gitlab-org/gitlab-elasticsearch-indexer) repository. Used only in EE builds.|
 | `GITLAB_KAS_VERSION`                   | `GITLAB_KAS_VERSION`                   | Git reference of the [GitLab Kubernetes Agent Server](https://gitlab.com/gitlab-org/cluster-integration/gitlab-agent) repository.|
 
-If you are running the `e2e:package-and-test` job from a GitLab MR, the `GITLAB_VERSION`
+If you are running the `e2e:test-on-omnibus` job from a GitLab MR, the `GITLAB_VERSION`
 environment variable is set to the commit SHA corresponding to the pipeline.
 Other environment variables, if not specified, are populated from
 their corresponding files and passed on to the triggered pipeline.
@@ -119,7 +119,7 @@ below for details:
 
 Prerequisites:
 
-- You must have permission to push branches to the `omnibus-gitlab` [release mirror](https://dev.gitlab.org/gitlab/omnibus-gitlab).
+- You must have permission to push branches to the `omnibus-gitlab` release mirror: `https://dev.gitlab.org/gitlab/omnibus-gitlab`.
 
 Use the release mirror to:
 
@@ -130,10 +130,10 @@ To build packages for other operating systems:
 
 1. Modify `*_VERSION` files or environment variables as specified in the
    previous section if needed. You might want to set the `ee` environment variable in
-   the [CI configuration](https://gitlab.com/gitlab-org/omnibus-gitlab/.gitlab-ci.yml)
+   the [CI configuration](https://gitlab.com/gitlab-org/omnibus-gitlab/-/blob/master/.gitlab-ci.yml)
    to `true` to use a commit from the GitLab repository instead of GitLab-FOSS.
 
 1. Push your branch to the release mirror and check the
-   [pipelines](https://dev.gitlab.org/gitlab/omnibus-gitlab/-/pipelines).
+   pipelines: `https://dev.gitlab.org/gitlab/omnibus-gitlab/-/pipelines`.
 
 1. The pipeline builds packages for all supported operating systems and a Docker image.

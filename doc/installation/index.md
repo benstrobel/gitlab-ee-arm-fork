@@ -13,7 +13,7 @@ DETAILS:
 ## Prerequisites
 
 - [Installation Requirements](https://docs.gitlab.com/ee/install/requirements.html).
-- If you want to access your GitLab instance via a domain name, like `mygitlabinstance.com`,
+- If you want to access your GitLab instance by using a domain name, like `mygitlabinstance.com`,
   make sure the domain correctly points to the IP of the server where GitLab is being
   installed. You can check this using the command `host mygitlabinstance.com`.
 - If you want to use HTTPS on your GitLab instance, make sure you have the SSL
@@ -29,7 +29,7 @@ These configuration settings are commonly used when configuring a Linux package 
 For a complete list of settings, see the [README](../index.md#configuring) file.
 
 - [Installing GitLab](https://about.gitlab.com/install/).
-  - [Manually downloading and installing a GitLab package](https://docs.gitlab.com/ee/update/package/#upgrade-using-a-manually-downloaded-package).
+  - [Manually downloading and installing a GitLab package](https://docs.gitlab.com/ee/update/package/#download-a-package-manually).
 - [Setting up a domain name/URL](../settings/configuration.md#configure-the-external-url-for-gitlab)
   for the GitLab Instance so that it can be accessed easily.
 - [Enabling HTTPS](../settings/nginx.md#enable-https).
@@ -46,14 +46,15 @@ For a complete list of settings, see the [README](../index.md#configuring) file.
   Set up the Prometheus monitoring included in the Linux package.
 - [GitLab High Availability Roles](../roles/index.md).
 
-### Set up the initial password
-
-> - [Introduced](https://gitlab.com/gitlab-org/omnibus-gitlab/-/merge_requests/5331) in GitLab 14.0.
+### Set up the initial account
 
 By default, a Linux package installation automatically generates a password for the
 initial administrator user account (`root`) and stores it to
 `/etc/gitlab/initial_root_password` for at least 24 hours. For security reasons,
 after 24 hours, this file is automatically removed by the first `gitlab-ctl reconfigure`.
+
+The default account is tied to a randomly-generated email address. To override
+this, pass the `GITLAB_ROOT_EMAIL` environment variable to the installation command.
 
 NOTE:
 If GitLab can't detect a valid hostname for the server during the
@@ -66,12 +67,12 @@ To provide a custom initial root password, you have two options:
   the hostname for the server is set up correctly:
 
   ```shell
-  sudo GITLAB_ROOT_PASSWORD="<strongpassword>" EXTERNAL_URL="http://gitlab.example.com" apt install gitlab-ee
+  sudo GITLAB_ROOT_EMAIL="<gitlab_admin@example.com>" GITLAB_ROOT_PASSWORD="<strongpassword>" EXTERNAL_URL="http://gitlab.example.com" apt install gitlab-ee
   ```
 
   If during the installation GitLab doesn't automatically perform a
-  reconfigure, you have to pass the `GITLAB_ROOT_PASSWORD` variable to the
-  first `gitlab-ctl reconfigure` run.
+  reconfigure, you have to pass the `GITLAB_ROOT_PASSWORD` or `GITLAB_ROOT_EMAIL`
+  variable to the first `gitlab-ctl reconfigure` run.
 
 - Before the first reconfigure, edit `/etc/gitlab/gitlab.rb` (create it if it
   doesn't exist) and set:

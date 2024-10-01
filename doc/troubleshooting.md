@@ -106,7 +106,7 @@ This error is thrown when `/etc/gitlab/gitlab.rb` configuration file contains
 configuration that is invalid or unsupported. Double check that there are no
 typos or that the configuration file does not contain obsolete configuration.
 
-You can check the latest available configuration by using `sudo gitlab-ctl diff-config` (Command available starting with GitLab 8.17) or check the latest [`gitlab.rb.template`](https://gitlab.com/gitlab-org/omnibus-gitlab/blob/master/files/gitlab-config-template/gitlab.rb.template).
+You can check the latest available configuration by using `sudo gitlab-ctl diff-config` or check the latest [`gitlab.rb.template`](https://gitlab.com/gitlab-org/omnibus-gitlab/blob/master/files/gitlab-config-template/gitlab.rb.template).
 
 ## GitLab is unreachable in my browser
 
@@ -155,7 +155,7 @@ postgresql['port'] = 2345
 puma['port'] = 3456
 ```
 
-For NGINX port changes please see [Setting the NGINX listen port](settings/nginx.md#setting-the-nginx-listen-port).
+For NGINX port changes please see [Setting the NGINX listen port](settings/nginx.md#set-the-nginx-listen-port).
 
 ## Git user does not have SSH access
 
@@ -166,7 +166,7 @@ get their security context messed up. You can fix this by running `sudo
 gitlab-ctl reconfigure`, which sets the `gitlab_shell_t` security context on
 `/var/opt/gitlab/.ssh`.
 
-In GitLab 10.0 this behavior was improved by setting the context permanently using
+To improve this behavior, we set the context permanently using
 `semanage`. The runtime dependency `policycoreutils-python` has been added to the
 RPM package for RHEL based operating systems in order to ensure the `semanage`
 command is available.
@@ -246,6 +246,8 @@ postgresql['shared_buffers'] = "100MB"
 
 Run `sudo gitlab-ctl reconfigure` for the change to take effect.
 
+<!-- markdownlint-disable line-length -->
+
 ## PostgreSQL error `FATAL:  could not open shared memory segment "/PostgreSQL.XXXXXXXXXX": Permission denied`
 
 By default, PostgreSQL tries to detect the shared memory type to use. If you don't
@@ -258,6 +260,8 @@ postgresql['dynamic_shared_memory_type'] = 'none'
 ```
 
 Run `sudo gitlab-ctl reconfigure` for the change to take effect.
+
+<!-- markdownlint-enable line-length -->
 
 ## PostgreSQL error `FATAL:  remaining connection slots are reserved for non-replication superuser connections`
 
@@ -537,7 +541,7 @@ how to override the default headers.
 
 ## Extension missing pg_trgm
 
-Starting from GitLab 8.6, [GitLab requires](https://docs.gitlab.com/ee/install/requirements.html#postgresql-requirements)
+[GitLab requires](https://docs.gitlab.com/ee/install/requirements.html#postgresql-requirements)
 the PostgreSQL extension `pg_trgm`.
 If you are using Omnibus GitLab package with the bundled database, the extension
 should be automatically enabled when you upgrade.
@@ -641,7 +645,7 @@ will need to switch to using `no_root_squash` in your NFS exports on the NFS ser
 
 This applies to operating systems using systemd (e.g. Ubuntu 18.04+, CentOS, etc.).
 
-Since GitLab 11.2, the `gitlab-runsvdir` starts during the `multi-user.target`
+`gitlab-runsvdir` starts during the `multi-user.target`
 instead of `basic.target`. If you are having trouble starting this service
 after upgrading GitLab, you may need to check that your system has properly
 booted all the required services for `multi-user.target` via the command:
@@ -789,6 +793,8 @@ GitLab services will be unable to establish network connections.
 This can be resolved by fixing the DNS configurations (or `/etc/hosts`) to
 resolve the hosts to an **IPv4** address instead of **IPv6**.
 
+<!-- markdownlint-disable line-length -->
+
 ## `URI::InvalidComponentError (bad component(expected host component: my_url.tld)` when `external_url` contains underscores
 
 If you have set `external_url` with underscores (for example `https://my_company.example.com`), you may face the following issues with CI/CD:
@@ -815,6 +821,8 @@ lib/gitlab/i18n.rb:79:in `with_user_locale'
 ```
 
 As a workaround, avoid using underscores in `external_url`. There is an open issue about it: [Setting `external_url` with underscore results in a broken GitLab CI/CD functionality](https://gitlab.com/gitlab-org/omnibus-gitlab/-/issues/6077).
+
+<!-- markdownlint-enable line-length -->
 
 ## Upgrade fails with `timeout: run: /opt/gitlab/service/gitaly` error
 
@@ -1048,3 +1056,49 @@ net.core.somaxconn = 1024
 
 You may experience timeouts or HTTP 502 errors and is recommended to increase this
 value by updating the `puma['somaxconn']` variable in your `gitlab.rb`.
+
+## `exec request failed on channel 0` or `shell request failed on channel 0` errors
+
+When pulling or pushing by using Git over SSH, you might see the following errors:
+
+- `exec request failed on channel 0`
+- `shell request failed on channel 0`
+
+These errors can happen if the number of processes from the `git` user is above the limit.
+
+To try and resolve this issue:
+
+1. Increase the `nproc` setting for the `git` user in the `/etc/security/limits.conf` file on the nodes where `gitlab-shell` is running.
+   Typically, `gitlab-shell` runs on GitLab Rails nodes.
+1. Retry the pull or push Git command.
+
+## Hung installation after SSH connection loss
+
+If you're installing GitLab on a remote virtual machine and your SSH connection gets lost,
+the installation could hang with a zombie `dpkg` process. To resume the installation:
+
+1. Run `top` to find the process ID of the associated `apt` process, which is the parent of the `dpkg` process.
+1. Kill the `apt` process by running `sudo kill <PROCESS_ID>`.
+1. Only if doing a fresh install, run `sudo gitlab-ctl cleanse`. This step erases existing data, so must not be used on upgrades.
+1. Run `sudo dpkg configure -a`.
+1. Edit the `gitlab.rb` file to include the desired external URL and any other configuration that might be missing.
+1. Run `sudo gitlab-ctl reconfigure`.
+
+## Redis-related error when reconfiguring GitLab
+
+You might encounter the following error when reconfiguring GitLab:
+
+```plaintext
+RuntimeError: redis_service[redis] (redis::enable line 19) had an error: RuntimeError: ruby_block[warn pending redis restart] (redis::enable line 77) had an error: RuntimeError: Execution of the command /opt/gitlab/embedded/bin/redis-cli -s /var/opt/gitlab/redis/redis.socket INFO failed with a non-zero exit code (1)
+```
+
+The error message indicates that Redis might have restarted or shut down while trying to establish a connection with `redis-cli`. Given that recipe runs
+`gitlab-ctl restart redis` and tries to check the version right away, there might be a race condition that causes the error.
+
+To resolve this problem, run the following command:
+
+```shell
+sudo gitlab-ctl reconfigure
+```
+
+If that fails, check the output of `gitlab-ctl tail redis` and try to run `redis-cli`.

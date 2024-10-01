@@ -90,6 +90,16 @@ production: &base
     ##   6 - Blue
     default_theme: <%= @gitlab_default_theme %> # default: 2
 
+    <% unless @custom_html_header_tags.nil? %>
+    ## Custom html header tags
+    # In some cases some custom header tags are needed
+    # e.g., to add the EU cookie consent
+    # custom_html_header_tags: |
+    #  <script src="https://example.com/cookie-consent.js"></script>
+    #  <link rel="stylesheet" href="https://example.com/cookie-consent.css"/>
+    custom_html_header_tags: <%= @custom_html_header_tags %>
+    <% end %>
+
     ## Automatic issue closing
     # If a commit message matches this regular expression, all issues referenced from the matched text will be closed.
     # This happens when the commit is pushed or merged into the default branch of a project.
@@ -597,6 +607,15 @@ production: &base
     <% unless @ci_catalog_resources_process_sync_events_worker_cron.nil? %>
     ci_catalog_resources_process_sync_events_worker:
       cron: "<%= @ci_catalog_resources_process_sync_events_worker_cron %>"
+    <% end %>
+
+    # Periodically sync finished pipelines from p_ci_finished_pipeline_ch_sync_events to ClickHouse
+    <% unless @ci_click_house_finished_pipelines_sync_worker_cron.nil? %>
+    ci_click_house_finished_pipelines_sync_worker:
+      cron: "<%= @ci_click_house_finished_pipelines_sync_worker_cron %>"
+      <% unless @ci_click_house_finished_pipelines_sync_worker_args.nil? %>
+      args: <%= @ci_click_house_finished_pipelines_sync_worker_args %>
+      <% end %>
     <% end %>
 
     ##

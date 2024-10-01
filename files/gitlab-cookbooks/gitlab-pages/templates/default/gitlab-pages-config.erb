@@ -167,6 +167,9 @@ rate-limit-tls-domain=<%= @rate_limit_tls_domain %>
 <%- if @rate_limit_tls_domain_burst -%>
 rate-limit-tls-domain-burst=<%= @rate_limit_tls_domain_burst %>
 <%-end -%>
+<%- unless @rate_limit_subnets_allow_list.empty? -%>
+rate-limit-subnets-allow-list=<%= @rate_limit_subnets_allow_list.join(',') %>
+<%- end -%>
 <%- if @server_read_timeout -%>
 server-read-timeout=<%= @server_read_timeout %>
 <%-end -%>
@@ -193,4 +196,13 @@ header=<%= @headers.join(';;') %>
 <%-end -%>
 <%- if @namespace_in_path -%>
 namespace-in-path=<%= @namespace_in_path %>
+<%-end -%>
+<%- if @client_cert -%>
+client-cert=<%= @client_cert %>
+<%-end -%>
+<%- if @client_key -%>
+client-key=<%= @client_key %>
+<%-end -%>
+<%- if @client_ca_certs -%>
+client-ca-certs=<%= @client_ca_certs %>
 <%-end -%>

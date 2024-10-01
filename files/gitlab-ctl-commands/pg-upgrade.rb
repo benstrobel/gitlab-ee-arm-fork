@@ -173,12 +173,20 @@ add_command_under_category 'pg-upgrade', 'database',
     Kernel.exit 0
   end
 
-  log 'Checking for a newer version of PostgreSQL to install'
-  if @db_worker.target_version && Dir.exist?("#{INST_DIR}/#{@db_worker.target_version.major}")
-    log "Upgrading PostgreSQL to #{@db_worker.target_version}"
-  else
+  unless GitlabCtl::Util.progress_message('Checking for a newer version of PostgreSQL to install') do
+    @db_worker.target_version && Dir.exist?("#{INST_DIR}/#{@db_worker.target_version.major}")
+  end
     $stderr.puts 'No new version of PostgreSQL installed, nothing to upgrade to'
     Kernel.exit 0
+  end
+
+  log "Upgrading PostgreSQL to #{@db_worker.target_version}"
+
+  if GitlabCtl::Util.progress_message('Checking for previous failed upgrade attempts') do
+    File.exist?("#{@db_worker.tmp_data_dir}.#{@db_worker.initial_version.major}")
+  end
+    $stderr.puts "Detected a potential failed upgrade.  Directory #{@db_worker.tmp_data_dir}.#{@db_worker.initial_version.major} already exists."
+    Kernel.exit 1
   end
 
   deprecation_message if @db_worker.target_version.major.to_f < 13
@@ -612,7 +620,7 @@ def analyze_cluster
   rescue Mixlib::ShellOut::CommandTimeout
     $stderr.puts "Time out while running the analyze stage.".color(:yellow)
     $stderr.puts "Please re-run the command manually as the #{pg_username} user".color(:yellow)
-    $stderr.puts analyze_command.color(:yellow)
+    $stderr.puts analyze_cmd.color(:yellow)
   end
 end
 
@@ -747,11 +755,11 @@ def old_version
 end
 
 def default_version
-  PGVersion.parse(version_from_manifest('postgresql_new')) || PGVersion.parse(version_from_manifest('postgresql'))
+  PGVersion.parse(version_from_manifest('postgresql'))
 end
 
 def new_version
-  PGVersion.parse(version_from_manifest('postgresql_new')) || PGVersion.parse(version_from_manifest('postgresql'))
+  PGVersion.parse(version_from_manifest('postgresql'))
 end
 
 SUPPORTED_VERSIONS = [old_version, default_version, new_version].freeze

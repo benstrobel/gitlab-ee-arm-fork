@@ -78,6 +78,9 @@ this OpenSSL version.
 
    This error indicates that an incomplete certificate chain is being presented by the server. To fix this error, you will need to [replace server's certificate with the full chained certificate](index.md#configure-https-manually). The full certificate chain order should consist of the server certificate first, followed by all intermediate certificates, with the root CA last.
 
+   NOTE:
+   If you get this error while running the system OpenSSL utility instead of the `/opt/gitlab/embedded/bin/openssl` utility, make sure you update your CA certificates at the OS level to fix it.
+
 1. `certificate signed by unknown authority`
 
    This error indicates that the client does not trust the certificate or CA. To fix this error, the client connecting to server will need to [trust the certificate or CA](index.md#install-custom-public-certificates).
@@ -107,17 +110,12 @@ Files other than `cacert.pem` and `README.md` stored in
 
 ## Custom Certificates Missing or Skipped
 
-GitLab versions ***8.9.0***, ***8.9.1***, and ***8.9.2*** all mistakenly used the
-`/etc/gitlab/ssl/trusted-certs/` directory. This directory is safe to remove if it
-is empty. If it still contains custom certificates then move them to `/etc/gitlab/trusted-certs/`
-and run `gitlab-ctl reconfigure`.
-
 If no symlinks are created in `/opt/gitlab/embedded/ssl/certs/` and you see
 the message "Skipping `cert.pem`" after running `gitlab-ctl reconfigure`, that
 means there may be one of four issues:
 
 1. The file in `/etc/gitlab/trusted-certs/` is a symlink
-1. The file is not a valid PEM or DER-encoded certificate
+1. The file is not a valid PEM- or DER-encoded certificate
 1. Perl is not installed on the operating system which is needed for c_rehash to properly symlink certificates
 1. The certificate contains the string `TRUSTED`
 
@@ -320,6 +318,8 @@ If the two outputs differ like the previous example, there's a mismatch between
 the certificate and key. Contact the provider of the SSL certificate for
 further support.
 
+<!-- markdownlint-disable line-length -->
+
 ## Using GitLab Runner with a GitLab instance configured with internal CA certificate or self-signed certificate
 
 Besides getting the errors mentioned in
@@ -335,6 +335,8 @@ x509: certificate signed by unknown authority
 ```
 
 Follow the details in [Self-signed certificates or custom Certification Authorities for GitLab Runner](https://docs.gitlab.com/runner/configuration/tls-self-signed.html).
+
+<!-- markdownlint-enable line-length -->
 
 ## Mirroring a remote GitLab repository that uses a self-signed SSL certificate
 

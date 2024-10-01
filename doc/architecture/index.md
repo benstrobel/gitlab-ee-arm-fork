@@ -148,7 +148,7 @@ parsed correctly.
 
 ### runit
 
-GitLab uses [runit](http://smarden.org/runit/) recipes for
+GitLab uses [runit](https://smarden.org/runit/) recipes for
 service management and supervision. runit recipes do the job of identifying the
 init system used by the OS and performing basic service management tasks like
 creating necessary service files for GitLab, service enabling, and service
@@ -178,7 +178,13 @@ not-so-common tasks.
 
 ## Tests
 
-Omnibus GitLab repository uses ChefSpec to [test the cookbooks and recipes](https://gitlab.com/gitlab-org/omnibus-gitlab/tree/master/spec/) it ships. The usual strategy is to check a recipe to see if it behaves correctly in two (or more) conditions: when the user doesn't specify any corresponding configuration, (i.e. when defaults are used) and when user-specified configuration is used. Tests may include checking if files are generated in the correct locations, services are started/stopped/notified, correct binaries are invoked, and correct parameters are being passed to method invocations. Recipes and library methods have tests associated with them. Omnibus GitLab also uses some support methods or macros to help in the testing process. The tests are defined as compatible for parallelization, where possible, to decrease the time required for running the entire test suite.
+Omnibus GitLab repository uses ChefSpec to [test the cookbooks and recipes](https://gitlab.com/gitlab-org/omnibus-gitlab/tree/master/spec/) it ships.
+The usual strategy is to check a recipe to see if it behaves correctly in two (or more) conditions: when the user
+doesn't specify any corresponding configuration, (i.e. when defaults are used) and when user-specified configuration is used.
+Tests may include checking if files are generated in the correct locations, services are started/stopped/notified, correct
+binaries are invoked, and correct parameters are being passed to method invocations. Recipes and library methods have tests associated with them.
+Omnibus GitLab also uses some support methods or macros to help in the testing process. The tests are defined as compatible for parallelization,
+where possible, to decrease the time required for running the entire test suite.
 
 So, of the components described above, some (such as software definitions, project metadata, and tests) find use during the package building, in a build environment, and some (such as Chef cookbooks and recipes, GitLab configuration file, runit, and `gitlab-ctl` commands) are used to configure the user's installed instance.
 
@@ -210,7 +216,17 @@ Software artifact cache uses an Amazon S3 bucket to store the sources of the dep
 
 ##### Build cache
 
-A second type of cache that plays an important role in our build process is the build cache. Build cache can be described as snapshots of the project tree (where the project gets built - `/opt/gitlab`) after each dependent software is built. Consider a project with five dependent pieces of software - A, B, C, D, and E, built in that order, we're not considering their dependencies. Build cache makes use of Git tags to make snapshots. After each software is built, a Git tag is computed and committed. Now, consider we made some change to the definition of software D. A, B, C and E remains the same. When we try to build again, omnibus can reuse the snapshot that was made before D was built in the previous build. Thus, the time taken to build A, B, and C can be saved as it can simply check out the snapshot that was made after C was built. Omnibus uses the snapshot just before the software which "dirtied" the cache (dirtying can happen either by a change in the software definition, a change in name/version of a previous component, or a change in version of the current component) was built. Similarly, if in a build there is a change in the definition of software A, it will dirty the cache and hence A and all the following dependencies get built from scratch. If C dirties the cache, A and B get reused and C, D, and E get built again from scratch.
+A second type of cache that plays an important role in our build process is the build cache. Build cache can be described
+as snapshots of the project tree (where the project gets built - `/opt/gitlab`) after each dependent software is built.
+Consider a project with five dependent pieces of software - A, B, C, D, and E, built in that order, we're not considering
+their dependencies. Build cache makes use of Git tags to make snapshots. After each software is built, a Git tag is computed and committed.
+Now, consider we made some change to the definition of software D. A, B, C and E remains the same. When we try to build again,
+omnibus can reuse the snapshot that was made before D was built in the previous build. Thus, the time taken to build A, B,
+and C can be saved as it can simply check out the snapshot that was made after C was built. Omnibus uses the snapshot just
+before the software which "dirtied" the cache (dirtying can happen either by a change in the software definition, a change
+in name/version of a previous component, or a change in version of the current component) was built. Similarly, if in a
+build there is a change in the definition of software A, it will dirty the cache and hence A and all the following dependencies
+get built from scratch. If C dirties the cache, A and B get reused and C, D, and E get built again from scratch.
 
 This cache makes sense only if it is retained across builds. For that, we use the caching mechanism of GitLab CI. We have a dedicated runner which is configured to store its internal cache in an Amazon bucket. Before each build, we pull in this cache (`restore_cache_bundle` target in our Makefile), move it to an appropriate location and start the build. It gets used by the omnibus until the point of dirtying. After the build, we pack the new cache and tell CI to back it up to the Amazon bucket (`pack_cache_bundle` in our Makefile).
 
@@ -231,10 +247,6 @@ The cache mechanism can be summarized as follows:
       1. Build the dependency.
       1. Create a snapshot and commit it.
 1. Push back the new build cache to the CI cache.
-
-### What happens during `gitlab-ctl reconfigure`
-
-One of the commonly used commands while managing a GitLab instance is `gitlab-ctl reconfigure`. This command, in short, parses the config file and runs the recipes with the values supplied from it. The recipes to be run are defined in a file called `dna.json` present in the `embedded` folder inside the installation directory (This file is generated by a software dependency named `gitlab-cookbooks` that's defined in the software definitions). In the case of GitLab CE, the cookbook named `gitlab` will be selected as the master recipe, which in turn invokes all other necessary recipes, including runit. In short, reconfigure is a chef-client run that configures different files and services with the values provided in the configuration template.
 
 ## Multiple databases
 

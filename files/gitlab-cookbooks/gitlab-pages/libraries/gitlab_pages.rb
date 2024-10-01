@@ -30,7 +30,6 @@ module GitlabPages
       # Only call parse_secrets when not generating a defaults secrets file.
       parse_secrets unless Gitlab['node'][SecretsHelper::SECRETS_FILE_CHEF_ATTR]
       parse_automatic_oauth_registration
-      parse_namespace_in_path
     end
 
     def parse_pages_external_url
@@ -80,6 +79,8 @@ module GitlabPages
       Gitlab['gitlab_pages']['gitlab_server'] ||= Gitlab['external_url']
       Gitlab['gitlab_pages']['artifacts_server_url'] ||= Gitlab['gitlab_pages']['gitlab_server'].chomp('/') + '/api/v4'
 
+      Gitlab['pages_nginx']['namespace_in_path'] = Gitlab['gitlab_pages']['namespace_in_path'] if Gitlab['gitlab_pages']['namespace_in_path']
+
       parse_auth_redirect_uri
     end
 
@@ -89,7 +90,13 @@ module GitlabPages
 
       pages_uri = URI(Gitlab['pages_external_url'].to_s)
       parsed_port = [80, 443].include?(pages_uri.port) ? "" : ":#{pages_uri.port}"
-      Gitlab['gitlab_pages']['auth_redirect_uri'] = pages_uri.scheme + '://projects.' + pages_uri.host + parsed_port + '/auth'
+
+      Gitlab['gitlab_pages']['auth_redirect_uri'] =
+        if Gitlab['gitlab_pages']['namespace_in_path']
+          "#{pages_uri.scheme}://#{pages_uri.host}#{parsed_port}/projects/auth"
+        else
+          "#{pages_uri.scheme}://projects.#{pages_uri.host}#{parsed_port}/auth"
+        end
     end
 
     def authorize_with_gitlab
@@ -135,33 +142,6 @@ module GitlabPages
       Gitlab['gitlab_pages']['register_as_oauth_app'] = false
 
       LoggingHelper.warning("Writing secrets to `gitlab-secrets.json` file is disabled. Hence, not automatically registering GitLab Pages as an Oauth App. So, GitLab SSO will not be available as a login option.")
-    end
-
-    def parse_namespace_in_path
-      # If GitLab Pages isn't enabled or namespace_in_path is isn't enabled, do nothing.
-      return unless Gitlab['gitlab_pages']['enable'] && Gitlab['gitlab_pages']['namespace_in_path']
-
-      Gitlab['pages_nginx']['namespace_in_path'] = Gitlab['gitlab_pages']['namespace_in_path']
-      url_scheme = Gitlab['gitlab_rails']['pages_https'] ? 'https' : 'http'
-
-      pages_port = Gitlab['gitlab_rails']['pages_port']
-      # Add the following when pages_port is not 80 or 443
-      Gitlab['pages_nginx']['proxy_redirect'] =
-        if [80, 443].include?(pages_port)
-          {
-            "~^#{url_scheme}://(projects\\.#{Gitlab['pages_nginx']['fqdn_regex']})/(.*)$" => "#{url_scheme}://$1/$2",
-            "~^#{url_scheme}://([^/]*)\\.(#{Gitlab['pages_nginx']['fqdn_regex']})/(.*)$" => "#{url_scheme}://$2/$1/$3",
-            "~^//([^/]*)\\.(#{Gitlab['pages_nginx']['fqdn_regex']})/(.*)$" => "/$1/$3",
-            "~^/(.*)$" => "/$namespace/$1",
-          }
-        else
-          {
-            "~^#{url_scheme}://(projects\\.#{Gitlab['pages_nginx']['fqdn_regex']}:#{pages_port})/(.*)$" => "#{url_scheme}://$1/$2",
-            "~^#{url_scheme}://([^/]*)\\.(#{Gitlab['pages_nginx']['fqdn_regex']}:#{pages_port})/(.*)$" => "#{url_scheme}://$2/$1/$3",
-            "~^//([^/]*)\\.(#{Gitlab['pages_nginx']['fqdn_regex']}:#{pages_port})/(.*)$" => "/$1/$3",
-            "~^/(.*)$" => "/$namespace/$1",
-          }
-        end
     end
   end
 end
