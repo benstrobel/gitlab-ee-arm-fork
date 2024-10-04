@@ -74,4 +74,6 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          build-args: RELEASE_PACKAGE=gitlab-ee RELEASE_VERSION=17.2.8-ee.0
+          build-args: |-
+            RELEASE_PACKAGE=gitlab-ee
+            RELEASE_VERSION=17.2.8-ee.0
